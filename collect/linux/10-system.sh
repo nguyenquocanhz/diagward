@@ -18,7 +18,12 @@ else
 	dw_missing system.dmi /sys/class/dmi/id
 fi
 
-if dw_has hostnamectl && [ -z "$DW_CONTAINER" ]; then
+# hostnamectl and timedatectl talk to systemd-hostnamed / systemd-timedated
+# over D-Bus, which starts those services when they are not running. The
+# collector must not start services, so they are used only when already up.
+_sy_active() { dw_has systemctl && $DW_TO systemctl is-active --quiet "$1" 2>/dev/null; }
+
+if dw_has hostnamectl && [ -z "$DW_CONTAINER" ] && _sy_active systemd-hostnamed; then
 	dw_run system.hostnamectl hostnamectl status
 fi
 
@@ -54,10 +59,17 @@ dw_sh system.stat 'grep -E "^(cpu |btime|procs_running|procs_blocked)" /proc/sta
 
 dw_file system.tainted /proc/sys/kernel/tainted
 
-if dw_has timedatectl && [ -z "$DW_CONTAINER" ]; then
+_sy_timesync() {
+	if [ -e /run/systemd/timesync/synchronized ]; then echo "synchronized=yes"; else echo "synchronized=no"; fi
+	echo "timesyncd_active=$( (_sy_active systemd-timesyncd && echo yes) || echo no)"
+}
+if dw_has timedatectl && [ -z "$DW_CONTAINER" ] && _sy_active systemd-timedated; then
 	dw_run system.timedatectl timedatectl status
 elif dw_has chronyc && [ -z "$DW_CONTAINER" ]; then
 	dw_run system.chrony chronyc -n tracking
+elif [ -z "$DW_CONTAINER" ] && [ -d /run/systemd/timesync ]; then
+	# systemd-timesyncd (systemd >= 239) touches this file once synchronised.
+	dw_fn system.timesync _sy_timesync
 fi
 
 _sy_reboot() {

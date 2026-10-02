@@ -27,6 +27,14 @@ const (
 // BundleFormat is the version of the saved bundle layout.
 const BundleFormat = 1
 
+// Limits for reading bundles that come from elsewhere (a customer's .dwb
+// file): real bundles are a few MB with a few hundred sections, so these
+// leave ample room while keeping a crafted file from exhausting memory.
+const (
+	MaxBundleBytes = 128 << 20
+	MaxSections    = 20000
+)
+
 // Section is the captured output of one command or file.
 type Section struct {
 	Name string `json:"name"`
@@ -180,20 +188,78 @@ func Read(r io.Reader) (*Bundle, error) {
 		defer zr.Close()
 		src = zr
 	}
-	var b Bundle
-	dec := json.NewDecoder(io.LimitReader(src, 512<<20))
-	if err := dec.Decode(&b); err != nil {
+	lr := &io.LimitedReader{R: src, N: MaxBundleBytes + 1}
+	b, err := decodeBundle(json.NewDecoder(lr))
+	if err != nil {
+		if lr.N <= 0 {
+			return nil, fmt.Errorf("bundle is larger than %d MiB uncompressed", MaxBundleBytes>>20)
+		}
 		return nil, fmt.Errorf("not a Diagward bundle: %w", err)
 	}
 	if b.Format == 0 || b.Format > BundleFormat {
 		return nil, fmt.Errorf("unsupported bundle format %d (this build reads %d)", b.Format, BundleFormat)
 	}
-	for _, s := range b.Sections {
-		if s == nil {
-			return nil, fmt.Errorf("bundle has an empty section")
+	b.reindex()
+	return b, nil
+}
+
+// decodeBundle decodes a bundle while streaming the sections array, so the
+// section limit holds before memory is spent on millions of tiny entries.
+func decodeBundle(dec *json.Decoder) (*Bundle, error) {
+	if t, err := dec.Token(); err != nil {
+		return nil, err
+	} else if d, ok := t.(json.Delim); !ok || d != '{' {
+		return nil, fmt.Errorf("expected a JSON object")
+	}
+	rest := map[string]json.RawMessage{}
+	var secs []*Section
+	for dec.More() {
+		kt, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		key, _ := kt.(string)
+		if key != "sections" {
+			var raw json.RawMessage
+			if err := dec.Decode(&raw); err != nil {
+				return nil, err
+			}
+			rest[key] = raw
+			continue
+		}
+		t, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		if t == nil {
+			continue
+		}
+		if d, ok := t.(json.Delim); !ok || d != '[' {
+			return nil, fmt.Errorf("sections must be an array")
+		}
+		for dec.More() {
+			if len(secs) >= MaxSections {
+				return nil, fmt.Errorf("more than %d sections", MaxSections)
+			}
+			var s Section
+			if err := dec.Decode(&s); err != nil {
+				return nil, err
+			}
+			secs = append(secs, &s)
+		}
+		if _, err := dec.Token(); err != nil {
+			return nil, err
 		}
 	}
-	b.reindex()
+	head, err := json.Marshal(rest)
+	if err != nil {
+		return nil, err
+	}
+	var b Bundle
+	if err := json.Unmarshal(head, &b); err != nil {
+		return nil, err
+	}
+	b.Sections = secs
 	return &b, nil
 }
 

@@ -224,6 +224,16 @@ func mdEsc(s string) string {
 	alnum := func(i int) bool {
 		return i >= 0 && i < len(rs) && (unicode.IsLetter(rs[i]) || unicode.IsDigit(rs[i]))
 	}
+	listMark := -1
+	for j, r := range rs {
+		if unicode.IsDigit(r) {
+			continue
+		}
+		if j > 0 && (r == '.' || r == ')') && (j+1 == len(rs) || rs[j+1] == ' ') {
+			listMark = j
+		}
+		break
+	}
 	var b strings.Builder
 	b.Grow(len(s) + 8)
 	for i, r := range rs {
@@ -246,6 +256,16 @@ func mdEsc(s string) string {
 			esc = i+1 < len(rs) && (rs[i+1] == '(' || rs[i+1] == '[' || rs[i+1] == ':')
 		case '~':
 			esc = (i+1 < len(rs) && rs[i+1] == '~') || (i > 0 && rs[i-1] == '~')
+		case ':':
+			// "https://phish" in a crafted DMI string must not become a
+			// clickable link (GFM/Slack autolinks bare URLs).
+			esc = i+2 < len(rs) && rs[i+1] == '/' && rs[i+2] == '/'
+		case '#', '>', '-', '+', '=', '|':
+			// Block syntax only matters at the start of a line.
+			esc = i == 0
+		}
+		if i == listMark {
+			esc = true // "1. " / "1) " at the start would become an ordered list
 		}
 		if esc {
 			b.WriteByte('\\')

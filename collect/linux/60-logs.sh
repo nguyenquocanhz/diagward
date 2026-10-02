@@ -213,7 +213,7 @@ _lg_boots() {
 
 # logs.last: wtmp boot/shutdown records ("crash" = no clean shutdown).
 _lg_last() {
-	for _lg_v in "-x -F reboot shutdown" "-x reboot shutdown" "reboot"; do
+	for _lg_v in "-x -F reboot shutdown" "-x reboot shutdown" "reboot" ""; do  # "" = bare last (busybox)
 		# shellcheck disable=SC2086
 		if $DW_TO last $_lg_v >"$DW_T/lgl" 2>"$DW_T/lgle" && [ -s "$DW_T/lgl" ]; then
 			echo "# args=$_lg_v tz=$_lg_tz now=$_lg_now"

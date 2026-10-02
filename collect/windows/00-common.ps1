@@ -19,6 +19,10 @@ try { [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false } c
 $DW_MAXCHARS = 4194304
 $DW_TIMEOUT_S = 30
 try { $DW_TIMEOUT_S = [int]$DW_TIMEOUT } catch {}
+# Every CIM query gets the per-command timeout, so a wedged WMI provider
+# cannot stall the collector (Storage cmdlets have no such parameter; the
+# caller's stall watchdog covers them).
+$PSDefaultParameterValues['Get-CimInstance:OperationTimeoutSec'] = $DW_TIMEOUT_S
 $DW_ADMIN = $false
 try {
   $DW_ADMIN = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -50,6 +54,36 @@ function DW-Emit([string]$Name, [string]$Out, [string]$Err, [int]$Rc, [long]$Ms,
   [Console]::Out.Flush()
 }
 
+# DW-Mark NAME — announce a step before running it (progress and the
+# caller's stall watchdog); not data.
+function DW-Mark([string]$Name) {
+  [Console]::Out.Write("==DW:${DW_B}:RUN $Name`n")
+  [Console]::Out.Flush()
+}
+
+# DW-QuoteArg ARG — quote one argument for a Windows command line
+# (CommandLineToArgvW rules: backslashes before a quote are doubled).
+function DW-QuoteArg([string]$a) {
+  if ($a -eq '') { return '""' }
+  if ($a -notmatch '[\s"]') { return $a }
+  $sb = New-Object System.Text.StringBuilder
+  [void]$sb.Append('"')
+  $bs = 0
+  foreach ($c in $a.ToCharArray()) {
+    if ($c -eq [char]'\') { $bs++; continue }
+    if ($c -eq [char]'"') {
+      [void]$sb.Append([char]'\', 2 * $bs + 1).Append('"')
+      $bs = 0
+      continue
+    }
+    if ($bs -gt 0) { [void]$sb.Append([char]'\', $bs); $bs = 0 }
+    [void]$sb.Append($c)
+  }
+  if ($bs -gt 0) { [void]$sb.Append([char]'\', 2 * $bs) }
+  [void]$sb.Append('"')
+  return $sb.ToString()
+}
+
 # DW-Has NAME — is a command available?
 function DW-Has([string]$Name) { return [bool](Get-Command $Name -ErrorAction SilentlyContinue) }
 
@@ -69,6 +103,7 @@ function DW-FindExe([string]$Name) {
 # DW-Json NAME { scriptblock } [DEPTH] — run the block and emit its output as
 # a JSON array (always an array, even for one or zero objects).
 function DW-Json([string]$Name, [scriptblock]$Script, [int]$Depth = 5) {
+  DW-Mark $Name
   $sw = [Diagnostics.Stopwatch]::StartNew()
   $errs = New-Object System.Collections.Generic.List[string]
   $rc = 0
@@ -90,6 +125,7 @@ function DW-Json([string]$Name, [scriptblock]$Script, [int]$Depth = 5) {
 
 # DW-Text NAME { scriptblock } — run the block and emit its output as text.
 function DW-Text([string]$Name, [scriptblock]$Script) {
+  DW-Mark $Name
   $sw = [Diagnostics.Stopwatch]::StartNew()
   $errs = New-Object System.Collections.Generic.List[string]
   $rc = 0
@@ -118,9 +154,7 @@ function DW-Run([string]$Exe, [string[]]$ArgList = @(), [string]$WorkDir = '', [
   if (-not $path) { return $null }
   if ($TimeoutS -le 0) { $TimeoutS = $DW_TIMEOUT_S }
   $sw = [Diagnostics.Stopwatch]::StartNew()
-  $quoted = foreach ($a in $ArgList) {
-    if ($a -match '[\s"]') { '"' + ($a -replace '"', '\"') + '"' } else { $a }
-  }
+  $quoted = foreach ($a in $ArgList) { DW-QuoteArg $a }
   $psi = New-Object System.Diagnostics.ProcessStartInfo
   $psi.FileName = $path
   $psi.Arguments = ($quoted -join ' ')
@@ -140,12 +174,15 @@ function DW-Run([string]$Exe, [string[]]$ArgList = @(), [string]$WorkDir = '', [
       $p.WaitForExit()
       $rc = $p.ExitCode
     } else {
+      # Kill the whole tree: a child that inherited stdout would otherwise
+      # keep the pipe (and this wait) open.
+      try { & "$env:SystemRoot\System32\taskkill.exe" /T /F /PID $p.Id 2>$null | Out-Null } catch {}
       try { $p.Kill() } catch {}
       $rc = 124
       $flags = 'timeout'
     }
-    $out = $ot.Result
-    $err = $et.Result
+    if ($ot.Wait(5000)) { $out = $ot.Result }
+    if ($et.Wait(5000)) { $err = $et.Result }
   } catch {
     $rc = 1
     $err = $_.ToString()
@@ -156,6 +193,7 @@ function DW-Run([string]$Exe, [string[]]$ArgList = @(), [string]$WorkDir = '', [
 # DW-Exe NAME EXE [ARGS...] [WORKDIR] — run an external program under the
 # timeout and emit it. Records missing=EXE when it cannot be found.
 function DW-Exe([string]$Name, [string]$Exe, [string[]]$ArgList = @(), [string]$WorkDir = '') {
+  DW-Mark $Name
   $r = DW-Run $Exe $ArgList $WorkDir
   if ($null -eq $r) { DW-Missing $Name $Exe; return }
   DW-Emit $Name $r.Out $r.Err $r.Rc $r.Ms $r.Flags

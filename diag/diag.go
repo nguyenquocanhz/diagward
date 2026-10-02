@@ -174,12 +174,27 @@ func enrichParts(results []model.Result) {
 // `\\.\PhysicalDrive1` match disk number 1.
 func deviceKeys(s string) []string {
 	s = strings.TrimSpace(s)
-	if i := strings.IndexAny(s, " ,("); i > 0 {
+	qual := ""
+	if i := strings.IndexAny(s, " [,("); i > 0 {
+		// A qualifier with a number names one disk behind a controller
+		// ("/dev/bus/0 [megaraid,3]", "/dev/sda,cciss,1"): it must be part of
+		// the key, or every disk on that controller would share one key and
+		// get the wrong serial. Plain types ("sat", "nvme") are dropped.
+		q := strings.ToLower(strings.Join(strings.FieldsFunc(s[i:], func(r rune) bool {
+			return r == ' ' || r == '[' || r == ']' || r == '(' || r == ')'
+		}), ""))
+		q = strings.Trim(q, ",")
+		if strings.ContainsAny(q, "0123456789") && q != "" && q[0] >= 'a' && q[0] <= 'z' {
+			qual = q
+		}
 		s = s[:i]
 	}
 	low := strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(s, `\\.\`), "/dev/"))
 	if low == "" {
 		return nil
+	}
+	if qual != "" {
+		return []string{low + "#" + qual}
 	}
 	for _, p := range []string{"physicaldrive", "physicaldisk"} {
 		if strings.HasPrefix(low, p) {
@@ -187,6 +202,11 @@ func deviceKeys(s string) []string {
 		}
 	}
 	keys := []string{low}
+	// The NVMe controller name (nvme0, from the driver or smartd) means its
+	// first namespace.
+	if strings.HasPrefix(low, "nvme") && strings.Trim(low[4:], "0123456789") == "" && len(low) > 4 {
+		keys = append(keys, low+"n1")
+	}
 	// Strip a partition suffix: sda1 -> sda, nvme0n1p2 -> nvme0n1.
 	if strings.HasPrefix(low, "nvme") {
 		if i := strings.LastIndexByte(low, 'p'); i > strings.IndexByte(low, 'n') && i > 4 {
@@ -270,7 +290,7 @@ func summarize(rep *model.Report) []model.ComponentSummary {
 	// another check of it ran (otherwise it simply was not checked), and not
 	// for opt-in tests nobody asked for.
 	for _, c := range rep.Coverage {
-		if s := idx[c.Component]; s != nil && s.Checked && (c.State == model.CovFailed || (c.State == model.CovSkipped && !optIn(c))) {
+		if s := idx[c.Component]; s != nil && s.Checked && (c.State == model.CovFailed || (c.State == model.CovSkipped && !optIn(c) && !c.NotApplicable)) {
 			s.Partial = true
 		}
 	}
@@ -314,7 +334,11 @@ func notes(b *collect.Bundle, env model.Env) []model.Text {
 		n = append(n, model.Tf("This machine is virtual (%s). Disks, RAM, fans and power supplies belong to the host, so hardware checks are limited; check the physical host for hardware faults.",
 			"Máy này là máy ảo (%s). Ổ cứng, RAM, quạt, nguồn thuộc về máy host nên phần kiểm tra phần cứng bị giới hạn; hãy kiểm tra máy chủ vật lý nếu nghi lỗi phần cứng.", env.Virtual))
 	}
-	if b.Get("meta.done") == nil && b.OS != collect.OSBMC {
+	if st := b.Get("meta.stalled"); st != nil {
+		kv := st.KV()
+		n = append(n, model.Tf("Collection was stopped because step %q hung for %s seconds (a stuck driver, disk, controller or WMI provider). Steps after it are missing from this report; the hang itself points at that component.",
+			"Quá trình thu thập bị dừng vì bước %q bị treo %s giây (driver, ổ, card RAID hoặc WMI bị kẹt). Các bước sau đó không có trong báo cáo; chính việc treo cũng là dấu hiệu lỗi ở thành phần đó.", kv["section"], kv["seconds"]))
+	} else if b.Get("meta.done") == nil && b.OS != collect.OSBMC {
 		n = append(n, model.T("Collection did not finish (it was interrupted or timed out); the report may be incomplete.",
 			"Quá trình thu thập chưa hoàn tất (bị ngắt hoặc quá thời gian); báo cáo có thể thiếu."))
 	}

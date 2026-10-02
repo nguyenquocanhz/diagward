@@ -163,6 +163,11 @@ func checkWindows(b *collect.Bundle, env model.Env, res *model.Result) {
 		cov("cpu.mce", nameMCE, model.CovSkipped,
 			model.T("On Windows, machine-check errors are WHEA-Logger events: they are checked in the System log section.", "Trên Windows, lỗi machine-check là sự kiện WHEA-Logger: được kiểm tra ở phần System log."),
 			model.Text{})
+		for i := range res.Coverage {
+			if id := res.Coverage[i].ID; id == "cpu.throttle" || id == "cpu.mce" {
+				res.Coverage[i].NotApplicable = true
+			}
+		}
 	}
 	res.Facts = facts
 }

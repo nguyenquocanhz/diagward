@@ -730,6 +730,10 @@ func (c *checker) linuxSmartCoverage(physical, unreadable, virtual, san, raidVol
 	if len(c.standby) > 0 {
 		reasons = append(reasons, standbyText(c.standby))
 	}
+	if capped := c.b.Get("disk.smart_capped").KV(); capped["limit"] != "" {
+		reasons = append(reasons, model.Tf("Only the first %s of %s disks were read (collection limit); check the rest with smartctl.",
+			"Chỉ đọc %s trên %s ổ đầu tiên (giới hạn thu thập); kiểm tra các ổ còn lại bằng smartctl.", capped["limit"], capped["total"]))
+	}
 	if len(reasons) == 0 {
 		c.cover("smart", covSmart, model.CovRan, model.Text{}, model.Text{})
 		return

@@ -64,6 +64,10 @@ and runs the same script over its SSH connections.
 ==DW:<boundary>:END rc=<n> ms=<n> [missing=<what>] [skipped=<why>] [timeout] [truncated]
 ```
 
+Before a step the helpers also print `==DW:<boundary>:RUN <name>`; the
+local runner uses it for progress and stops a collector whose step makes no
+progress for max(4 × timeout, 3 min) (hung driver), recording `meta.stalled`.
+
 Always use the helpers; never print markers yourself.
 
 **Linux (`00-common.sh`)** — POSIX sh only (dash, busybox ash, bash, CentOS 7
@@ -143,6 +147,11 @@ func Check(b *collect.Bundle, env model.Env) model.Result
   `hint.InstallFix(env, tool)` returns both. Name real CLI flags in texts:
   `diagward check --bench /var/tmp` (`--bench-size 1G`), `diagward check
   --memtest 2G`, `diagward bmc <address>`, `sudo diagward install-tools`.
+  `hint.RootFix(env)` gives the not-root Fix + Cmd (`sudo diagward check`),
+  `hint.ServiceCmd(env, svc)` the `systemctl enable --now` command.
+* A skipped check that cannot exist on the platform or is covered by
+  another domain sets `Coverage.NotApplicable`; it is not shown as a gap and
+  does not make the component "partial".
 * Put typed data in `Result.Facts` (exported structs with JSON tags).
   Domains may read another domain's *sections* and import its exported
   helper packages (e.g. memory imports `internal/checks/cpu/ras`), but must
@@ -197,6 +206,12 @@ machine-translation tone. Example:
   mdstat, SEL). Both may appear: they are different evidence. A log finding
   about a disk names the device (`Part{Kind:"disk", Location:"/dev/sda"}`);
   `diag` then fills in model and serial from the disk domain's inventory.
+* The logs domain reads `disk.lsblk` (name, kname, tran, pkname),
+  `disk.win_physical` (DeviceId, BusType), `disk.win_diskdrive` (Index,
+  InterfaceType, PNPDeviceID) and `filesystem.win_volume` (DriveLetter,
+  DriveType) to tell USB or detached disks from server disks: keep those
+  fields. The filesystem domain reports ZFS pool capacity (from
+  `raid.zpool_list`); the raid domain does not.
 * Temperatures of disks belong to the disk domain; the sensors domain shows
   nvme/drivetemp hwmon chips in its table but does not raise findings for
   them.

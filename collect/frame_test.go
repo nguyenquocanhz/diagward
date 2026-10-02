@@ -139,3 +139,23 @@ func TestWindowsScriptRuns(t *testing.T) {
 	t.Logf("ident: %s", b.Get("meta.ident").Out)
 	t.Logf("env: %+v", EnvOf(b))
 }
+
+func TestReadRejectsHugeSectionCount(t *testing.T) {
+	var sb strings.Builder
+	sb.WriteString(`{"format":1,"os":"linux","sections":[`)
+	for i := 0; i < MaxSections+5; i++ {
+		if i > 0 {
+			sb.WriteByte(',')
+		}
+		sb.WriteString(`{}`)
+	}
+	sb.WriteString(`]}`)
+	if _, err := Read(strings.NewReader(sb.String())); err == nil || !strings.Contains(err.Error(), "sections") {
+		t.Fatalf("want a section-limit error, got %v", err)
+	}
+	ok := `{"format":1,"os":"linux","host":"h","sections":[{"name":"a","out":"x"},null]}`
+	b, err := Read(strings.NewReader(ok))
+	if err != nil || b.Host != "h" || b.Get("a").Out != "x" {
+		t.Fatalf("small bundle: %v %+v", err, b)
+	}
+}

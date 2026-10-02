@@ -14,15 +14,20 @@ import (
 
 func TestDeviceKeys(t *testing.T) {
 	cases := map[string][]string{
-		"/dev/sda":           {"sda"},
-		"sda1":               {"sda1", "sda"},
-		"/dev/nvme0n1p2":     {"nvme0n1p2", "nvme0n1"},
-		"nvme0n1":            {"nvme0n1"},
-		"PhysicalDrive1":     {"win:1"},
-		`\\.\PHYSICALDRIVE3`: {"win:3"},
-		"PhysicalDisk3":      {"win:3"},
-		"md0":                {"md0"},
-		"":                   nil,
+		"/dev/sda":                {"sda"},
+		"sda1":                    {"sda1", "sda"},
+		"/dev/nvme0n1p2":          {"nvme0n1p2", "nvme0n1"},
+		"nvme0n1":                 {"nvme0n1"},
+		"PhysicalDrive1":          {"win:1"},
+		`\\.\PHYSICALDRIVE3`:      {"win:3"},
+		"PhysicalDisk3":           {"win:3"},
+		"md0":                     {"md0"},
+		"/dev/bus/0 [megaraid,3]": {"bus/0#megaraid,3"},
+		"/dev/bus/0,megaraid,3":   {"bus/0#megaraid,3"},
+		"/dev/sda [cciss,1]":      {"sda#cciss,1"},
+		"/dev/sda [SAT]":          {"sda"},
+		"nvme0":                   {"nvme0", "nvme0n1"},
+		"":                        nil,
 	}
 	for in, want := range cases {
 		if got := deviceKeys(in); !reflect.DeepEqual(got, want) {
@@ -36,11 +41,15 @@ func TestEnrichParts(t *testing.T) {
 		{Domain: "disk", Facts: disk.Facts{Disks: []disk.DiskFact{
 			{Device: "/dev/sda", Vendor: "Seagate", Model: "ST4000NM0035", Serial: "ZC1234", SizeBytes: 4000787030016},
 			{Device: "PhysicalDisk1", Model: "Samsung SSD", Serial: "S5XYZ"},
+			{Device: "/dev/bus/0 [megaraid,0]", Serial: "MR0"},
+			{Device: "/dev/bus/0 [megaraid,1]", Serial: "MR1"},
 		}}},
 		{Domain: "logs", Findings: []model.Finding{
 			{ID: "logs.disk_io", Target: "sda", Part: &model.Part{Kind: "disk", Location: "/dev/sda"}},
 			{ID: "logs.win_disk", Target: "PhysicalDrive1", Part: &model.Part{Kind: "disk", Location: "PhysicalDrive1"}},
 			{ID: "logs.unknown", Target: "sdz", Part: &model.Part{Kind: "disk", Location: "/dev/sdz"}},
+			{ID: "raid.pd", Target: "slot 0", Part: &model.Part{Kind: "disk", Location: "/dev/bus/0 [megaraid,0]"}},
+			{ID: "raid.bus", Target: "bus/0", Part: &model.Part{Kind: "disk", Location: "/dev/bus/0"}},
 		}},
 	}
 	enrichParts(res)
@@ -53,6 +62,12 @@ func TestEnrichParts(t *testing.T) {
 	}
 	if p := f[2].Part; p.Serial != "" {
 		t.Errorf("unknown disk got a serial: %+v", p)
+	}
+	if p := f[3].Part; p.Serial != "MR0" {
+		t.Errorf("megaraid,0 part: %+v", p)
+	}
+	if p := f[4].Part; p.Serial != "" {
+		t.Errorf("a bare controller path must not pick one of its disks: %+v", p)
 	}
 }
 

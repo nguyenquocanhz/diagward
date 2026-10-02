@@ -158,7 +158,13 @@ func checkLinux(b *collect.Bundle, env model.Env, res *model.Result) {
 	if loadOK && !warned {
 		okLoad(load, res)
 	}
-	if synced, known, line := clockSynced(b.Get("system.timedatectl").Text(), b.Get("system.chrony").Text()); known {
+	synced, known, line := clockSynced(b.Get("system.timedatectl").Text(), b.Get("system.chrony").Text())
+	if ts := b.Get("system.timesync").KV(); !known && ts["timesyncd_active"] == "yes" {
+		// Only meaningful while timesyncd runs; a missing file then means
+		// it has not synchronised yet.
+		synced, known, line = ts["synchronized"] == "yes", true, "systemd-timesyncd synchronized="+ts["synchronized"]
+	}
+	if known {
 		facts.ClockSynced = &synced
 		if !synced {
 			res.Findings = append(res.Findings, model.Finding{

@@ -178,6 +178,7 @@ func (s *state) windows() {
 				model.T("Windows has no per-DIMM ECC counters; corrected and uncorrected memory errors are WHEA-Logger events, checked in the System log section. The BMC event log names the slot.",
 					"Windows không có bộ đếm lỗi ECC theo từng thanh; lỗi RAM là sự kiện WHEA-Logger, được kiểm tra ở phần System log. Log sự kiện BMC cho biết khe RAM nào."),
 				model.T("Check the BMC event log (iDRAC/iLO/IPMI SEL) for memory errors.", "Xem log sự kiện BMC (iDRAC/iLO/IPMI SEL) để biết lỗi RAM."))
+			s.res.Coverage[len(s.res.Coverage)-1].NotApplicable = true
 		}
 	}
 

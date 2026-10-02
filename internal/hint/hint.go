@@ -29,6 +29,12 @@ var packages = map[string]map[string]string{
 	"lscpu":      {"*": "util-linux"},
 	"sar":        {"*": "sysstat"},
 	"hdparm":     {"*": "hdparm"},
+	"tune2fs":    {"*": "e2fsprogs"},
+	"btrfs":      {"debian": "btrfs-progs", "rhel": "btrfs-progs", "*": "btrfs-progs"},
+	"lvs":        {"*": "lvm2"},
+	"chronyc":    {"*": "chrony"},
+	"storcli2":   {},
+	"perccli2":   {},
 	"storcli":    {},
 	"perccli":    {},
 	"ssacli":     {},
@@ -43,6 +49,10 @@ var vendorTools = map[string]model.Text{
 		"Cài Dell PERC CLI (perccli64) từ dell.com/support cho card RAID PERC."),
 	"ssacli": model.T("Install HPE Smart Storage Administrator CLI (ssacli) from the HPE Service Pack for ProLiant or HPE's repository.",
 		"Cài HPE Smart Storage Administrator CLI (ssacli) từ HPE Service Pack for ProLiant hoặc kho phần mềm của HPE."),
+	"storcli2": model.T("Install Broadcom StorCLI2 (storcli2) from broadcom.com for MegaRAID 9600-series (mpi3mr) controllers.",
+		"Cài Broadcom StorCLI2 (storcli2) từ broadcom.com cho card MegaRAID dòng 9600 (driver mpi3mr)."),
+	"perccli2": model.T("Install Dell PERC CLI 2 (perccli2) from dell.com/support for PERC 12 controllers.",
+		"Cài Dell PERC CLI 2 (perccli2) từ dell.com/support cho card PERC 12."),
 	"arcconf": model.T("Install Microchip/Adaptec ARCCONF from microchip.com for Adaptec SmartRAID/HBA controllers.",
 		"Cài Microchip/Adaptec ARCCONF từ microchip.com cho card Adaptec SmartRAID/HBA."),
 }
@@ -210,6 +220,26 @@ func RunAsRoot(env model.Env) model.Text {
 			"Chạy Diagward trong cửa sổ dòng lệnh mở bằng \"Run as administrator\".")
 	}
 	return model.T("Run it as root: sudo diagward", "Chạy với quyền root: sudo diagward")
+}
+
+// RootFix returns the Fix text and the Coverage.Cmd for checks that need
+// root/Administrator. On Windows there is no command to paste (elevation is
+// a UI action), so cmd is "".
+func RootFix(env model.Env) (fix model.Text, cmd string) {
+	if env.OS == "windows" {
+		return RunAsRoot(env), ""
+	}
+	return model.T("Run Diagward as root.", "Chạy Diagward với quyền root."), "sudo diagward check"
+}
+
+// ServiceCmd returns the command that enables and starts a systemd service
+// (with sudo when not root).
+func ServiceCmd(env model.Env, svc string) string {
+	cmd := "systemctl enable --now " + svc
+	if !env.Root {
+		cmd = "sudo " + cmd
+	}
+	return cmd
 }
 
 // Virtual is the coverage reason for hardware checks on a virtual machine or

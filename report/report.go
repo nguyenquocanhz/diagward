@@ -542,8 +542,8 @@ func coverageGroups(r *model.Report, withRan bool) []covGroup {
 		default:
 			st = model.CovFailed // unknown state: never pretend it ran
 		}
-		if st == model.CovRan && !withRan {
-			continue
+		if (st == model.CovRan || c.NotApplicable) && !withRan {
+			continue // not a gap: ran, or cannot exist on this platform
 		}
 		key := st
 		if st != model.CovRan {

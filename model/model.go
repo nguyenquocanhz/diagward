@@ -201,6 +201,11 @@ type Coverage struct {
 	// paste (e.g. "dnf install -y smartmontools"). Optional; when set, Fix
 	// should not repeat it.
 	Cmd string `json:"cmd,omitempty"`
+	// NotApplicable marks a skipped check that cannot exist on this
+	// platform or is covered by another check (Windows has no throttle
+	// counters; machine checks are read from the event log). It is not a
+	// gap: the component is not "partially checked" because of it.
+	NotApplicable bool `json:"notApplicable,omitempty"`
 }
 
 // Result is what one domain check returns.

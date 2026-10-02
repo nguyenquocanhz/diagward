@@ -152,7 +152,7 @@ func TestRunScriptCancelKillsTree(t *testing.T) {
 		cancel()
 	}()
 	progress := func(s string) { once.Do(func() { close(pidSeen) }) }
-	out, _, err = runScript(ctx, name, args, script, bnd, progress)
+	out, _, err = runScript(ctx, name, args, script, bnd, progress, 0)
 	elapsed := time.Since(start)
 	if err == nil {
 		t.Fatalf("expected an exit error after cancel, got nil (out=%q)", out)

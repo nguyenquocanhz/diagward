@@ -76,12 +76,14 @@ if [ -n "$_rd_bt" ]; then
 		dw_skip raid.btrfs_show not-root
 	else
 		dw_run raid.btrfs_show btrfs filesystem show
+		set -f # mount points are data, not glob patterns
 		for _rd_p in $_rd_bt; do
 			# /proc/mounts escapes blanks as \040 and tabs as \011; the
 			# escaped form keeps the section name free of spaces.
 			_rd_real=$(printf '%s\n' "$_rd_p" | sed -e 's/\\040/ /g' -e 's/\\011/	/g')
 			dw_run "raid.btrfs_stats:$_rd_p" btrfs device stats "$_rd_real"
 		done
+		set +f
 	fi
 fi
 

@@ -108,11 +108,17 @@ else
 			case $_dk_dev in '' | '#'*) continue ;; esac
 			[ "$_dk_d" = "-d" ] || _dk_type=""
 			_dk_n=$((_dk_n + 1))
-			[ "$_dk_n" -gt 128 ] && break
+			if [ "$_dk_n" -gt 256 ]; then
+				# Bound the run time on huge JBODs; record the cut so the
+				# report does not imply every disk was read.
+				printf 'limit=256\ntotal=%s\n' "$(grep -c '^/dev' "$DW_T/dk_scan")" >"$DW_T/dk_cap"
+				break
+			fi
 			_dk_name=$_dk_dev
 			case $_dk_type in *,*) _dk_name="$_dk_dev,$_dk_type" ;; esac
 			dw_fn "disk.smart:$_dk_name" _dk_smart "$_dk_dev" "$_dk_type"
 		done <"$DW_T/dk_scan"
+		if [ -s "$DW_T/dk_cap" ]; then dw_file disk.smart_capped "$DW_T/dk_cap"; fi
 		# HPE Smart Array (hpsa) in RAID mode: --scan-open lists only the
 		# logical volume; the physical drives answer to -d cciss,N on any
 		# logical volume of the same controller. Probe N = 0..15 once per
@@ -155,8 +161,8 @@ _dk_smartd() {
 		# Ubuntu/Debian name the unit smartmontools.service (smartd.service is
 		# an alias); RHEL family names it smartd.service.
 		for _dk_u in smartd smartmontools; do
-			echo "active_$_dk_u=$(systemctl is-active "$_dk_u.service" 2>/dev/null)"
-			echo "enabled_$_dk_u=$(systemctl is-enabled "$_dk_u.service" 2>/dev/null)"
+			echo "active_$_dk_u=$($DW_TO systemctl is-active "$_dk_u.service" 2>/dev/null)"
+			echo "enabled_$_dk_u=$($DW_TO systemctl is-enabled "$_dk_u.service" 2>/dev/null)"
 		done
 	fi
 	if grep -qx smartd /proc/[0-9]*/comm 2>/dev/null; then

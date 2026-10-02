@@ -43,6 +43,9 @@ DW_ROOT=0
 
 _dw_now() { date +%s 2>/dev/null || echo 0; }
 
+# _dw_mark NAME — announce a step (progress, stall watchdog); not data.
+_dw_mark() { printf '==DW:%s:RUN %s\n' "$DW_B" "$1"; }
+
 # dw_emit NAME RC START [FLAGS] — print $DW_T/o and $DW_T/e as one section.
 dw_emit() {
 	_dw_fl=${4:-}
@@ -60,8 +63,11 @@ dw_emit() {
 	: >"$DW_T/e"
 }
 
+# GNU timeout exits 124 (137 after -k); busybox timeout exits 143 (SIGTERM).
 _dw_rcflags() {
-	if [ -n "$DW_TO" ] && { [ "$1" = 124 ] || [ "$1" = 137 ]; }; then echo timeout; fi
+	if [ -n "$DW_TO" ]; then
+		case "$1" in 124 | 137 | 143) echo timeout ;; esac
+	fi
 }
 
 # dw_run NAME CMD [ARGS...] — run one command under the timeout. Records
@@ -74,6 +80,7 @@ dw_run() {
 		return 127
 	fi
 	_dw_st=$(_dw_now)
+	_dw_mark "$_dw_n"
 	$DW_TO "$@" >"$DW_T/o" 2>"$DW_T/e" </dev/null
 	_dw_rc=$?
 	dw_emit "$_dw_n" "$_dw_rc" "$_dw_st" "$(_dw_rcflags "$_dw_rc")"
@@ -86,6 +93,7 @@ dw_run() {
 dw_sh() {
 	_dw_n=$1
 	_dw_st=$(_dw_now)
+	_dw_mark "$_dw_n"
 	export DW_SINCE_DAYS DW_MAXLINES DW_TIMEOUT DW_ROOT DW_T
 	$DW_TO sh -c "$2" >"$DW_T/o" 2>"$DW_T/e" </dev/null
 	_dw_rc=$?
@@ -100,6 +108,7 @@ dw_fn() {
 	_dw_n=$1
 	shift
 	_dw_st=$(_dw_now)
+	_dw_mark "$_dw_n"
 	( "$@" ) >"$DW_T/o" 2>"$DW_T/e" </dev/null
 	_dw_rc=$?
 	dw_emit "$_dw_n" "$_dw_rc" "$_dw_st" "$(_dw_rcflags "$_dw_rc")"
@@ -136,18 +145,23 @@ dw_file() {
 
 # dw_sysfs NAME GLOB... — dump small sysfs/procfs files as "path=value"
 # lines (first line of each readable regular file).
+# Runs under the timeout: some attributes (drivetemp, nvme hwmon, ACPI)
+# talk to the device and can block.
 dw_sysfs() {
 	_dw_n=$1
 	shift
 	_dw_st=$(_dw_now)
-	for _dw_g in "$@"; do
-		for _dw_f in $_dw_g; do
-			[ -f "$_dw_f" ] && [ -r "$_dw_f" ] || continue
-			_dw_v=$(head -n 1 "$_dw_f" 2>/dev/null)
-			printf '%s=%s\n' "$_dw_f" "$_dw_v"
+	_dw_mark "$_dw_n"
+	# shellcheck disable=SC2016
+	$DW_TO sh -c 'for g in "$@"; do
+		for f in $g; do
+			[ -f "$f" ] && [ -r "$f" ] || continue
+			v=$(head -n 1 "$f" 2>/dev/null)
+			printf "%s=%s\n" "$f" "$v"
 		done
-	done >"$DW_T/o" 2>"$DW_T/e"
-	dw_emit "$_dw_n" 0 "$_dw_st"
+	done' sh "$@" >"$DW_T/o" 2>"$DW_T/e" </dev/null
+	_dw_rc=$?
+	dw_emit "$_dw_n" 0 "$_dw_st" "$(_dw_rcflags "$_dw_rc")"
 }
 
 # dw_missing NAME WHAT — record that a tool/file is not present.

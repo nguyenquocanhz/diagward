@@ -51,11 +51,16 @@ func EnvOf(b *Bundle) model.Env {
 		}
 		env.Distro = "windows"
 		var v []struct {
-			Manufacturer string `json:"manufacturer"`
-			Model        string `json:"model"`
+			Manufacturer     string `json:"manufacturer"`
+			Model            string `json:"model"`
+			BiosManufacturer string `json:"biosManufacturer"`
+			BiosVersion      string `json:"biosVersion"`
 		}
 		if DecodeJSON(b.Get("meta.virt").Text(), &v) == nil && len(v) > 0 {
 			env.Virtual = classifyVirt(v[0].Manufacturer, v[0].Model)
+			if env.Virtual == "" {
+				env.Virtual = classifyBIOS(v[0].BiosManufacturer, v[0].BiosVersion)
+			}
 		}
 	case OSBMC:
 		env.Root = true
@@ -119,6 +124,14 @@ func linuxVirt(kv map[string]string) (virtual string, container bool) {
 func classifyVirt(vendor, product string) string {
 	v, p := strings.ToLower(vendor), strings.ToLower(product)
 	switch {
+	case strings.Contains(v, "red hat") && (strings.Contains(p, " pc (") || strings.Contains(p, "kvm") || strings.Contains(p, "rhel") || strings.Contains(p, "openstack")):
+		return "kvm" // RHEL/oVirt/RHV KVM guests: "Red Hat" / "RHEL 7.6.0 PC (i440FX + PIIX, 1996)"
+	case strings.Contains(v, "ovirt") || strings.Contains(p, "ovirt"):
+		return "kvm"
+	case strings.Contains(v, "bhyve") || strings.Contains(p, "bhyve"):
+		return "bhyve"
+	case strings.Contains(v, "hetzner") && strings.Contains(p, "vserver"):
+		return "kvm"
 	case strings.Contains(p, "vmware") || strings.Contains(v, "vmware"):
 		return "vmware"
 	case strings.Contains(p, "virtualbox") || strings.Contains(v, "innotek"):
@@ -143,6 +156,26 @@ func classifyVirt(vendor, product string) string {
 		return "parallels"
 	case strings.Contains(v, "nutanix") && strings.Contains(p, "ahv"):
 		return "kvm"
+	}
+	return ""
+}
+
+// classifyBIOS recognises virtual firmware when the SMBIOS system strings
+// are customised (Windows guests): SeaBIOS/OVMF (KVM), Hyper-V "VRTUAL",
+// VMware "VMW..." BIOS versions, Xen.
+func classifyBIOS(maker, version string) string {
+	m, ver := strings.ToLower(maker), strings.ToLower(version)
+	switch {
+	case strings.Contains(m, "seabios") || strings.Contains(ver, "seabios") || strings.Contains(m, "ovmf") || strings.Contains(ver, "ovmf") || strings.Contains(m, "development kit ii"):
+		return "kvm"
+	case strings.HasPrefix(ver, "vrtual") || strings.Contains(ver, "hyper-v"):
+		return "microsoft"
+	case strings.HasPrefix(ver, "vmw") || strings.Contains(m, "vmware"):
+		return "vmware"
+	case strings.Contains(m, "xen") || strings.Contains(ver, "xen"):
+		return "xen"
+	case strings.Contains(m, "innotek") || strings.Contains(ver, "virtualbox"):
+		return "oracle"
 	}
 	return ""
 }

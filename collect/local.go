@@ -67,14 +67,23 @@ func RunLocal(ctx context.Context, o Options, progress func(section string)) (*B
 	name, args := Command(osName)
 	name = resolveShell(name, os.Getenv)
 	b.Started = time.Now()
-	out, stderr, err := runScript(ctx, name, args, script, boundary, progress)
+	out, stderr, err := runScript(ctx, name, args, script, boundary, progress, stallLimit(o))
 	b.Finished = time.Now()
 	b.Sections, b.Noise = ParseFramed(out, boundary)
 	if stderr != "" {
 		b.Noise = joinNoise(b.Noise, "stderr:\n"+stderr)
 	}
 	b.reindex()
+	var stalled *StallError
+	if errors.As(err, &stalled) {
+		// Record which section hung, so the report can say so.
+		b.Add(&Section{Name: "meta.stalled", Out: "section=" + stalled.Section + "\nseconds=" + strconv.Itoa(int(stalled.After.Seconds()))})
+	}
 	switch {
+	case stalled != nil:
+		return b, err
+	case errors.Is(err, errOutputCap):
+		return b, fmt.Errorf("collector output exceeded %d MiB and was cut off (%d sections kept)", maxLocalOutput>>20, len(b.Sections))
 	case ctx.Err() != nil:
 		return b, fmt.Errorf("collection interrupted after %d sections: %w", len(b.Sections), ctx.Err())
 	case err != nil && b.Get("meta.done") == nil:
@@ -107,10 +116,11 @@ func resolveShell(name string, getenv func(string) string) string {
 // runScript runs name/args with script on stdin. It returns stdout, the
 // cleaned stderr and the exit error. It is separate from RunLocal so tests
 // can run small scripts.
-func runScript(ctx context.Context, name string, args []string, script, boundary string, progress func(string)) (string, string, error) {
+func runScript(ctx context.Context, name string, args []string, script, boundary string, progress func(string), stall time.Duration) (string, string, error) {
 	cmd := exec.Command(name, args...)
 	cmd.Stdin = strings.NewReader(script)
-	sw := &streamWriter{marker: []byte("==DW:" + boundary + ":BEGIN "), progress: progress}
+	sw := &streamWriter{marker: []byte("==DW:" + boundary + ":BEGIN "), any: []byte("==DW:" + boundary + ":"),
+		run: []byte("==DW:" + boundary + ":RUN "), progress: progress, last: time.Now()}
 	ew := &cappedBuffer{max: maxStderr}
 	cmd.Stdout = sw
 	cmd.Stderr = ew
@@ -125,12 +135,24 @@ func runScript(ctx context.Context, name string, args []string, script, boundary
 	done := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(1)
+	var stalled *StallError
 	go func() {
 		defer wg.Done()
-		select {
-		case <-done:
-			return
-		case <-ctx.Done():
+		tick := time.NewTicker(stallTick)
+		defer tick.Stop()
+	wait:
+		for {
+			select {
+			case <-done:
+				return
+			case <-ctx.Done():
+				break wait
+			case <-tick.C:
+				if sec, since := sw.idle(); stall > 0 && since > stall {
+					stalled = &StallError{Section: sec, After: since.Round(time.Second)}
+					break wait
+				}
+			}
 		}
 		tree.stop()
 		select {
@@ -143,14 +165,59 @@ func runScript(ctx context.Context, name string, args []string, script, boundary
 	close(done)
 	wg.Wait()
 	tree.close()
+	switch {
+	case stalled != nil:
+		err = stalled
+	case sw.truncated:
+		err = errOutputCap
+	}
 	return sw.String(), cleanStderr(ew.String()), err
+}
+
+// StallError reports a collector stopped because one step produced no
+// output for too long (a hung storage, WMI or BMC driver).
+type StallError struct {
+	Section string // the step that was running ("" if unknown)
+	After   time.Duration
+}
+
+func (e *StallError) Error() string {
+	if e.Section == "" {
+		return fmt.Sprintf("collector stopped: no progress for %s", e.After)
+	}
+	return fmt.Sprintf("collector stopped: %s did not finish within %s (hung driver or device?)", e.Section, e.After)
+}
+
+var errOutputCap = errors.New("collector output cap reached")
+
+// stallTick is how often the watchdog looks; a variable for tests.
+var stallTick = 5 * time.Second
+
+// stallLimit is how long one step may run without any output before the
+// collector is stopped. Every command already has its own timeout, so this
+// only catches steps that cannot be timed out from inside the script
+// (PowerShell storage cmdlets, a wedged WMI provider).
+func stallLimit(o Options) time.Duration {
+	if o.Memtest != "" || o.BenchDir != "" {
+		// memtester and the disk test may run for many minutes in one step.
+		return 2 * time.Hour
+	}
+	d := time.Duration(o.Timeout) * 4 * time.Second
+	if d < 3*time.Minute {
+		d = 3 * time.Minute
+	}
+	return d
 }
 
 // streamWriter keeps the collector's stdout and reports each section name
 // as its BEGIN line arrives. Writes may split lines anywhere.
 type streamWriter struct {
-	marker   []byte
+	marker   []byte // BEGIN marker prefix
+	any      []byte // any marker of this run
+	run      []byte // RUN marker prefix: a step started
 	progress func(string)
+	last     time.Time // when the last marker arrived
+	running  string    // the step announced by the last RUN marker
 
 	mu        sync.Mutex
 	buf       bytes.Buffer
@@ -176,6 +243,12 @@ func (w *streamWriter) Write(p []byte) (int, error) {
 		}
 		line := data[w.scan : w.scan+i]
 		w.scan += i + 1
+		if bytes.HasPrefix(line, w.any) {
+			w.last = time.Now()
+			if bytes.HasPrefix(line, w.run) {
+				w.running = strings.TrimSpace(string(bytes.TrimSuffix(line[len(w.run):], []byte("\r"))))
+			}
+		}
 		if w.progress != nil && bytes.HasPrefix(line, w.marker) {
 			name := strings.TrimSpace(string(bytes.TrimSuffix(line[len(w.marker):], []byte("\r"))))
 			if name != "" {
@@ -184,6 +257,13 @@ func (w *streamWriter) Write(p []byte) (int, error) {
 		}
 	}
 	return len(p), nil
+}
+
+// idle reports the running step and how long ago the last marker arrived.
+func (w *streamWriter) idle() (string, time.Duration) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.running, time.Since(w.last)
 }
 
 func (w *streamWriter) String() string {

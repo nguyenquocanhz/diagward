@@ -15,6 +15,9 @@ import (
 //	<stderr>
 //	==DW:<boundary>:END rc=<n> ms=<n> [missing=<what>] [skipped=<why>] [timeout] [truncated]
 //
+// Before a slow step the collector may also print "==DW:<boundary>:RUN
+// <name>", which callers use for progress and to spot a hung step.
+//
 // The script always writes one extra "\n" after stdout and after stderr, so
 // the parser strips exactly one trailing newline from each and the content
 // round-trips exactly. The boundary is random per run, so command output
@@ -64,6 +67,9 @@ func ParseFramed(out, boundary string) (sections []*Section, noise string) {
 		if strings.HasPrefix(bare, pfx) {
 			marker := bare[len(pfx):]
 			switch {
+			case strings.HasPrefix(marker, "RUN "):
+				// A step started (progress and the stall watchdog); not data.
+				continue
 			case strings.HasPrefix(marker, "BEGIN "):
 				if cur != nil { // unterminated section: keep what we have
 					cur.RC, cur.Timeout = -1, true
