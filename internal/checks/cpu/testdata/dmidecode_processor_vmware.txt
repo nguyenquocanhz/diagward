@@ -1,0 +1,1347 @@
+# dmidecode 2.11
+SMBIOS 2.4 present.
+364 structures occupying 17030 bytes.
+
+Handle 0x0004, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #0
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 01 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Enabled
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0054
+	L2 Cache Handle: 0x0055
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0005, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #1
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Enabled
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0056
+	L2 Cache Handle: 0x0057
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0006, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #2
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0058
+	L2 Cache Handle: 0x0059
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0007, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #3
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x005A
+	L2 Cache Handle: 0x005B
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0008, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #4
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x005C
+	L2 Cache Handle: 0x005D
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0009, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #5
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x005E
+	L2 Cache Handle: 0x005F
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x000A, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #6
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0060
+	L2 Cache Handle: 0x0061
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x000B, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #7
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0062
+	L2 Cache Handle: 0x0063
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x000C, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #8
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0064
+	L2 Cache Handle: 0x0065
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x000D, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #9
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0066
+	L2 Cache Handle: 0x0067
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x000E, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #10
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0068
+	L2 Cache Handle: 0x0069
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x000F, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #11
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x006A
+	L2 Cache Handle: 0x006B
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0010, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #12
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x006C
+	L2 Cache Handle: 0x006D
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0011, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #13
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x006E
+	L2 Cache Handle: 0x006F
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0012, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #14
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0070
+	L2 Cache Handle: 0x0071
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0013, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #15
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0072
+	L2 Cache Handle: 0x0073
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0014, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #16
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0074
+	L2 Cache Handle: 0x0075
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0015, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #17
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0076
+	L2 Cache Handle: 0x0077
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0016, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #18
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0078
+	L2 Cache Handle: 0x0079
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0017, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #19
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x007A
+	L2 Cache Handle: 0x007B
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0018, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #20
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x007C
+	L2 Cache Handle: 0x007D
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0019, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #21
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x007E
+	L2 Cache Handle: 0x007F
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x001A, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #22
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0080
+	L2 Cache Handle: 0x0081
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x001B, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #23
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0082
+	L2 Cache Handle: 0x0083
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x001C, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #24
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0084
+	L2 Cache Handle: 0x0085
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x001D, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #25
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0086
+	L2 Cache Handle: 0x0087
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x001E, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #26
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0088
+	L2 Cache Handle: 0x0089
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x001F, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #27
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x008A
+	L2 Cache Handle: 0x008B
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0020, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #28
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x008C
+	L2 Cache Handle: 0x008D
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0021, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #29
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x008E
+	L2 Cache Handle: 0x008F
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0022, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #30
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0090
+	L2 Cache Handle: 0x0091
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0023, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #31
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0092
+	L2 Cache Handle: 0x0093
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0024, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #32
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0094
+	L2 Cache Handle: 0x0095
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0025, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #33
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0096
+	L2 Cache Handle: 0x0097
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0026, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #34
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x0098
+	L2 Cache Handle: 0x0099
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0027, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #35
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x009A
+	L2 Cache Handle: 0x009B
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0028, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #36
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x009C
+	L2 Cache Handle: 0x009D
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0029, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #37
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x009E
+	L2 Cache Handle: 0x009F
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x002A, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #38
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00A0
+	L2 Cache Handle: 0x00A1
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x002B, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #39
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00A2
+	L2 Cache Handle: 0x00A3
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x002C, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #40
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00A4
+	L2 Cache Handle: 0x00A5
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x002D, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #41
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00A6
+	L2 Cache Handle: 0x00A7
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x002E, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #42
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00A8
+	L2 Cache Handle: 0x00A9
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x002F, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #43
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00AA
+	L2 Cache Handle: 0x00AB
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0030, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #44
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00AC
+	L2 Cache Handle: 0x00AD
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0031, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #45
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00AE
+	L2 Cache Handle: 0x00AF
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0032, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #46
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00B0
+	L2 Cache Handle: 0x00B1
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0033, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #47
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00B2
+	L2 Cache Handle: 0x00B3
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0034, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #48
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00B4
+	L2 Cache Handle: 0x00B5
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0035, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #49
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00B6
+	L2 Cache Handle: 0x00B7
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0036, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #50
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00B8
+	L2 Cache Handle: 0x00B9
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0037, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #51
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00BA
+	L2 Cache Handle: 0x00BB
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0038, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #52
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00BC
+	L2 Cache Handle: 0x00BD
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0039, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #53
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00BE
+	L2 Cache Handle: 0x00BF
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x003A, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #54
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00C0
+	L2 Cache Handle: 0x00C1
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x003B, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #55
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00C2
+	L2 Cache Handle: 0x00C3
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x003C, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #56
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00C4
+	L2 Cache Handle: 0x00C5
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x003D, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #57
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00C6
+	L2 Cache Handle: 0x00C7
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x003E, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #58
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00C8
+	L2 Cache Handle: 0x00C9
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x003F, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #59
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00CA
+	L2 Cache Handle: 0x00CB
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0040, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #60
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00CC
+	L2 Cache Handle: 0x00CD
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0041, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #61
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00CE
+	L2 Cache Handle: 0x00CF
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0042, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #62
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00D0
+	L2 Cache Handle: 0x00D1
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified
+
+Handle 0x0043, DMI type 4, 35 bytes
+Processor Information
+	Socket Designation: CPU socket #63
+	Type: Central Processor
+	Family: Unknown
+	Manufacturer: GenuineIntel
+	ID: A4 06 00 00 FF FB AB 0F
+	Version: Intel(R) Xeon(R) CPU           E7520  @ 1.87GHz
+	Voltage: 3.3 V
+	External Clock: Unknown
+	Max Speed: 30000 MHz
+	Current Speed: 1867 MHz
+	Status: Populated, Disabled By BIOS
+	Upgrade: ZIF Socket
+	L1 Cache Handle: 0x00D2
+	L2 Cache Handle: 0x00D3
+	L3 Cache Handle: Not Provided
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Part Number: Not Specified

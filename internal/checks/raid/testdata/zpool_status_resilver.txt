@@ -1,0 +1,21 @@
+  pool: rpool
+ state: DEGRADED
+status: One or more devices is currently being resilvered.  The pool will
+        continue to function, possibly in a degraded state.
+action: Wait for the resilver to complete.
+  scan: resilver in progress since Mon Jul 13 21:00:46 2020
+        24.4G scanned at 197M/s, 3.66G issued at 29.5M/s, 53.1G total
+        7.33G resilvered, 6.90% done, 0 days 00:28:33 to go
+config:
+
+        NAME                                                 STATE     READ WRITE CKSUM
+        rpool                                                DEGRADED     0     0     0
+          mirror-0                                           DEGRADED     0     0     0
+            ata-CT500MX500SSD1_2004E2856102-part4            ONLINE       0     0   248  (resilvering)
+            replacing-1                                      DEGRADED     0     0     0
+              ata-Crucial_CT256MX100SSD1_15010E47F61C-part2  DEGRADED     0     0   254  too many errors
+              ata-CT500MX500SSD1_2004E2856119-part4          ONLINE       0     0   254  (resilvering)
+
+errors: Permanent errors have been detected in the following files:
+
+        rpool/data/vm-858-disk-1:<0x1>

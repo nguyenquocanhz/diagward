@@ -1,0 +1,42 @@
+# dmidecode 2.12-dmifs
+SMBIOS 2.4 present.
+11 structures occupying 310 bytes.
+Table at 0x000EB01F.
+
+Handle 0x0000, DMI type 0, 24 bytes
+BIOS Information
+	Vendor: Xen
+	Version: 4.2.amazon
+	Release Date: 12/09/2016
+	Address: 0xE8000
+	Runtime Size: 96 kB
+	ROM Size: 64 kB
+	Characteristics:
+		PCI is supported
+		EDD is supported
+		Targeted content distribution is supported
+	BIOS Revision: 4.2
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+	Manufacturer: Xen
+	Product Name: HVM domU
+	Version: 4.2.amazon
+	Serial Number: ec2f58af-2dad-c57e-88c0-a81cb6084290
+	UUID: EC2F58AF-2DAD-C57E-88C0-A81CB6084290
+	Wake-up Type: Power Switch
+	SKU Number: Not Specified
+	Family: Not Specified
+
+Handle 0x0300, DMI type 3, 13 bytes
+Chassis Information
+	Manufacturer: Xen
+	Type: Other
+	Lock: Not Present
+	Version: Not Specified
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Boot-up State: Safe
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: Unknown

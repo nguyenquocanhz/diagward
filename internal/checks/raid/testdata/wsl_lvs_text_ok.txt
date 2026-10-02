@@ -1,0 +1,6 @@
+  dwlv|dwvg|raid1||100.00|0|rwi-a-r---|dwlv_rimage_0(0),dwlv_rimage_1(0)
+  [dwlv_rimage_0]|dwvg|linear||||iwi-aor---|/dev/loop2(1)
+  [dwlv_rimage_1]|dwvg|linear||||iwi-aor---|/dev/loop3(1)
+  [dwlv_rmeta_0]|dwvg|linear||||ewi-aor---|/dev/loop2(0)
+  [dwlv_rmeta_1]|dwvg|linear||||ewi-aor---|/dev/loop3(0)
+  plain|dwvg|linear||||-wi-a-----|/dev/loop2(51)

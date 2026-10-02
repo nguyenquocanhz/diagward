@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"runtime/debug"
 	"sort"
+	"strings"
 
 	"github.com/nguyenquocanhz/diagward/collect"
 	"github.com/nguyenquocanhz/diagward/internal/checks/cpu"
@@ -19,6 +20,7 @@ import (
 	"github.com/nguyenquocanhz/diagward/internal/checks/redfish"
 	"github.com/nguyenquocanhz/diagward/internal/checks/sensors"
 	"github.com/nguyenquocanhz/diagward/internal/checks/system"
+	"github.com/nguyenquocanhz/diagward/internal/units"
 	"github.com/nguyenquocanhz/diagward/model"
 )
 
@@ -67,7 +69,18 @@ func Analyze(b *collect.Bundle) *model.Report {
 		if res.Domain == "" {
 			res.Domain = c.domain
 		}
+		if res.Findings == nil {
+			res.Findings = []model.Finding{}
+		}
 		rep.Results = append(rep.Results, res)
+	}
+	enrichParts(rep.Results)
+	if rep.Host.BMC == "" {
+		rep.Host.BMC = bmcAddress(rep.Results)
+	}
+	rep.Findings = []model.Finding{}
+	rep.Coverage = []model.Coverage{}
+	for _, res := range rep.Results {
 		rep.Findings = append(rep.Findings, res.Findings...)
 		rep.Coverage = append(rep.Coverage, res.Coverage...)
 	}
@@ -99,7 +112,119 @@ func safeHost(b *collect.Bundle, env model.Env) (h model.HostInfo) {
 			h = model.HostInfo{Hostname: b.Host}
 		}
 	}()
+	if b.OS == collect.OSBMC {
+		return redfish.HostInfo(b)
+	}
 	return system.HostInfo(b, env)
+}
+
+// enrichParts fills in vendor/model/serial on disk parts that other domains
+// (logs, raid) could only name by device, using the disk domain's
+// inventory, so the "parts to replace" list carries serial numbers.
+func enrichParts(results []model.Result) {
+	var disks []disk.DiskFact
+	for _, r := range results {
+		switch f := r.Facts.(type) {
+		case disk.Facts:
+			disks = f.Disks
+		case *disk.Facts:
+			if f != nil {
+				disks = f.Disks
+			}
+		}
+	}
+	if len(disks) == 0 {
+		return
+	}
+	byDev := map[string]disk.DiskFact{}
+	for _, d := range disks {
+		for _, k := range deviceKeys(d.Device) {
+			byDev[k] = d
+		}
+	}
+	for ri := range results {
+		for fi := range results[ri].Findings {
+			f := &results[ri].Findings[fi]
+			if f.Part == nil || f.Part.Kind != "disk" || f.Part.Serial != "" {
+				continue
+			}
+			var d disk.DiskFact
+			found := false
+			for _, k := range append(deviceKeys(f.Part.Location), deviceKeys(f.Target)...) {
+				if d, found = byDev[k]; found {
+					break
+				}
+			}
+			if !found || d.Serial == "" {
+				continue
+			}
+			q := *f.Part
+			q.Vendor, q.Model, q.Serial = firstNonEmpty(q.Vendor, d.Vendor), firstNonEmpty(q.Model, d.Model), d.Serial
+			q.Firmware = firstNonEmpty(q.Firmware, d.Firmware)
+			if q.Size == "" && d.SizeBytes > 0 {
+				q.Size = units.SI(d.SizeBytes)
+			}
+			f.Part = &q
+		}
+	}
+}
+
+// deviceKeys normalises a device name for matching: "/dev/sda", "sda" and
+// "sda1" match the disk sda; Windows "PhysicalDrive1", "PhysicalDisk1" and
+// `\\.\PhysicalDrive1` match disk number 1.
+func deviceKeys(s string) []string {
+	s = strings.TrimSpace(s)
+	if i := strings.IndexAny(s, " ,("); i > 0 {
+		s = s[:i]
+	}
+	low := strings.ToLower(strings.TrimPrefix(strings.TrimPrefix(s, `\\.\`), "/dev/"))
+	if low == "" {
+		return nil
+	}
+	for _, p := range []string{"physicaldrive", "physicaldisk"} {
+		if strings.HasPrefix(low, p) {
+			return []string{"win:" + strings.TrimPrefix(low, p)}
+		}
+	}
+	keys := []string{low}
+	// Strip a partition suffix: sda1 -> sda, nvme0n1p2 -> nvme0n1.
+	if strings.HasPrefix(low, "nvme") {
+		if i := strings.LastIndexByte(low, 'p'); i > strings.IndexByte(low, 'n') && i > 4 {
+			keys = append(keys, low[:i])
+		}
+	} else if t := strings.TrimRight(low, "0123456789"); t != low && t != "" && !strings.HasPrefix(low, "md") {
+		keys = append(keys, t)
+	}
+	return keys
+}
+
+func firstNonEmpty(a, b string) string {
+	if a != "" {
+		return a
+	}
+	return b
+}
+
+// bmcAddress reports the BMC's LAN address from the in-band IPMI data.
+func bmcAddress(results []model.Result) string {
+	for _, r := range results {
+		var b ipmi.BMC
+		switch f := r.Facts.(type) {
+		case ipmi.Facts:
+			b = f.BMC
+		case *ipmi.Facts:
+			if f == nil {
+				continue
+			}
+			b = f.BMC
+		default:
+			continue
+		}
+		if b.Address != "" && b.Address != "0.0.0.0" {
+			return b.Address
+		}
+	}
+	return ""
 }
 
 func run(domain string, fn Check, b *collect.Bundle, env model.Env) (res model.Result) {
@@ -130,8 +255,23 @@ func summarize(rep *model.Report) []model.ComponentSummary {
 		idx[out[i].Component] = &out[i]
 	}
 	for _, c := range rep.Coverage {
-		if s := idx[c.Component]; s != nil && (c.State == model.CovRan || c.State == model.CovPartial) {
+		s := idx[c.Component]
+		if s == nil {
+			continue
+		}
+		switch c.State {
+		case model.CovRan:
 			s.Checked = true
+		case model.CovPartial:
+			s.Checked, s.Partial = true, true
+		}
+	}
+	// A skipped or failed check makes a component "partial" only when
+	// another check of it ran (otherwise it simply was not checked), and not
+	// for opt-in tests nobody asked for.
+	for _, c := range rep.Coverage {
+		if s := idx[c.Component]; s != nil && s.Checked && (c.State == model.CovFailed || (c.State == model.CovSkipped && !optIn(c))) {
+			s.Partial = true
 		}
 	}
 	for _, f := range rep.Findings {
@@ -151,6 +291,12 @@ func summarize(rep *model.Report) []model.ComponentSummary {
 		}
 	}
 	return out
+}
+
+// optIn reports whether a coverage entry is an opt-in active test (disk
+// benchmark, memory test) that is skipped unless requested.
+func optIn(c model.Coverage) bool {
+	return c.ID == "disk.bench" || c.ID == "memory.memtest"
 }
 
 func notes(b *collect.Bundle, env model.Env) []model.Text {

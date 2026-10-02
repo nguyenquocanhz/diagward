@@ -1,0 +1,182 @@
+# source=journal persistent=1 tz=+0700
+2026-10-02T14:24:30+07:00 devbox mdadm[8334]: mdadm: NewArray event detected on md device /dev/md90
+2026-10-02T14:24:30+07:00 devbox mdadm[8334]: mdadm: RebuildStarted event detected on md device /dev/md90
+2026-10-02T14:24:33+07:00 devbox mdadm[8334]: mdadm: NewArray event detected on md device /dev/md91
+2026-10-02T14:24:33+07:00 devbox mdadm[8334]: mdadm: DegradedArray event detected on md device /dev/md91
+2026-10-02T14:24:33+07:00 devbox mdadm[8444]: sh: 1: /usr/sbin/sendmail: not found
+2026-10-02T14:24:33+07:00 devbox mdadm[8334]: mdadm: RebuildStarted event detected on md device /dev/md91
+2026-10-02T14:24:48+07:00 devbox mdadm[8334]: mdadm: RebuildFinished event detected on md device /dev/md91
+2026-10-02T14:24:48+07:00 devbox mdadm[8334]: mdadm: Fail event detected on md device /dev/md91, component device /dev/loop3
+2026-10-02T14:24:48+07:00 devbox mdadm[9279]: sh: 1: /usr/sbin/sendmail: not found
+2026-10-02T14:24:48+07:00 devbox mdadm[8334]: mdadm: SpareActive event detected on md device /dev/md91, component device /dev/loop5
+2026-10-02T14:24:48+07:00 devbox mdadm[8334]: mdadm: SpareActive event detected on md device /dev/md91, component device /dev/loop4
+2026-10-02T14:24:48+07:00 devbox mdadm[8334]: mdadm: DeviceDisappeared event detected on md device /dev/md90
+2026-10-02T14:24:48+07:00 devbox mdadm[8334]: mdadm: DeviceDisappeared event detected on md device /dev/md91
+2026-10-02T14:24:48+07:00 devbox mdadm[8334]: mdadm: No array with redundancy detected, stopping
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Threshold of memory Corrected Errors statistics is 2000
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Threshold of poison page statistics is 102400 kB
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Threshold of memory Corrected Errors statistics is 2000
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Threshold of poison page statistics is 102400 kB
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Family 6 Model a5 CPU: only decoding architectural errors
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Family 6 Model a5 CPU: only decoding architectural errors
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Failed to open directory
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Failed to open directory
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: ras:mc_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Row offline choice on Corrected Errors is off
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Page offline choice on Corrected Errors is soft
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Threshold of memory Corrected Errors is 50 / 24h
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: ras:mc_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event ras:mc_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event ras:mc_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: ras:aer_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event ras:aer_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event ras:aer_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: ras:non_standard_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event ras:non_standard_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event ras:non_standard_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: ras:arm_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event ras:arm_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event ras:arm_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: [open_sys_file]:open file: /sys/devices/system/cpu/cpu0/online failed
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Cpu fault isolation is disabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Family 6 Model a5 CPU: only decoding architectural errors
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Family 6 Model a5 CPU: only decoding architectural errors
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: ras:aer_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: mce:mce_record event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event mce:mce_record
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event mce:mce_record
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: ras:extlog_mem_event event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from ras:extlog_mem_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: ras:extlog_mem_event event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from ras:extlog_mem_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: net:net_dev_xmit_timeout event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event net:net_dev_xmit_timeout
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event net:net_dev_xmit_timeout
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: devlink:devlink_health_report event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event devlink:devlink_health_report
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event devlink:devlink_health_report
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: block:block_rq_error event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event block:block_rq_error
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event block:block_rq_error
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: ras:memory_failure_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event ras:memory_failure_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_poison event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_poison
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_aer_uncorrectable_error event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event ras:memory_failure_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_aer_uncorrectable_error
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_aer_correctable_error event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_aer_correctable_error
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_overflow event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_overflow
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_generic_event event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_generic_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_general_media event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_general_media
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_dram event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_dram
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_memory_module event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:memory_module
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: cxl:cxl_memory_sparing event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Can't get traces from cxl:cxl_memory_sparing
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_poison event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_poison
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_aer_uncorrectable_error event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_aer_uncorrectable_error
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_aer_correctable_error event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_aer_correctable_error
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_overflow event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_overflow
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_generic_event event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_generic_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_general_media event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: mce:mce_record event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_general_media
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_dram event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_dram
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_memory_module event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:memory_module
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: cxl:cxl_memory_sparing event not exist
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: ras:non_standard_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Can't get traces from cxl:cxl_memory_sparing
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: ras:arm_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: devlink:devlink_health_report event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: block:block_rq_error event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: ras:memory_failure_event event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: rasdaemon: signal:signal_generate event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2826]: Can't write to set_event
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: signal:signal_generate event enabled
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Enabled event signal:signal_generate
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Listening to events for cpus 0 to 1
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: Enabled event signal:signal_generate
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Recording mc_event events
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Recording aer_event events
+2026-10-02T14:38:17+07:00 devbox rasdaemon[2825]: rasdaemon: Recording extlog_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording mce_record events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording non_standard_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording arm_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording devlink_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording disk_errors events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording memory_failure_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_poison_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_aer_ue_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_aer_ce_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_overflow_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_generic_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_general_media_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_dram_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording cxl_memory_module_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording signal_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording yitian_ddr_reg_dump_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording jm_payload0_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording jm_payload0_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording jm_payload0_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording jm_payload0_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording jm_payload0_event events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording hisi_common_section_v2 events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording hip08_oem_type1_event_v2 events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording hip08_oem_type2_event_v2 events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: Recording hip08_pcie_local_event_v2 events
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: signal_event store: 0x596ca66c9148
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: register inserted at db
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: Calling ras_mc_event_opendb()
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]:            <...>-7694  [000] d..1.     0.000060 signal_generate 2026-10-02 14:38:17 +0700 signal: Terminated, errorno: 0, code: (null), comm: systemd-tty-ask, pid: 7695, grp: 1, res: Delivered, msg: Unknown
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: signal_event store: 0x596ca66c9148
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: register inserted at db
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]:            <...>-7694  [000] d..1.     0.000060 signal_generate 2026-10-02 14:38:17 +0700 signal: Continued, errorno: 0, code: (null), comm: systemd-tty-ask, pid: 7695, grp: 1, res: Ignore, msg: Unknown
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: signal_event store: 0x596ca66c9148
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: register inserted at db
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]:            <...>-7695  [000] d..2.     0.000060 signal_generate 2026-10-02 14:38:17 +0700 signal: Child exited, errorno: 0, code: BUS_ADRALN, comm: systemctl, pid: 7694, grp: 1, res: Ignore, msg: Unknown
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: signal_event store: 0x596ca66c9148
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: register inserted at db
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]:            <...>-7694  [000] d..2.     0.000060 signal_generate 2026-10-02 14:38:17 +0700 signal: Child exited, errorno: 0, code: BUS_ADRALN, comm: deb-systemd-inv, pid: 7690, grp: 1, res: Delivered, msg: Unknown
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: signal_event store: 0x596ca66c9148
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: register inserted at db
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]:            <...>-7690  [000] d..2.     0.000060 signal_generate 2026-10-02 14:38:17 +0700 signal: Child exited, errorno: 0, code: BUS_ADRALN, comm: rasdaemon.posti, pid: 7637, grp: 1, res: Delivered, msg: Unknown
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: signal_event store: 0x596ca66c9148
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: register inserted at db
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]:            <...>-7697  [001] d..2.     0.000060 signal_generate 2026-10-02 14:38:17 +0700 signal: Child exited, errorno: 0, code: BUS_ADRALN, comm: systemd, pid: 4810, grp: 1, res: Delivered, msg: Unknown
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: signal_event store: 0x596ca66c9148
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]: rasdaemon: register inserted at db
+2026-10-02T14:38:18+07:00 devbox rasdaemon[2825]:            <...>-7698  [001] d..2.     0.000060 signal_generate 2026-10-02 14:38:17 +0700 signal: Child exited, errorno: 0, code: BUS_ADRALN, comm: systemd, pid: 4810, grp: 1, res: Delivered, msg: Unknown
+# rc=0
+

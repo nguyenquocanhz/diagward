@@ -1,0 +1,404 @@
+# dmidecode 3.6
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2.1 present.
+
+Handle 0x000F, DMI type 16, 23 bytes
+Physical Memory Array
+	Location: System Board Or Motherboard
+	Use: System Memory
+	Error Correction Type: Single-bit ECC
+	Maximum Capacity: 5 TB
+	Error Information Handle: Not Provided
+	Number Of Devices: 16
+
+Handle 0x0010, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P1-DIMMA1
+	Bank Locator: P0_Node0_Channel0_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0011, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P1-DIMMA2
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0012, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P1-DIMMB1
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0013, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P1-DIMMC1
+	Bank Locator: P0_Node0_Channel2_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0014, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P1-DIMMD1
+	Bank Locator: P0_Node1_Channel0_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0015, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P1-DIMMD2
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0016, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P1-DIMME1
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x0017, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P1-DIMMF1
+	Bank Locator: P0_Node1_Channel2_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0018, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P2-DIMMA1
+	Bank Locator: P1_Node0_Channel0_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x0019, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P2-DIMMA2
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x001A, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P2-DIMMB1
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x001B, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P2-DIMMC1
+	Bank Locator: P1_Node0_Channel2_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x001C, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P2-DIMMD1
+	Bank Locator: P1_Node1_Channel0_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None
+
+Handle 0x001D, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P2-DIMMD2
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x001E, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: Unknown
+	Data Width: Unknown
+	Size: No Module Installed
+	Form Factor: Unknown
+	Set: None
+	Locator: P2-DIMME1
+	Bank Locator: NO DIMM
+	Type: Unknown
+	Type Detail: Unknown
+
+Handle 0x001F, DMI type 17, 84 bytes
+Memory Device
+	Array Handle: 0x000F
+	Error Information Handle: Not Provided
+	Total Width: 72 bits
+	Data Width: 64 bits
+	Size: 16 GB
+	Form Factor: DIMM
+	Set: None
+	Locator: P2-DIMMF1
+	Bank Locator: P1_Node1_Channel2_Dimm0
+	Type: DDR4
+	Type Detail: Synchronous
+	Speed: 3200 MT/s
+	Manufacturer: Hynix
+	Serial Number: --
+	Asset Tag: --
+	Part Number: HMA82GR7DJR4N-XN    
+	Rank: 1
+	Configured Memory Speed: 2934 MT/s
+	Minimum Voltage: 1.2 V
+	Maximum Voltage: 1.2 V
+	Configured Voltage: 1.2 V
+	Memory Technology: DRAM
+	Memory Operating Mode Capability: Volatile memory
+	Firmware Version: 0000 
+	Module Manufacturer ID: Bank 1, Hex 0xAD
+	Module Product ID: Unknown
+	Memory Subsystem Controller Manufacturer ID: Unknown
+	Memory Subsystem Controller Product ID: Unknown
+	Non-Volatile Size: None
+	Volatile Size: 16 GB
+	Cache Size: None
+	Logical Size: None

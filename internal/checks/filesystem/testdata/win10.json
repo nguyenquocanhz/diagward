@@ -1,0 +1,44 @@
+{
+ "finished": "2026-10-02T14:57:53.24484+07:00",
+ "format": 1,
+ "host": "test-host",
+ "options": {
+  "maxLines": 0,
+  "sinceDays": 7,
+  "timeout": 0
+ },
+ "os": "windows",
+ "sections": [
+  {
+   "ms": 720,
+   "name": "meta.ident",
+   "out": "[{\"hostname\":\"dw-testhost\",\"fqdn\":\"dw-testhost\",\"user\":\"dw-testhost\\\\admin\",\"admin\":false,\"caption\":\"Microsoft Windows 10 Pro\",\"version\":\"10.0.19045\",\"build\":\"19045\",\"arch\":\"AMD64\",\"lastBoot\":\"2026-10-01T03:16:30.5000000Z\",\"now\":\"2026-10-02T07:57:35.7083838Z\",\"ps\":\"5.1.19041.6456\",\"collector\":\"dev\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 40,
+   "name": "meta.virt",
+   "out": "[{\"manufacturer\":\"Acer\",\"model\":\"AN515-55\",\"hypervisorPresent\":true,\"biosManufacturer\":\"Insyde Corp.\",\"biosVersion\":\"V1.10\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 78,
+   "name": "filesystem.win_volume",
+   "out": "[{\"DriveLetter\":\"D\",\"FileSystemLabel\":\"Data_Working\",\"FileSystem\":\"NTFS\",\"DriveType\":\"Fixed\",\"HealthStatus\":\"Healthy\",\"OperationalStatus\":[\"OK\"],\"Size\":322123591680,\"SizeRemaining\":43376533504,\"Path\":\"\\\\\\\\?\\\\Volume{00000be7-5bb0-332d-fa7f-fc15ce170000}\\\\\"},{\"DriveLetter\":\"C\",\"FileSystemLabel\":\"WIN10\",\"FileSystem\":\"NTFS\",\"DriveType\":\"Fixed\",\"HealthStatus\":\"Healthy\",\"OperationalStatus\":[\"OK\"],\"Size\":177169764352,\"SizeRemaining\":16791027712,\"Path\":\"\\\\\\\\?\\\\Volume{402e0ee6-050c-49ad-8119-ec85cb09d66c}\\\\\"},{\"DriveLetter\":\"\",\"FileSystemLabel\":\"\",\"FileSystem\":\"NTFS\",\"DriveType\":\"Fixed\",\"HealthStatus\":\"Healthy\",\"OperationalStatus\":[\"OK\"],\"Size\":688910336,\"SizeRemaining\":88145920,\"Path\":\"\\\\\\\\?\\\\Volume{f85aa020-34bc-45a8-9937-957bec8dddba}\\\\\"}]",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.win_dirty",
+   "rc": 0,
+   "skipped": "not-admin"
+  },
+  {
+   "ms": 3,
+   "name": "meta.done",
+   "out": "[{\"now\":\"2026-10-02T07:57:53.2050559Z\"}]",
+   "rc": 0
+  }
+ ],
+ "started": "2026-10-02T14:57:32.7891506+07:00",
+ "tool": "dwdev"
+}

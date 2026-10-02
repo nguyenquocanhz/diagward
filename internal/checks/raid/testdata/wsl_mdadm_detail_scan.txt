@@ -1,0 +1,2 @@
+ARRAY /dev/md90 metadata=1.2 UUID=878d1e52:792ab0c1:bf176ccf:0d162be6
+ARRAY /dev/md91 metadata=1.2 spares=1 UUID=cbb07f6d:f7f697a3:41b974e3:db54f0af

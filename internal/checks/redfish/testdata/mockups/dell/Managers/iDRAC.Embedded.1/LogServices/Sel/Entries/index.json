@@ -1,0 +1,12 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#LogEntryCollection.LogEntryCollection",
+  "@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Sel/Entries",
+  "@odata.type": "#LogEntryCollection.LogEntryCollection",
+  "Description": "System Event Logs for this manager",
+  "Members": [
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Sel/Entries/12", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-09-30T22:14:05-05:00", "Description": "Log Entry 12", "EntryCode": "Assert", "EntryType": "SEL", "Id": "12", "Message": "The power input for power supply 2 is lost.", "MessageArgs": ["2"], "MessageId": "PSU0003", "Name": "Log Entry 12", "SensorNumber": 101, "SensorType": "Power Supply", "Severity": "Critical"},
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Sel/Entries/11", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-06-02T09:10:00-05:00", "Description": "Log Entry 11", "EntryCode": "Assert", "EntryType": "SEL", "Id": "11", "Message": "Log cleared.", "MessageArgs": [], "MessageId": "SEL0001", "Name": "Log Entry 11", "SensorNumber": 114, "SensorType": "Event Logging Disabled", "Severity": "OK"}
+  ],
+  "Members@odata.count": 2,
+  "Name": "Log Entry Collection"
+}

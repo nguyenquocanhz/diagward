@@ -1,0 +1,92 @@
+{
+ "finished": "2026-10-02T14:57:02.6318679+07:00",
+ "format": 1,
+ "host": "test-host",
+ "options": {
+  "maxLines": 0,
+  "sinceDays": 7,
+  "timeout": 0
+ },
+ "os": "linux",
+ "sections": [
+  {
+   "name": "meta.ident",
+   "out": "hostname=dw-testhost\nfqdn=dw-testhost.localdomain\nuid=0\nuser=root\nkernel=6.18.40.1-microsoft-standard-WSL2\narch=x86_64\nnow=2026-10-02T07:56:56Z\nuptime=1718.72\ncollector=dev\nshell=/usr/bin/dash\n",
+   "rc": 0
+  },
+  {
+   "name": "meta.osrelease",
+   "out": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo\n",
+   "rc": 0
+  },
+  {
+   "name": "meta.virt",
+   "out": "vm=microsoft\ncontainer=wsl\nwsl=1\nhypervisor_flag=1\npid1_container=wsl\n",
+   "rc": 0
+  },
+  {
+   "ms": 1000,
+   "name": "meta.pm",
+   "out": "apt-get=1\nsudo=1\ntimeout=1\nsystemctl=1\njournalctl=1\n",
+   "rc": 0
+  },
+  {
+   "name": "system.uptime",
+   "out": "1719.73 3156.11\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.df",
+   "out": "Filesystem     Type      1-blocks       Used     Available Capacity Mounted on\n/dev/sdd       ext4 1081101176832 3811090432 1022297731072       1% /\n/dev/loop0     ext4      58675200   56778752             0     100% /mnt/dwfull\n/dev/loop1     ext4      58675200     155648      53825536       1% /mnt/dwerr\n/dev/loop2     ext4      58675200     172032      53809152       1% /mnt/dwro\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.df_inodes",
+   "out": "Filesystem     Type   Inodes IUsed    IFree IUse% Mounted on\n/dev/sdd       ext4 67108864 61669 67047195    1% /\n/dev/loop0     ext4    16384    13    16371    1% /mnt/dwfull\n/dev/loop1     ext4    16384    12    16372    1% /mnt/dwerr\n/dev/loop2     ext4    16384    16    16368    1% /mnt/dwro\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.mounts",
+   "out": "none /usr/lib/modules/6.18.40.1-microsoft-standard-WSL2 overlay rw,nosuid,nodev,noatime,lowerdir=/modules/6.18.40.1-microsoft-standard-WSL2/modules,upperdir=/lib/modules/6.18.40.1-microsoft-standard-WSL2/rw/upper,workdir=/lib/modules/6.18.40.1-microsoft-standard-WSL2/rw/work,uuid=on 0 0\nnone /mnt/wsl tmpfs rw,relatime 0 0\ndrivers /usr/lib/wsl/drivers 9p ro,nosuid,nodev,noatime,aname=drivers;fmask=222;dmask=222,cache=0x5,access=client,msize=65536,trans=fd,rfd=8,wfd=8 0 0\n/dev/sdd / ext4 rw,relatime,discard,errors=remount-ro,data=ordered 0 0\nnone /mnt/wslg tmpfs rw,relatime 0 0\n/dev/sdd /mnt/wslg/distro ext4 ro,relatime,discard,errors=remount-ro,data=ordered 0 0\nnone /usr/lib/wsl/lib overlay rw,nosuid,nodev,noatime,lowerdir=/gpu_lib_packaged:/gpu_lib_inbox,upperdir=/gpu_lib/rw/upper,workdir=/gpu_lib/rw/work,uuid=on 0 0\nrootfs /init rootfs ro,size=971804k,nr_inodes=242951 0 0\nnone /dev devtmpfs rw,nosuid,relatime,size=971804k,nr_inodes=242951,mode=755 0 0\nsysfs /sys sysfs rw,nosuid,nodev,noexec,noatime 0 0\nproc /proc proc rw,nosuid,nodev,noexec,noatime 0 0\ndevpts /dev/pts devpts rw,nosuid,noexec,noatime,gid=5,mode=620,ptmxmode=000 0 0\nnone /run tmpfs rw,nosuid,nodev,mode=755 0 0\nnone /run/lock tmpfs rw,nosuid,nodev,noexec,noatime 0 0\nnone /run/shm tmpfs rw,nosuid,nodev,noatime 0 0\nnone /dev/shm tmpfs rw,nosuid,nodev,noatime 0 0\nnone /run/user tmpfs rw,nosuid,nodev,noexec,noatime,mode=755 0 0\nbinfmt_misc /proc/sys/fs/binfmt_misc binfmt_misc rw,relatime 0 0\ncgroup2 /sys/fs/cgroup cgroup2 rw,nosuid,nodev,noexec,relatime,nsdelegate 0 0\nnone /mnt/wslg/versions.txt overlay rw,relatime,lowerdir=/systemvhd,upperdir=/system/rw/upper,workdir=/system/rw/work,uuid=on 0 0\nnone /mnt/wslg/doc overlay rw,relatime,lowerdir=/systemvhd,upperdir=/system/rw/upper,workdir=/system/rw/work,uuid=on 0 0\nnone /tmp/.X11-unix tmpfs ro,relatime 0 0\nC:\\134 /mnt/c 9p rw,noatime,aname=drvfs;path=C:\\;uid=0;gid=0;symlinkroot=/mnt/,cache=0x5,access=client,msize=65536,trans=fd,rfd=6,wfd=6 0 0\nD:\\134 /mnt/d 9p rw,noatime,aname=drvfs;path=D:\\;uid=0;gid=0;symlinkroot=/mnt/,cache=0x5,access=client,msize=65536,trans=fd,rfd=6,wfd=6 0 0\nnone /run/user tmpfs rw,relatime 0 0\nnone /proc/sys/fs/binfmt_misc/status tmpfs ro,mode=755 0 0\ntracefs /sys/kernel/tracing tracefs rw,nosuid,nodev,noexec,relatime 0 0\nhugetlbfs /dev/hugepages hugetlbfs rw,nosuid,nodev,relatime,pagesize=2M 0 0\nmqueue /dev/mqueue mqueue rw,nosuid,nodev,noexec,relatime 0 0\ndebugfs /sys/kernel/debug debugfs rw,nosuid,nodev,noexec,relatime 0 0\nnone /run/credentials/systemd-journald.service tmpfs ro,nosuid,nodev,noexec,relatime,nosymfollow,size=1024k,nr_inodes=1024,mode=700,noswap 0 0\ntmpfs /tmp tmpfs rw,nosuid,nodev,size=976240k,nr_inodes=1048576 0 0\nconfigfs /sys/kernel/config configfs rw,nosuid,nodev,noexec,relatime 0 0\nfusectl /sys/fs/fuse/connections fusectl rw,nosuid,nodev,noexec,relatime 0 0\nnone /run/credentials/systemd-resolved.service tmpfs ro,nosuid,nodev,noexec,relatime,nosymfollow,size=1024k,nr_inodes=1024,mode=700,noswap 0 0\nnone /tmp/.X11-unix tmpfs ro,relatime 0 0\nnone /run/credentials/getty@tty1.service tmpfs ro,nosuid,nodev,noexec,relatime,nosymfollow,size=1024k,nr_inodes=1024,mode=700,noswap 0 0\ntmpfs /run/user/0 tmpfs rw,nosuid,nodev,relatime,size=195244k,nr_inodes=48811,mode=700 0 0\ntmpfs /mnt/wslg/run/user/0 tmpfs rw,nosuid,nodev,relatime,size=195244k,nr_inodes=48811,mode=700 0 0\n/dev/loop0 /mnt/dwfull ext4 rw,relatime 0 0\n/dev/loop1 /mnt/dwerr ext4 rw,relatime,errors=remount-ro 0 0\n/dev/loop2 /mnt/dwro ext4 rw,relatime,errors=remount-ro,emergency_ro 0 0\ntracefs /sys/kernel/debug/tracing tracefs rw,nosuid,nodev,noexec,relatime 0 0\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.fstab",
+   "out": "# UNCONFIGURED FSTAB FOR BASE SYSTEM\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.ext4",
+   "out": "/sys/fs/ext4/loop0/errors_count=0\n/sys/fs/ext4/loop1/errors_count=3\n/sys/fs/ext4/loop2/errors_count=1\n/sys/fs/ext4/sda/errors_count=0\n/sys/fs/ext4/sdb/errors_count=0\n/sys/fs/ext4/sdd/errors_count=0\n/sys/fs/ext4/loop0/first_error_time=0\n/sys/fs/ext4/loop1/first_error_time=1789979400\n/sys/fs/ext4/loop2/first_error_time=1790926614\n/sys/fs/ext4/sda/first_error_time=0\n/sys/fs/ext4/sdb/first_error_time=0\n/sys/fs/ext4/sdd/first_error_time=0\n/sys/fs/ext4/loop0/last_error_time=0\n/sys/fs/ext4/loop1/last_error_time=1790648100\n/sys/fs/ext4/loop2/last_error_time=1790926614\n/sys/fs/ext4/sda/last_error_time=0\n/sys/fs/ext4/sdb/last_error_time=0\n/sys/fs/ext4/sdd/last_error_time=0\n/sys/fs/ext4/loop0/first_error_func=\n/sys/fs/ext4/loop1/first_error_func=ext4_lookup\n/sys/fs/ext4/loop2/first_error_func=ext4_lookup\n/sys/fs/ext4/sda/first_error_func=\n/sys/fs/ext4/sdb/first_error_func=\n/sys/fs/ext4/sdd/first_error_func=\n/sys/fs/ext4/loop0/last_error_func=\n/sys/fs/ext4/loop1/last_error_func=ext4_lookup\n/sys/fs/ext4/loop2/last_error_func=ext4_lookup\n/sys/fs/ext4/sda/last_error_func=\n/sys/fs/ext4/sdb/last_error_func=\n/sys/fs/ext4/sdd/last_error_func=\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.tune2fs:/dev/loop0",
+   "out": "tune2fs 1.47.2 (1-Jan-2025)\nFilesystem volume name:   dwfull\nLast mounted on:          /mnt/dwfull\nFilesystem UUID:          64916474-d66c-46c3-926c-44902bc37397\nFilesystem magic number:  0xEF53\nFilesystem revision #:    1 (dynamic)\nFilesystem features:      has_journal ext_attr resize_inode dir_index orphan_file filetype needs_recovery extent 64bit flex_bg metadata_csum_seed sparse_super large_file huge_file dir_nlink extra_isize metadata_csum orphan_present\nFilesystem flags:         signed_directory_hash \nDefault mount options:    user_xattr acl\nFilesystem state:         clean\nErrors behavior:          Continue\nFilesystem OS type:       Linux\nInode count:              16384\nBlock count:              16384\nReserved block count:     819\nOverhead clusters:        2059\nFree blocks:              14287\nFree inodes:              16372\nFirst block:              0\nBlock size:               4096\nFragment size:            4096\nGroup descriptor size:    64\nReserved GDT blocks:      7\nBlocks per group:         32768\nFragments per group:      32768\nInodes per group:         16384\nInode blocks per group:   1024\nFlex block group size:    16\nFilesystem created:       Fri Oct  2 14:36:54 2026\nLast mount time:          Fri Oct  2 14:36:54 2026\nLast write time:          Fri Oct  2 14:36:54 2026\nMount count:              1\nMaximum mount count:      -1\nLast checked:             Fri Oct  2 14:36:54 2026\nCheck interval:           0 (\u003cnone\u003e)\nLifetime writes:          173 kB\nReserved blocks uid:      0 (user root)\nReserved blocks gid:      0 (group root)\nFirst inode:              11\nInode size:               256\nRequired extra isize:     32\nDesired extra isize:      32\nJournal inode:            8\nDefault directory hash:   half_md4\nDirectory Hash Seed:      329ed2e4-4313-48b3-8131-8e484f42daa6\nJournal backup:           inode blocks\nChecksum type:            crc32c\nChecksum:                 0xf72cec48\nChecksum seed:            0x695709ef\nOrphan file inode:        12\n",
+   "rc": 0
+  },
+  {
+   "ms": 1000,
+   "name": "filesystem.tune2fs:/dev/loop1",
+   "out": "tune2fs 1.47.2 (1-Jan-2025)\nFilesystem volume name:   dwerr\nLast mounted on:          \u003cnot available\u003e\nFilesystem UUID:          a7c3fd10-f17e-461f-b337-f3c9bddb687b\nFilesystem magic number:  0xEF53\nFilesystem revision #:    1 (dynamic)\nFilesystem features:      has_journal ext_attr resize_inode dir_index orphan_file filetype needs_recovery extent 64bit flex_bg metadata_csum_seed sparse_super large_file huge_file dir_nlink extra_isize metadata_csum orphan_present\nFilesystem flags:         signed_directory_hash \nDefault mount options:    user_xattr acl\nFilesystem state:         clean with errors\nErrors behavior:          Continue\nFilesystem OS type:       Linux\nInode count:              16384\nBlock count:              16384\nReserved block count:     819\nOverhead clusters:        2059\nFree blocks:              14287\nFree inodes:              16372\nFirst block:              0\nBlock size:               4096\nFragment size:            4096\nGroup descriptor size:    64\nReserved GDT blocks:      7\nBlocks per group:         32768\nFragments per group:      32768\nInodes per group:         16384\nInode blocks per group:   1024\nFlex block group size:    16\nFilesystem created:       Fri Oct  2 14:36:54 2026\nLast mount time:          Fri Oct  2 14:36:54 2026\nLast write time:          Fri Oct  2 14:36:54 2026\nMount count:              1\nMaximum mount count:      -1\nLast checked:             Fri Oct  2 14:36:54 2026\nCheck interval:           0 (\u003cnone\u003e)\nLifetime writes:          173 kB\nReserved blocks uid:      0 (user root)\nReserved blocks gid:      0 (group root)\nFirst inode:              11\nInode size:               256\nRequired extra isize:     32\nDesired extra isize:      32\nJournal inode:            8\nDefault directory hash:   half_md4\nDirectory Hash Seed:      e97e47cf-af16-4096-9021-d8e15ceb7bbb\nJournal backup:           inode blocks\nFS Error count:           3\nFirst error time:         Mon Sep 21 15:30:00 2026\nFirst error function:     ext4_lookup\nFirst error line #:       0\nLast error time:          Tue Sep 29 09:15:00 2026\nLast error function:      ext4_lookup\nLast error line #:        0\nChecksum type:            crc32c\nChecksum:                 0x2beb1dd9\nChecksum seed:            0x26f58295\nOrphan file inode:        12\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.tune2fs:/dev/loop2",
+   "out": "tune2fs 1.47.2 (1-Jan-2025)\nFilesystem volume name:   dwro\nLast mounted on:          /mnt/dwro\nFilesystem UUID:          ddc9e953-ae4f-4d89-9c73-e691f14b6f6c\nFilesystem magic number:  0xEF53\nFilesystem revision #:    1 (dynamic)\nFilesystem features:      has_journal ext_attr resize_inode dir_index orphan_file filetype needs_recovery extent 64bit flex_bg metadata_csum_seed sparse_super large_file huge_file dir_nlink extra_isize metadata_csum orphan_present\nFilesystem flags:         signed_directory_hash \nDefault mount options:    user_xattr acl\nFilesystem state:         clean with errors\nErrors behavior:          Continue\nFilesystem OS type:       Linux\nInode count:              16384\nBlock count:              16384\nReserved block count:     819\nOverhead clusters:        2059\nFree blocks:              14283\nFree inodes:              16368\nFirst block:              0\nBlock size:               4096\nFragment size:            4096\nGroup descriptor size:    64\nReserved GDT blocks:      7\nBlocks per group:         32768\nFragments per group:      32768\nInodes per group:         16384\nInode blocks per group:   1024\nFlex block group size:    16\nFilesystem created:       Fri Oct  2 14:36:54 2026\nLast mount time:          Fri Oct  2 14:36:54 2026\nLast write time:          Fri Oct  2 14:36:54 2026\nMount count:              2\nMaximum mount count:      -1\nLast checked:             Fri Oct  2 14:36:54 2026\nCheck interval:           0 (\u003cnone\u003e)\nLifetime writes:          273 kB\nReserved blocks uid:      0 (user root)\nReserved blocks gid:      0 (group root)\nFirst inode:              11\nInode size:               256\nRequired extra isize:     32\nDesired extra isize:      32\nJournal inode:            8\nDefault directory hash:   half_md4\nDirectory Hash Seed:      2bd8ef55-799c-4721-ab90-3854e32d9358\nJournal backup:           inode blocks\nFS Error count:           1\nFirst error time:         Fri Oct  2 14:36:54 2026\nFirst error function:     ext4_lookup\nFirst error line #:       1789\nFirst error inode #:      13\nFirst error err:          EFSCORRUPTED\nLast error time:          Fri Oct  2 14:36:54 2026\nLast error function:      ext4_lookup\nLast error line #:        1789\nLast error inode #:       13\nLast error err:           EFSCORRUPTED\nChecksum type:            crc32c\nChecksum:                 0xdd39cc60\nChecksum seed:            0x88673e9c\nOrphan file inode:        12\n",
+   "rc": 0
+  },
+  {
+   "name": "filesystem.tune2fs:/dev/sdd",
+   "out": "tune2fs 1.47.2 (1-Jan-2025)\nFilesystem volume name:   \u003cnone\u003e\nLast mounted on:          /distro\nFilesystem UUID:          daeed207-4388-4a79-89b1-709934ffb4b7\nFilesystem magic number:  0xEF53\nFilesystem revision #:    1 (dynamic)\nFilesystem features:      has_journal ext_attr resize_inode dir_index orphan_file filetype needs_recovery extent 64bit flex_bg metadata_csum_seed sparse_super large_file huge_file dir_nlink extra_isize metadata_csum orphan_present\nFilesystem flags:         signed_directory_hash \nDefault mount options:    user_xattr acl\nFilesystem state:         clean\nErrors behavior:          Continue\nFilesystem OS type:       Linux\nInode count:              67108864\nBlock count:              268435456\nReserved block count:     13421772\nOverhead clusters:        4494739\nFree blocks:              263036501\nFree inodes:              67047828\nFirst block:              0\nBlock size:               4096\nFragment size:            4096\nGroup descriptor size:    64\nReserved GDT blocks:      1024\nBlocks per group:         32768\nFragments per group:      32768\nInodes per group:         8192\nInode blocks per group:   512\nFlex block group size:    4096\nFilesystem created:       Fri Sep 18 12:20:10 2026\nLast mount time:          Fri Oct  2 14:35:40 2026\nLast write time:          Fri Oct  2 14:35:40 2026\nMount count:              47\nMaximum mount count:      -1\nLast checked:             Fri Sep 18 12:20:10 2026\nCheck interval:           0 (\u003cnone\u003e)\nLifetime writes:          22 GB\nReserved blocks uid:      0 (user root)\nReserved blocks gid:      0 (group root)\nFirst inode:              11\nInode size:               256\nRequired extra isize:     32\nDesired extra isize:      32\nJournal inode:            8\nDefault directory hash:   half_md4\nDirectory Hash Seed:      6856a167-45b1-430b-8035-957875bcd7c7\nJournal backup:           inode blocks\nChecksum type:            crc32c\nChecksum:                 0x1c03b6ba\nChecksum seed:            0x022615d0\nOrphan file inode:        12\n",
+   "rc": 0
+  },
+  {
+   "name": "meta.done",
+   "out": "now=2026-10-02T07:57:02Z\n",
+   "rc": 0
+  }
+ ],
+ "started": "2026-10-02T14:56:56.0940277+07:00",
+ "tool": "dwdev"
+}

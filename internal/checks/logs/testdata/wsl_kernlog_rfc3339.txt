@@ -1,0 +1,41 @@
+# source=syslog file=/var/log/kern.log mtime=1790927467 tz=+0700
+2026-10-02T14:24:30.685274+07:00 devbox kernel: md/raid1:md90: not clean -- starting background reconstruction
+2026-10-02T14:24:30.685289+07:00 devbox kernel: md/raid1:md90: active with 2 out of 2 mirrors
+2026-10-02T14:24:33.038363+07:00 devbox kernel: md/raid:md91: device loop3 operational as raid disk 1
+2026-10-02T14:24:33.038413+07:00 devbox kernel: md/raid:md91: device loop2 operational as raid disk 0
+2026-10-02T14:24:33.038417+07:00 devbox kernel: md/raid:md91: raid level 5 active with 2 out of 3 devices, algorithm 2
+2026-10-02T14:24:40.990785+07:00 devbox kernel: md/raid1:md90: Disk failure on loop1, disabling device.
+2026-10-02T14:24:40.990978+07:00 devbox kernel: md/raid1:md90: Operation continuing on 1 devices.
+2026-10-02T14:24:41.130441+07:00 devbox kernel: md/raid:md91: Disk failure on loop3, disabling device.
+2026-10-02T14:24:41.130504+07:00 devbox kernel: md/raid:md91: Operation continuing on 2 devices.
+2026-10-02T14:25:23.125250+07:00 devbox kernel: md/raid1:mdX: not clean -- starting background reconstruction
+2026-10-02T14:25:23.125270+07:00 devbox kernel: md/raid1:mdX: active with 2 out of 2 mirrors
+2026-10-02T14:25:37.431450+07:00 devbox kernel: md/raid1:mdX: active with 1 out of 2 mirrors
+2026-10-02T14:31:30.150888+07:00 devbox kernel: bond9: (slave dw9a): making interface the new active one
+2026-10-02T14:31:30.150916+07:00 devbox kernel: bond9: (slave dw9a): Enslaving as an active interface with an up link
+2026-10-02T14:31:30.150918+07:00 devbox kernel: bond9: (slave dw9b): Enslaving as a backup interface with an up link
+2026-10-02T14:31:31.165654+07:00 devbox kernel: bond9 (unregistering): (slave dw9a): Releasing backup interface
+2026-10-02T14:31:31.181763+07:00 devbox kernel: bond9 (unregistering): (slave dw9b): Releasing backup interface
+2026-10-02T14:31:31.193649+07:00 devbox kernel: bond9 (unregistering): Released all slaves
+2026-10-02T14:31:39.065706+07:00 devbox kernel: bond9: (slave dw9a): Enslaving as a backup interface with a down link
+2026-10-02T14:31:39.065724+07:00 devbox kernel: bond9: (slave dw9b): Enslaving as a backup interface with a down link
+2026-10-02T14:31:39.077818+07:00 devbox kernel: bond9: (slave dw9a): link status definitely up, 10000 Mbps full duplex
+2026-10-02T14:31:39.077834+07:00 devbox kernel: bond9: (slave dw9b): link status definitely up, 10000 Mbps full duplex
+2026-10-02T14:31:39.077835+07:00 devbox kernel: bond9: (slave dw9a): making interface the new active one
+2026-10-02T14:31:39.077836+07:00 devbox kernel: bond9: active interface up!
+2026-10-02T14:31:40.117700+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:31:40.637646+07:00 devbox kernel: bond9: (slave dw9b): link status definitely up, 10000 Mbps full duplex
+2026-10-02T14:31:41.157620+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:31:42.101593+07:00 devbox kernel: bond9 (unregistering): (slave dw9a): Releasing backup interface
+2026-10-02T14:31:42.113690+07:00 devbox kernel: bond9 (unregistering): (slave dw9b): Releasing backup interface
+2026-10-02T14:31:42.118145+07:00 devbox kernel: bond9 (unregistering): Released all slaves
+2026-10-02T14:31:51.029709+07:00 devbox kernel: bond9: (slave dw9a): Enslaving as a backup interface with a down link
+2026-10-02T14:31:51.052431+07:00 devbox kernel: bond9: (slave dw9b): Enslaving as a backup interface with a down link
+2026-10-02T14:31:52.553593+07:00 devbox kernel: bond9 (unregistering): (slave dw9a): Releasing backup interface
+2026-10-02T14:31:52.561606+07:00 devbox kernel: bond9 (unregistering): (slave dw9b): Releasing backup interface
+2026-10-02T14:31:52.578145+07:00 devbox kernel: bond9 (unregistering): Released all slaves
+2026-10-02T14:31:52.639039+07:00 devbox kernel: bond9: (slave dw9a): Enslaving as a backup interface with a down link
+2026-10-02T14:31:52.647628+07:00 devbox kernel: bond9: (slave dw9b): Enslaving as a backup interface with a down link
+2026-10-02T14:31:52.652698+07:00 devbox kernel: bond9: (slave dw9a): link status definitely up, 10000 Mbps full duplex
+2026-10-02T14:31:52.652713+07:00 devbox kernel: bond9: (slave dw9b): link status definitely up, 10000 Mbps full duplex
+2026-10-02T14:31:52.652714+07:00 devbox kernel: bond9: now running without any active interface!

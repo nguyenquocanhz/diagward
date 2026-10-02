@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        if: runner.os == 'Linux'
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - run: go vet ./...
+      - name: Test (race detector on Linux)
+        if: runner.os == 'Linux'
+        run: go test -race ./...
+      - name: Test
+        if: runner.os != 'Linux'
+        run: go test ./...
+
+  collector:
+    name: Collector scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Install shells and tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck dash busybox smartmontools lm-sensors ipmitool mdadm
+      - name: Assemble the Linux collector
+        run: go run ./internal/devtools/dwdev -os linux -script > collector.sh
+      - name: Syntax under dash, busybox ash and bash
+        run: |
+          dash -n collector.sh
+          busybox sh -n collector.sh
+          bash -n collector.sh
+      - name: shellcheck (POSIX sh)
+        run: shellcheck -s sh -S warning collector.sh
+      - name: Run the collector for real (as user and as root)
+        run: |
+          go build -o diagward ./cmd/diagward
+          ./diagward check -v --no-color || test $? -le 2
+          sudo ./diagward check -v --no-color --json report.json || test $? -le 2
+          test -s report.json
+
+  windows-smoke:
+    name: Windows collector
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Run the collector for real (elevated runner)
+        shell: pwsh
+        run: |
+          go build -o diagward.exe ./cmd/diagward
+          ./diagward.exe check -v --no-color --json report.json
+          if ($LASTEXITCODE -gt 2) { exit 1 }
+          if (-not (Test-Path report.json)) { exit 1 }
+          exit 0

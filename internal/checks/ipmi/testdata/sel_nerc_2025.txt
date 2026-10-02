@@ -1,0 +1,3 @@
+  34 | 02/25/2025 | 04:50:09 PM EST | Memory #0x02 | Uncorrectable ECC (UnCorrectable ECC |  DIMMD7) | Asserted
+  35 | 02/25/2025 | 04:53:16 PM EST | Unknown #0x2e |  | Asserted
+  36 | 02/25/2025 | 04:53:16 PM EST | Memory #0x02 | Uncorrectable ECC (UnCorrectable ECC |  DIMMD7) | Asserted

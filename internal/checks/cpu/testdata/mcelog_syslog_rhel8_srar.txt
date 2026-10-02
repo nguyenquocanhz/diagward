@@ -1,0 +1,19 @@
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: Hardware event. This is not a software error.
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MCE 0
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: CPU 21 BANK 1 TSC 8a4ce5d5aa0
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: RIP 33:403c4b
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MISC 86 ADDR 6696d1040
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: TIME 1548833366 Wed Jan 30 02:29:26 2019
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MCG status:RIPV EIPV MCIP LMCE
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MCi status:
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: Uncorrected error
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: Error enabled
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MCi_MISC register valid
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MCi_ADDR register valid
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: SRAR
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MCA: Data CACHE Level-0 Data-Read Error
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: STATUS bd80000000100134 MCGSTATUS f
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MCGCAP f000c14 APICID 17 SOCKETID 0
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: PPIN 2f5f92f94c7e6989
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: MICROCODE 2000055
+Jan 30 02:29:26 rhel8-ose-test mcelog[1177]: CPUID Vendor Intel Family 6 Model 85

@@ -1,0 +1,14 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#LogEntryCollection.LogEntryCollection",
+  "@odata.id": "/redfish/v1/Systems/1/LogServices/IML/Entries/",
+  "@odata.type": "#LogEntryCollection.LogEntryCollection",
+  "Description": "Integrated Management Log view",
+  "Members": [
+    {"@odata.id": "/redfish/v1/Systems/1/LogServices/IML/Entries/1/", "@odata.type": "#LogEntry.v1_1_0.LogEntry", "Id": "1", "Created": "0000-00-00T00:00:00Z", "EntryType": "Oem", "Message": "IML Cleared (iLO user: admin)", "Name": "Integrated Management Log", "Oem": {"Hpe": {"@odata.type": "#HpeLogEntry.v2_3_0.HpeLogEntry", "Categories": ["Maintenance", "Administration"], "Class": 33, "ClassDescription": "Maintenance", "Code": 1, "Count": 1, "EventNumber": 51, "Severity": "Informational", "Updated": "0000-00-00T00:00:00Z"}}, "OemRecordFormat": "Hpe-IML", "Severity": "OK"},
+    {"@odata.id": "/redfish/v1/Systems/1/LogServices/IML/Entries/2/", "@odata.type": "#LogEntry.v1_1_0.LogEntry", "Id": "2", "Created": "2026-09-05T03:11:00Z", "EntryType": "Oem", "Message": "Uncorrectable Memory Error Detected by ROM-based Memory Validation (Processor 1, Memory Module 4)", "Name": "Integrated Management Log", "Oem": {"Hpe": {"@odata.type": "#HpeLogEntry.v2_3_0.HpeLogEntry", "Categories": ["Hardware"], "Class": 19, "ClassDescription": "Memory", "Code": 13, "Count": 1, "EventNumber": 60, "Repaired": true, "Severity": "Repaired", "Updated": "2026-09-05T03:11:00Z"}}, "OemRecordFormat": "Hpe-IML", "Severity": "Critical"},
+    {"@odata.id": "/redfish/v1/Systems/1/LogServices/IML/Entries/3/", "@odata.type": "#LogEntry.v1_1_0.LogEntry", "Id": "3", "Created": "2026-09-28T16:40:00Z", "EntryType": "Oem", "Message": "Internal Storage Enclosure Device Failure (Bay 2, Box 1, Port 1I, Slot 0)", "Name": "Integrated Management Log", "Oem": {"Hpe": {"@odata.type": "#HpeLogEntry.v2_3_0.HpeLogEntry", "Categories": ["Hardware"], "Class": 12, "ClassDescription": "Drive Array", "Code": 1290, "Count": 3, "EventNumber": 71, "Repaired": false, "Severity": "Critical", "Updated": "2026-09-30T05:02:00Z"}}, "OemRecordFormat": "Hpe-IML", "Severity": "Critical"},
+    {"@odata.id": "/redfish/v1/Systems/1/LogServices/IML/Entries/4/", "@odata.type": "#LogEntry.v1_1_0.LogEntry", "Id": "4", "Created": "2026-09-30T05:03:00Z", "EntryType": "Oem", "Message": "System Fans Not Redundant", "Name": "Integrated Management Log", "Oem": {"Hpe": {"@odata.type": "#HpeLogEntry.v2_3_0.HpeLogEntry", "Categories": ["Hardware", "Environment"], "Class": 3, "ClassDescription": "Environment", "Code": 9, "Count": 1, "EventNumber": 72, "Repaired": false, "Severity": "Caution", "Updated": "2026-09-30T05:03:00Z"}}, "OemRecordFormat": "Hpe-IML", "Severity": "Warning"}
+  ],
+  "Members@odata.count": 4,
+  "Name": "Integrated Management Log"
+}

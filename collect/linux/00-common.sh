@@ -10,7 +10,8 @@
 LC_ALL=C
 LANG=C
 export LC_ALL LANG
-PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/opt/MegaRAID/storcli:/opt/MegaRAID/perccli:/opt/lsi/storcli:/opt/smartmontools/sbin"
+# Vendor tools often live outside PATH.
+PATH="$PATH:/usr/local/sbin:/usr/sbin:/sbin:/usr/local/bin:/opt/MegaRAID/storcli:/opt/MegaRAID/perccli:/opt/MegaRAID/MegaCli:/opt/lsi/storcli:/opt/smartmontools/sbin:/opt/dell/srvadmin/bin:/opt/smartstorageadmin/ssacli/bin:/usr/Arcconf"
 export PATH
 umask 077
 
@@ -101,7 +102,24 @@ dw_fn() {
 	_dw_st=$(_dw_now)
 	( "$@" ) >"$DW_T/o" 2>"$DW_T/e" </dev/null
 	_dw_rc=$?
-	dw_emit "$_dw_n" "$_dw_rc" "$_dw_st"
+	dw_emit "$_dw_n" "$_dw_rc" "$_dw_st" "$(_dw_rcflags "$_dw_rc")"
+	return "$_dw_rc"
+}
+
+# dw_run_t SECONDS NAME CMD [ARGS...] — like dw_run with its own timeout
+# (for long tests such as memtester).
+dw_run_t() {
+	_dw_secs=$1
+	shift
+	_dw_save=$DW_TO
+	case "$DW_TO" in
+	"") ;;
+	*"-k 5"*) DW_TO="timeout -k 10 $_dw_secs" ;;
+	*) DW_TO="timeout $_dw_secs" ;;
+	esac
+	dw_run "$@"
+	_dw_rc=$?
+	DW_TO=$_dw_save
 	return "$_dw_rc"
 }
 

@@ -1,0 +1,14 @@
+Filesystem        Inodes  IUsed     IFree IUse% Mounted on
+/dev/mapper/vg_lxcrhel6sat56-lv_root
+
+                 6275072 124955   6150117    2% /
+
+devtmpfs         1497120    532   1496588    1% /dev
+tmpfs            1499684    331   1499353    1% /dev/shm
+tmpfs            1499684    728   1498956    1% /run
+tmpfs            1499684     16   1499668    1% /sys/fs/cgroup
+tmpfs            1499684     54   1499630    1% /tmp
+/dev/sda2      106954752 298662 106656090    1% /home
+/dev/sda1         128016    429    127587    1% /boot
+/dev/sdb1        1499684      6   1499678    1% /V M T o o l s
+/dev/sdb2        1499684     15   1499669    1% /VM Tools

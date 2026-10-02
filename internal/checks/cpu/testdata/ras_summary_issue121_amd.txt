@@ -1,0 +1,12 @@
+No Memory errors.
+
+No PCIe AER errors.
+
+No ARM processor errors.
+
+No Extlog errors.
+
+No devlink errors.
+No disk errors.
+MCE records summary:
+	1 Corrected error, no action required. errors

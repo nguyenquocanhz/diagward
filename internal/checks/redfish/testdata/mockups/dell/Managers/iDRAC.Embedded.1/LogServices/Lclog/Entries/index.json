@@ -1,0 +1,14 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#LogEntryCollection.LogEntryCollection",
+  "@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries",
+  "@odata.type": "#LogEntryCollection.LogEntryCollection",
+  "Description": "LC Logs for this manager",
+  "Members": [
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries/5121", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-09-30T22:20:11-05:00", "Description": "Log Entry 5121", "EntryType": "Oem", "Id": "5121", "Message": "Successfully logged in using root, from 10.0.0.9 and REDFISH.", "MessageArgs": ["root", "10.0.0.9", "REDFISH"], "MessageId": "USR0030", "Name": "Log Entry 5121", "OemRecordFormat": "Dell", "Severity": "OK"},
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries/5120", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-09-30T22:14:07-05:00", "Description": "Log Entry 5120", "EntryType": "Oem", "Id": "5120", "Message": "Power supply redundancy is lost.", "MessageArgs": [], "MessageId": "RDU0012", "Name": "Log Entry 5120", "OemRecordFormat": "Dell", "Severity": "Critical"},
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries/5119", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-09-30T22:14:05-05:00", "Description": "Log Entry 5119", "EntryType": "Oem", "Id": "5119", "Message": "The power input for power supply 2 is lost.", "MessageArgs": ["2"], "MessageId": "PSU0003", "Name": "Log Entry 5119", "OemRecordFormat": "Dell", "Severity": "Critical"}
+  ],
+  "Members@odata.count": 7,
+  "Members@odata.nextLink": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries?$skip=3",
+  "Name": "Log Entry Collection"
+}

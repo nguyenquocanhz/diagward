@@ -1,0 +1,233 @@
+# dmidecode 3.4
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2.1 present.
+Table at 0xAAD70000.
+
+Handle 0x0000, DMI type 0, 26 bytes
+BIOS Information
+	Vendor: Lenovo
+	Version: -[IVE182H-4.10]-
+	Release Date: 04/19/2023
+	Address: 0xF0000
+	Runtime Size: 64 kB
+	ROM Size: 32 MB
+	Characteristics:
+		PCI is supported
+		PNP is supported
+		BIOS is upgradeable
+		BIOS shadowing is allowed
+		Boot from CD is supported
+		Selectable boot is supported
+		EDD is supported
+		Serial services are supported (int 14h)
+		ACPI is supported
+		USB legacy is supported
+		BIOS boot specification is supported
+		Targeted content distribution is supported
+		UEFI is supported
+	BIOS Revision: 4.10
+	Firmware Revision: 6.0
+
+Handle 0x0001, DMI type 1, 27 bytes
+System Information
+	Manufacturer: Lenovo
+	Product Name: ThinkSystem SN550 -[7X16CTO1WW]-
+	Version: 07
+	Serial Number: --
+	UUID: --
+	Wake-up Type: Power Switch
+	SKU Number: 7X16CTO1WW
+	Family: ThinkSystem
+
+Handle 0x0002, DMI type 2, 15 bytes
+Base Board Information
+	Manufacturer: Lenovo
+	Product Name: -[7X16CTO1WW]-
+	Version: none
+	Serial Number: --
+	Asset Tag: --
+	Features:
+		Board is a hosting board
+		Board is replaceable
+	Location In Chassis: Slot12
+	Chassis Handle: 0x0003
+	Type: Motherboard
+	Contained Object Handles: 0
+
+Handle 0x0003, DMI type 3, 22 bytes
+Chassis Information
+	Manufacturer: Lenovo
+	Type: Blade
+	Lock: Not Present
+	Version: none
+	Serial Number: --
+	Asset Tag: --
+	Boot-up State: Safe
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: None
+	OEM Information: 0x00000000
+	Height: 1 U
+	Number Of Power Cords: 6
+	Contained Elements: 0
+	SKU Number: 7X16CTO1WW
+
+Handle 0x009D, DMI type 3, 22 bytes
+Chassis Information
+	Manufacturer: Lenovo
+	Type: Blade Enclosing
+	Lock: Not Present
+	Version: 04
+	Serial Number: --
+	Asset Tag: --
+	380AD15AAB729CF25C4397C21C466ACE
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: Unknown
+	OEM Information: 0x00000000
+	Height: 10 U
+	Number Of Power Cords: 6
+	Contained Elements: 0
+	SKU Number: 8721LRG
+
+Handle 0x00B0, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW1-1 : PCH ME recovery
+
+Handle 0x00B2, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW1-2 : Switch ME security override
+
+Handle 0x00B4, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW1-3 : PWR permession enable
+
+Handle 0x00B6, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW1-4 : Force IMM reset
+
+Handle 0x00B8, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW2-1 : Low security
+
+Handle 0x00BA, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW2-2 : FM ESPI EN
+
+Handle 0x00BC, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW2-3 : IMM FPGA UEFI recovery image BUF
+
+Handle 0x00BE, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW2-4 : By pass IMM reset control
+
+Handle 0x00C0, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW5-1 : Password override
+
+Handle 0x00C2, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW5-2 : Switch set TPM PP
+
+Handle 0x00C4, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW5-3 : PCH RTCRST
+
+Handle 0x00C6, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW5-4 : Debug serial port select
+
+Handle 0x00C8, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW8-1 : IMM SPI0 half ROM EN
+
+Handle 0x00CA, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW8-2 : IMM FPGA PWR button out
+
+Handle 0x00CC, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW8-3 : IMM force update
+
+Handle 0x00CE, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: SW8-4 : DIP WOL disable
+
+Handle 0x00F1, DMI type 13, 22 bytes
+BIOS Language Information
+	Language Description Format: Long
+	Installable Languages: 11
+		en|US|iso8859-1
+		zh|CN|unicode
+		zh|TW|unicode
+		fr|FR|iso8859-1
+		de|DE|iso8859-1
+		it|IT|iso8859-1
+		ja|JP|unicode
+		ko|KR|unicode
+		pt|BR|iso8859-1
+		es|ES|iso8859-1
+		ru|RU|iso8859-5
+	Currently Installed Language: en|US|iso8859-1
+
+Handle 0x000D, DMI type 32, 20 bytes
+System Boot Information
+	Status: No errors detected
+
+Handle 0x00E9, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Onboard LAN1
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 1
+	Bus Address: 0000:0c:00.0
+
+Handle 0x00EA, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Onboard LAN2
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 2
+	Bus Address: 0000:0c:00.1
+
+Handle 0x00EB, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Onboard LAN3
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 3
+	Bus Address: 0000:0c:00.2
+
+Handle 0x00EC, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Onboard LAN4
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 4
+	Bus Address: 0000:0c:00.3
+
+Handle 0x00ED, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Onboard VGA
+	Type: Video
+	Status: Enabled
+	Type Instance: 5
+	Bus Address: 0000:02:00.0
+
+Handle 0x00EE, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: PCH Integrated SATA Controller
+	Type: SATA Controller
+	Status: Enabled
+	Type Instance: 6
+	Bus Address: 0000:00:17.0
+
+Handle 0x00EF, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: PCH Integrated SSATA Controller
+	Type: SATA Controller
+	Status: Enabled
+	Type Instance: 7
+	Bus Address: 0000:00:11.5
+

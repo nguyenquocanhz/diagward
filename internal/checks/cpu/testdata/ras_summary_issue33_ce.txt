@@ -1,0 +1,7 @@
+Memory controller events summary:
+	Corrected on DIMM Label(s): 'CPU1_E0' location: 3:1:0:-1 errors: 1987314
+
+No PCIe AER errors.
+
+No Extlog errors.
+

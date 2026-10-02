@@ -1,0 +1,244 @@
+# persistent=1 tz=+0700
+#list
+IDX BOOT ID                          FIRST ENTRY                 LAST ENTRY
+-29 df06d1b43b2d41b39c9507a54055bf7b Fri 2026-09-18 12:20:25 +07 Fri 2026-09-18 12:24:15 +07
+-28 5aa625ad836a49749718d989aafee750 Fri 2026-09-18 13:18:19 +07 Fri 2026-09-18 13:20:04 +07
+-27 34e27a66bd3545a397218fbb19ce4626 Fri 2026-09-18 13:22:08 +07 Fri 2026-09-18 13:22:47 +07
+-26 c34ae14f3b064eae9c3997806ac909b2 Fri 2026-09-18 13:23:52 +07 Fri 2026-09-18 13:26:12 +07
+-25 dad3673f9e94441fbd8501d768e6a4dc Fri 2026-09-18 13:27:35 +07 Fri 2026-09-18 13:42:40 +07
+-24 b40797106471495e85b47f3268b2f159 Fri 2026-09-18 13:44:58 +07 Fri 2026-09-18 13:46:46 +07
+-23 3b401b029a9941d3869dcdffcee0781b Fri 2026-09-18 14:30:40 +07 Fri 2026-09-18 14:41:00 +07
+-22 9d02ff4736b54d798d6271ded682215f Wed 2026-09-23 22:09:50 +07 Wed 2026-09-23 22:10:10 +07
+-21 089fd6c63c0c4d2d85cd48cabe629a3e Wed 2026-09-23 22:54:21 +07 Thu 2026-09-24 00:35:40 +07
+-20 7406fa6037ba4dee964c33e7f6329cbf Fri 2026-09-25 17:56:03 +07 Fri 2026-09-25 17:58:28 +07
+-19 3aa41f78777048b1a5512c2beb827320 Fri 2026-09-25 18:02:07 +07 Fri 2026-09-25 18:03:17 +07
+-18 d8d57c9bd8274ffda92dce37ae88465a Fri 2026-09-25 18:04:45 +07 Fri 2026-09-25 18:06:45 +07
+-17 d734e6d932fd460aa1d074d484f76709 Fri 2026-09-25 18:15:48 +07 Fri 2026-09-25 18:16:11 +07
+-16 b5a7e92577ea4d39a9dd354c32525d2a Fri 2026-09-25 18:17:21 +07 Fri 2026-09-25 18:31:47 +07
+-15 342c6e6c00b34c4dba3430bb7897ce40 Fri 2026-09-25 18:36:57 +07 Fri 2026-09-25 18:54:24 +07
+-14 3b1d6d4fc006488cb3cbe5578e89c96a Fri 2026-09-25 19:17:44 +07 Fri 2026-09-25 19:18:03 +07
+-13 2dfd28a2c053452b80132b912ce8930f Thu 2026-10-01 19:07:52 +07 Thu 2026-10-01 19:08:13 +07
+-12 62b8125cc4c54d558715bfa68f1ac856 Thu 2026-10-01 23:00:27 +07 Thu 2026-10-01 23:00:50 +07
+-11 905dade56d24483e9cf85d1c1e42afd0 Fri 2026-10-02 00:39:09 +07 Fri 2026-10-02 00:40:04 +07
+-10 df5a7d14ea6a45c39b8804df43d7688b Fri 2026-10-02 00:41:31 +07 Fri 2026-10-02 00:42:01 +07
+ -9 4a427d54a16b4e5a909971b61d3d684d Fri 2026-10-02 00:51:08 +07 Fri 2026-10-02 00:51:31 +07
+ -8 f77c38f7a9864bf3863892b9aa0348e9 Fri 2026-10-02 01:07:14 +07 Fri 2026-10-02 01:07:32 +07
+ -7 555163b58b1541a380c08f24182fadf3 Fri 2026-10-02 01:13:03 +07 Fri 2026-10-02 01:14:07 +07
+ -6 083c58068a9f48fb8677f5ff99269ade Fri 2026-10-02 01:16:35 +07 Fri 2026-10-02 01:17:02 +07
+ -5 70588ce8e6684c6ca3c2bafd844d72eb Fri 2026-10-02 01:20:18 +07 Fri 2026-10-02 01:49:12 +07
+ -4 6ce1236153e44a038ca3d64ddb139ac5 Fri 2026-10-02 14:00:05 +07 Fri 2026-10-02 14:00:23 +07
+ -3 b777d8b5291542b28a14915d0281f845 Fri 2026-10-02 14:10:22 +07 Fri 2026-10-02 14:10:41 +07
+ -2 c81a046d09f042acb05c044717670066 Fri 2026-10-02 14:11:56 +07 Fri 2026-10-02 14:12:15 +07
+ -1 949f3328b5da4481bc1f53628ddbf557 Fri 2026-10-02 14:21:54 +07 Fri 2026-10-02 14:25:58 +07
+  0 1d267b18fa774106b2acba1aa649f399 Fri 2026-10-02 14:28:21 +07 Fri 2026-10-02 14:51:07 +07
+#boot -10
+2026-10-02T00:42:00+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: mnt-wslg.mount: Deactivated successfully.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T00:42:00+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T00:42:01+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -9
+2026-10-02T00:51:31+07:00 devbox systemd[1]: mnt-wslg.mount: Deactivated successfully.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T00:51:31+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T00:51:31+07:00 devbox systemd-journald[58]: Journal stopped
+#boot -8
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T01:07:32+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T01:07:32+07:00 devbox systemd-udevd[100]: Failed to remove file descriptor "config-serialization" from the store, ignoring: Connection refused
+2026-10-02T01:07:32+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -7
+2026-10-02T01:14:07+07:00 devbox systemd[1]: mnt-wslg.mount: Deactivated successfully.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T01:14:07+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T01:14:07+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -6
+2026-10-02T01:17:02+07:00 devbox systemd[1]: mnt-wslg.mount: Deactivated successfully.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T01:17:02+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T01:17:02+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -5
+2026-10-02T01:49:12+07:00 devbox systemd[1]: mnt-wslg.mount: Deactivated successfully.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T01:49:12+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T01:49:12+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -4
+2026-10-02T14:00:23+07:00 devbox systemd[1]: mnt-wslg.mount: Deactivated successfully.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T14:00:23+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T14:00:23+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -3
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: mnt-wslg.mount: Deactivated successfully.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T14:10:41+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T14:10:41+07:00 devbox systemd-udevd[99]: Failed to remove file descriptor "config-serialization" from the store, ignoring: Connection refused
+2026-10-02T14:10:41+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -2
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Unmounted mnt-wslg.mount - /mnt/wslg.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: tmp.mount: Deactivated successfully.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Unmounted tmp.mount - Temporary Directory /tmp.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Stopped target local-fs-pre.target - Preparation for Local File Systems.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T14:12:15+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T14:12:15+07:00 devbox systemd-udevd[101]: Failed to remove file descriptor "config-serialization" from the store, ignoring: Connection refused
+2026-10-02T14:12:15+07:00 devbox systemd-journald[52]: Journal stopped
+#boot -1
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Stopped target swap.target - Swaps.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Reached target umount.target - Unmount All Filesystems.
+2026-10-02T14:25:58+07:00 devbox dmeventd[11662]: dmeventd detected break while being idle for 21 second(s), exiting.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Stopping dm-event.service - Device-mapper event daemon...
+2026-10-02T14:25:58+07:00 devbox dmeventd[11662]: dmeventd shutting down.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: systemd-remount-fs.service: Deactivated successfully.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Stopped systemd-remount-fs.service - Remount Root and Kernel File Systems.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev.service: Deactivated successfully.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev.service - Create Static Device Nodes in /dev.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: systemd-tmpfiles-setup-dev-early.service: Deactivated successfully.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Stopped systemd-tmpfiles-setup-dev-early.service - Create Static Device Nodes in /dev gracefully.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: dm-event.service: Deactivated successfully.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Stopped dm-event.service - Device-mapper event daemon.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Reached target shutdown.target - System Shutdown.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Reached target final.target - Late Shutdown Services.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: systemd-poweroff.service: Deactivated successfully.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Finished systemd-poweroff.service - System Power Off.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Reached target poweroff.target - System Power Off.
+2026-10-02T14:25:58+07:00 devbox systemd[1]: Shutting down.
+2026-10-02T14:25:58+07:00 devbox systemd-journald[52]: Journal stopped
+

@@ -1,0 +1,16 @@
+# source=journal persistent=1 tz=+0700
+2026-09-20T07:00:01+07:00 srv01 mdadm[2200]: DegradedArray event detected on md device /dev/md5
+2026-09-29T08:00:00+07:00 srv01 smartd[1102]: Device: /dev/sdb [SAT], 8 Currently unreadable (pending) sectors
+2026-09-29T08:00:00+07:00 srv01 smartd[1102]: Device: /dev/sdb [SAT], 8 Offline uncorrectable sectors
+2026-09-29T08:30:00+07:00 srv01 smartd[1102]: Device: /dev/sdc [SAT], 1 Currently unreadable (pending) sectors
+2026-09-30T08:30:00+07:00 srv01 smartd[1102]: Device: /dev/sdc [SAT], No more Currently unreadable (pending) sectors, warning condition reset
+2026-09-30T09:00:00+07:00 srv01 smartd[1102]: Device: /dev/sdd [SAT], SMART Prefailure Attribute: 5 Reallocated_Sector_Ct changed from 100 to 99
+2026-09-30T09:00:00+07:00 srv01 smartd[1102]: Device: /dev/sdd [SAT], ATA error count increased from 0 to 3
+2026-09-30T09:00:00+07:00 srv01 smartd[1102]: Device: /dev/sdd [SAT], SMART Usage Attribute: 194 Temperature_Celsius changed from 64 to 65
+2026-09-30T10:00:00+07:00 srv01 smartd[1102]: Device: /dev/bus/0 [megaraid_disk_03] [SAT], FAILED SMART self-check. BACK UP DATA NOW!
+2026-09-30T10:00:00+07:00 srv01 smartd[1102]: Device: /dev/nvme0, Critical Warning (0x04): Reliability
+2026-09-30T11:00:00+07:00 srv01 smartd[1102]: Device: /dev/sda [SAT], Temperature 61 Celsius reached limit of 60 Celsius (Min/Max 25/61)
+2026-10-01T07:00:00+07:00 srv01 mdadm[2200]: Fail event detected on md device /dev/md0, component device /dev/sdb1
+2026-10-01T07:00:01+07:00 srv01 mdadm[2200]: DegradedArray event detected on md device /dev/md0
+2026-10-01T07:00:05+07:00 srv01 mdadm[2200]: RebuildFinished event detected on md device /dev/md1
+# rc=0

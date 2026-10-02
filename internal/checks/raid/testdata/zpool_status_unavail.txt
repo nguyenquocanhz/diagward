@@ -1,0 +1,17 @@
+  pool: testpool
+ state: DEGRADED
+status: One or more devices could not be used because the label is missing or
+        invalid.  Sufficient replicas exist for the pool to continue
+        functioning in a degraded state.
+action: Replace the device using 'zpool replace'.
+   see: https://openzfs.github.io/openzfs-docs/msg/ZFS-8000-4J
+  scan: scrub repaired 0B in 00:00:00 with 0 errors on Tue Sep 24 23:07:59 2024
+config:
+
+        NAME                      STATE     READ WRITE CKSUM
+        testpool                  DEGRADED     0     0     0
+          mirror-0                DEGRADED     0     0     0
+            /mnt/poolfiles/file0  UNAVAIL      0     0     0  corrupted data
+            /mnt/poolfiles/file1  ONLINE       0     0     0
+
+errors: No known data errors

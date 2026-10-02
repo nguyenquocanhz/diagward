@@ -1,0 +1,14 @@
+slot=0000:03:00.0
+class=0x010400
+vendor=0x103c
+device=0x3239
+subsystem_vendor=0x103c
+subsystem_device=0x21c5
+driver=hpsa
+lspci_Slot=03:00.0
+lspci_Class=RAID bus controller [0104]
+lspci_Vendor=Hewlett-Packard Company [103c]
+lspci_Device=Smart Array Gen9 Controllers [3239]
+lspci_SVendor=Hewlett-Packard Company [103c]
+lspci_SDevice=P440ar [21c5]
+

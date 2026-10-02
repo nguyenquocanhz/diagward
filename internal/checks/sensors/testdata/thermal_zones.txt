@@ -1,0 +1,14 @@
+/sys/class/thermal/thermal_zone0/type=acpitz
+/sys/class/thermal/thermal_zone1/type=x86_pkg_temp
+/sys/class/thermal/thermal_zone2/type=pch_cannonlake
+/sys/class/thermal/thermal_zone0/temp=27800
+/sys/class/thermal/thermal_zone1/temp=47000
+/sys/class/thermal/thermal_zone2/temp=52000
+/sys/class/thermal/thermal_zone0/trip_point_0_temp=105000
+/sys/class/thermal/thermal_zone1/trip_point_0_temp=0
+/sys/class/thermal/thermal_zone1/trip_point_1_temp=0
+/sys/class/thermal/thermal_zone2/trip_point_0_temp=115000
+/sys/class/thermal/thermal_zone0/trip_point_0_type=critical
+/sys/class/thermal/thermal_zone1/trip_point_0_type=passive
+/sys/class/thermal/thermal_zone1/trip_point_1_type=passive
+/sys/class/thermal/thermal_zone2/trip_point_0_type=critical

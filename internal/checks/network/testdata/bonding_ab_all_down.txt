@@ -1,0 +1,26 @@
+Ethernet Channel Bonding Driver: v6.18.40.1-microsoft-standard-WSL2
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: None
+Currently Active Slave: None
+MII Status: down
+MII Polling Interval (ms): 100
+Up Delay (ms): 0
+Down Delay (ms): 0
+Peer Notification Delay (ms): 0
+
+Slave Interface: eno1
+MII Status: down
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 82:ad:2e:a7:3e:f1
+Slave queue ID: 0
+
+Slave Interface: eno2
+MII Status: down
+Speed: 10000 Mbps
+Duplex: full
+Link Failure Count: 0
+Permanent HW addr: 7a:44:91:b7:73:2f
+Slave queue ID: 0

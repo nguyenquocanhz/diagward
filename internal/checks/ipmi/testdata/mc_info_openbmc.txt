@@ -1,0 +1,20 @@
+Device ID                 : 0
+Device Revision           : 0
+Firmware Revision         : 0.00
+IPMI Version              : 2.0
+Manufacturer ID           : 42817
+Manufacturer Name         : Unknown (0xA741)
+Product ID                : 16975 (0x424f)
+Product Name              : Unknown (0x424F)
+Device Available          : yes
+Provides Device SDRs      : yes
+Additional Device Support :
+    Sensor Device
+    SEL Device
+    FRU Inventory Device
+    Chassis Device
+Aux Firmware Rev Info     :
+    0x01
+    0x62
+    0x00
+    0x00

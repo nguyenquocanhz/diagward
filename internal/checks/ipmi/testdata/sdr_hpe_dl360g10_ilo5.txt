@@ -1,0 +1,98 @@
+UID              | AEh | ok  | 23.1 | 
+SysHealth_Stat   | ACh | ok  | 23.1 | Transition to OK
+01-Inlet Ambient | A2h | ok  | 55.1 | 19 degrees C
+02-CPU 1         | 02h | ok  |  3.1 | 40 degrees C
+03-CPU 2         | 03h | ok  |  3.2 | 40 degrees C
+04-P1 DIMM 1-6   | 24h | ok  | 32.11 | 29 degrees C
+05-PMM 1-6       | FEh | ns  |  7.1 | Disabled
+06-P1 DIMM 7-12  | 25h | ok  | 32.12 | 29 degrees C
+07-PMM 7-12      | FDh | ns  |  7.1 | Disabled
+08-P2 DIMM 1-6   | 26h | ok  | 32.13 | 32 degrees C
+09-PMM 1-6       | FCh | ns  |  7.1 | Disabled
+10-P2 DIMM 7-12  | 27h | ok  | 32.14 | 31 degrees C
+11-PMM 7-12      | FBh | ns  |  7.1 | Disabled
+12-HD Max        | 98h | ns  |  4.3 | Disabled
+13-Exp Bay Drive | 96h | ns  |  4.1 | Disabled
+14-Stor Batt 1   | BFh | ok  | 40.1 | 19 degrees C
+15-Front Ambient | A3h | ok  | 55.2 | 21 degrees C
+16-VR P1         | 0Ah | ok  | 20.1 | 34 degrees C
+17-VR P2         | 0Bh | ok  | 20.2 | 36 degrees C
+18-VR P1 Mem 1   | 61h | ok  | 20.21 | 25 degrees C
+19-VR P1 Mem 2   | 62h | ok  | 20.22 | 25 degrees C
+20-VR P2 Mem 1   | 63h | ok  | 20.23 | 27 degrees C
+21-VR P2 Mem 2   | 64h | ok  | 20.24 | 29 degrees C
+22-Chipset       | A4h | ok  |  7.1 | 37 degrees C
+23-BMC           | FAh | ok  |  7.1 | 66 degrees C
+24-BMC Zone      | F9h | ok  |  7.1 | 37 degrees C
+25-HD Controller | B3h | ok  | 11.1 | 52 degrees C
+26-HD Cntlr Zone | F8h | ok  |  7.1 | 28 degrees C
+27-LOM           | B4h | ok  | 11.3 | 44 degrees C
+28-LOM Card      | B5h | ns  | 11.4 | Disabled
+29-I/O Zone      | F7h | ok  |  7.1 | 29 degrees C
+30-PCI 1         | 84h | ns  | 49.1 | Disabled
+31-PCI 1 Zone    | F6h | ok  |  7.1 | 30 degrees C
+32-PCI 2         | 85h | ns  | 49.2 | Disabled
+33-PCI 2 Zone    | F5h | ok  |  7.1 | 30 degrees C
+34-PCI 3         | 86h | ns  | 49.3 | Disabled
+35-PCI 3 Zone    | F4h | ns  |  7.1 | Disabled
+37-Rear HD Max   | 99h | ns  |  4.4 | Disabled
+38-Battery Zone  | F3h | ok  |  7.1 | 32 degrees C
+39-P/S 1 Inlet   | 4Bh | ok  | 10.1 | 30 degrees C
+40-P/S 2 Inlet   | 4Ch | ok  | 10.2 | 32 degrees C
+41-P/S 1         | 43h | ok  | 10.1 | 40 degrees C
+42-P/S 2         | 44h | ok  | 10.2 | 40 degrees C
+43-E-Fuse        | A5h | ok  | 20.0 | 30 degrees C
+44-P/S 2 Zone    | F2h | ok  |  7.1 | 34 degrees C
+61-AHCI HD Max   | F1h | ns  |  7.1 | Disabled
+69-PCI 1 M2      | F0h | ns  |  7.1 | Disabled
+70-PCI 1 M2 Zn   | EFh | ns  |  7.1 | Disabled
+71-PCI 2 M2      | EEh | ns  |  7.1 | Disabled
+72-PCI 2 M2 Zn   | EDh | ns  |  7.1 | Disabled
+73-PCI 3 M2      | ECh | ns  |  7.1 | Disabled
+74-PCI 3 M2 Zn   | EBh | ns  |  7.1 | Disabled
+Fan 1            | 03h | ok  | 29.1 | Transition to OK
+Fan 1 DutyCycle  | 01h | ok  | 29.1 | 39.98 percent
+Fan 1 Presence   | 02h | ok  | 29.1 | Device Present
+Fan 2            | 06h | ok  | 29.2 | Transition to OK
+Fan 2 DutyCycle  | 04h | ok  | 29.2 | 39.98 percent
+Fan 2 Presence   | 05h | ok  | 29.2 | Device Present
+Fan 3            | 09h | ok  | 29.3 | Transition to OK
+Fan 3 DutyCycle  | 07h | ok  | 29.3 | 39.98 percent
+Fan 3 Presence   | 08h | ok  | 29.3 | Device Present
+Fan 4            | 0Ch | ok  | 29.4 | Transition to OK
+Fan 4 DutyCycle  | 0Ah | ok  | 29.4 | 39.98 percent
+Fan 4 Presence   | 0Bh | ok  | 29.4 | Device Present
+Fan 5            | 0Fh | ok  | 29.5 | Transition to OK
+Fan 5 DutyCycle  | 0Dh | ok  | 29.5 | 39.98 percent
+Fan 5 Presence   | 0Eh | ok  | 29.5 | Device Present
+Fan 6            | 12h | ok  | 29.6 | Transition to OK
+Fan 6 DutyCycle  | 10h | ok  | 29.6 | 39.98 percent
+Fan 6 Presence   | 11h | ok  | 29.6 | Device Present
+Fan 7            | 15h | ok  | 29.7 | Transition to OK
+Fan 7 DutyCycle  | 13h | ok  | 29.7 | 39.98 percent
+Fan 7 Presence   | 14h | ok  | 29.7 | Device Present
+Power Supply 1   | 32h | ok  | 10.1 | Presence detected
+PS 1 Output      | 3Ah | ok  | 10.1 | 105 Watts
+Power Supply 2   | 33h | ok  | 10.2 | Presence detected
+PS 2 Output      | 3Bh | ok  | 10.2 | 130 Watts
+Power Meter      | B6h | ok  |  7.1 | 250 Watts
+Fans             | 31h | ok  | 30.1 | Fully Redundant
+Power Supplies   | 42h | ok  | 19.1 | Fully Redundant
+Memory Status    | 48h | ok  | 32.0 | Presence Detected
+Megacell Status  | BBh | ok  | 40.1 | Presence Detected
+Intrusion        | ABh | ns  | 23.1 | Disabled
+CPU Utilization  | 23h | ok  |  3.1 | 48 unspecified
+LOM_Link_P1      | 01h | ns  | 44.97 | Disabled
+LOM_Link_P2      | 02h | ns  | 44.98 | Disabled
+LOM_Link_P3      | 03h | ns  | 44.99 | Disabled
+LOM_Link_P4      | 04h | ns  | 44.100 | Disabled
+ALOM_Link_P1     | 01h | ok  | 44.97 | Heartbeat
+ALOM_Link_P2     | 02h | ns  | 44.98 | Disabled
+ALOM_Link_P3     | 03h | ns  | 44.99 | Disabled
+ALOM_Link_P4     | 04h | ns  | 44.100 | Disabled
+Dr_Stat_1I1_B001 | 02h | ns  |  0.0 | No Reading
+Dr_Stat_1I1_B002 | 03h | ns  |  0.0 | No Reading
+Dr_Stat_1I1_B003 | 04h | ns  |  0.0 | No Reading
+Dr_Stat_1I1_B004 | 05h | ns  |  0.0 | No Reading
+CPU_Stat_C1      | 12h | ok  |  3.1 | Presence detected
+CPU_Stat_C2      | 13h | ok  |  3.2 | Presence detected

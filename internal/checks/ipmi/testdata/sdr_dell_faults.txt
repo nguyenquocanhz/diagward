@@ -1,0 +1,21 @@
+Fan1             | 30h | ok  |  7.1 | 5880 RPM
+Fan2             | 31h | ok  |  7.1 | 5760 RPM
+Fan3             | 32h | lcr |  7.1 | 0 RPM
+Inlet Temp       | 04h | ok  |  7.1 | 23 degrees C
+Exhaust Temp     | 01h | ok  |  7.1 | 38 degrees C
+Temp             | 0Eh | ucr |  3.1 | 98 degrees C
+Temp             | 0Fh | ok  |  3.2 | 52 degrees C
+Current 1        | 6Ah | ok  | 10.1 | 0.60 Amps
+Current 2        | 6Bh | ns  | 10.2 | No Reading
+Voltage 1        | 6Ch | ok  | 10.1 | 230 Volts
+Voltage 2        | 6Dh | ns  | 10.2 | No Reading
+Pwr Consumption  | 77h | ok  |  7.1 | 140 Watts
+PS1 Status       | E0h | ok  | 10.1 | Presence detected
+PS2 Status       | E1h | ok  | 10.2 | Presence detected, Failure detected
+PS Redundancy    | 74h | ok  |  7.1 | Redundancy Lost
+Intrusion        | 73h | ok  |  7.1 | General Chassis intrusion
+Drive 0          | 80h | ok  | 26.1 | Drive Present, Drive Fault
+ECC Uncorr Err   | 02h | ns  | 34.1 | No Reading
+PS1 PG FAIL      | 09h | ok  |  7.1 | State Deasserted
+PS2 PG FAIL      | 0Ah | ok  |  7.1 | State Deasserted
+Unable to send command: Invalid argument

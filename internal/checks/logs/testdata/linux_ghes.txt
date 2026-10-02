@@ -1,0 +1,20 @@
+# source=journal persistent=1 tz=+0000
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]: Hardware error from APEI Generic Hardware Error Source: 1
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]: It has been corrected by h/w and requires no further action
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]: event severity: corrected
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]:  Error 0, type: corrected
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]:  fru_text: B1
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]:   section_type: memory error
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]:   physical_address: 0x000000183f1a3c80
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]:   node: 1 card: 1 module: 0 rank: 1 bank: 3 row: 18215 column: 912
+2026-09-30T20:11:05+00:00 srv02 kernel: {1}[Hardware Error]:   error_type: 2, single-bit ECC
+2026-09-30T22:40:13+00:00 srv02 kernel: {2}[Hardware Error]: Hardware error from APEI Generic Hardware Error Source: 0
+2026-09-30T22:40:13+00:00 srv02 kernel: {2}[Hardware Error]: event severity: recoverable
+2026-09-30T22:40:13+00:00 srv02 kernel: {2}[Hardware Error]:  Error 0, type: recoverable
+2026-09-30T22:40:13+00:00 srv02 kernel: {2}[Hardware Error]:   section_type: PCIe error
+2026-09-30T22:40:13+00:00 srv02 kernel: {2}[Hardware Error]:   port_type: 4, root port
+2026-09-30T23:01:00+00:00 srv02 kernel: mce: [Hardware Error]: CPU 0: Machine Check: 0 Bank 4: be00000000800400
+2026-09-30T23:01:00+00:00 srv02 kernel: mce: [Hardware Error]: TSC 0 ADDR 1234abcd MISC 86
+2026-09-30T23:01:00+00:00 srv02 kernel: mce: [Hardware Error]: PROCESSOR 0:50654 TIME 1790809260 SOCKET 0 APIC 0 microcode 2006906
+2026-09-30T23:05:00+00:00 srv02 kernel: Memory failure: 0x183f1a3: recovery action for dirty LRU page: Recovered
+# rc=0

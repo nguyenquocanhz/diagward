@@ -1,0 +1,1 @@
+[{"InstanceName":"SCSI\\Disk&Ven_INTEL&Prod_SSDSC2KB480G8\\4&2a4b5c6d&0&000000_0","Active":true,"PredictFailure":false,"Reason":0},{"InstanceName":"SCSI\\Disk&Ven_SEAGATE&Prod_ST4000NM0025\\5&1f2e3d4c&0&000400_0","Active":true,"PredictFailure":true,"Reason":5}]

@@ -1,0 +1,27 @@
+{
+"Controllers":[
+{
+	"Command Status" : {
+		"CLI Version" : "007.1616.0000.0000 Dec 24, 2020",
+		"Operating system" : "Linux 5.10.0-23-amd64",
+		"Controller" : 0,
+		"Status" : "Success",
+		"Description" : "Show Drive Rebuild Status Succeeded."
+	},
+	"Response Data" : [
+		{
+			"Drive-ID" : "/c0/e252/s0",
+			"Progress%" : "-",
+			"Status" : "Not in progress",
+			"Estimated Time Left" : "-"
+		},
+		{
+			"Drive-ID" : "/c0/e252/s5",
+			"Progress%" : 36,
+			"Status" : "In progress",
+			"Estimated Time Left" : "1 Hours 13 Minutes"
+		}
+	]
+}
+]
+}

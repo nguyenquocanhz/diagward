@@ -80,8 +80,7 @@ func Duration(d time.Duration) model.Text {
 // Hours formats a power-on-hours counter ("3 years 2 months (27,900 h)").
 func Hours(h uint64) model.Text {
 	d := Duration(time.Duration(h) * time.Hour)
-	n := Thousands(h)
-	return model.Text{EN: fmt.Sprintf("%s (%s h)", d.EN, n), VI: fmt.Sprintf("%s (%s giờ)", d.VI, n)}
+	return model.Text{EN: fmt.Sprintf("%s (%s h)", d.EN, Thousands(h)), VI: fmt.Sprintf("%s (%s giờ)", d.VI, ThousandsVI(h))}
 }
 
 // Thousands formats n with thousands separators (27,900).
@@ -96,6 +95,12 @@ func Thousands(n uint64) string {
 	}
 	return b.String()
 }
+
+// ThousandsVI formats n the Vietnamese way, with dots (27.900).
+func ThousandsVI(n uint64) string { return strings.ReplaceAll(Thousands(n), ",", ".") }
+
+// Count formats n for both languages (27,900 / 27.900).
+func Count(n uint64) model.Text { return model.Text{EN: Thousands(n), VI: ThousandsVI(n)} }
 
 // Evidence trims a list of raw lines for Finding.Evidence: at most max lines,
 // each at most 300 characters, with a final "... N more" line.

@@ -1,0 +1,36 @@
+CPU Temp         | 01h | ok  |  3.1 | 36 degrees C
+PCH Temp         | 0Ah | ok  |  7.3 | 47 degrees C
+System Temp      | 0Bh | ok  |  7.1 | 26 degrees C
+Peripheral Temp  | 0Ch | ok  |  7.2 | 36 degrees C
+VcpuVRM Temp     | 10h | ok  |  8.1 | 38 degrees C
+VmemABVRM Temp   | 12h | ok  |  8.2 | 32 degrees C
+VmemCDVRM Temp   | 13h | ok  |  8.3 | 25 degrees C
+DIMMA1 Temp      | B0h | ok  | 32.64 | 37 degrees C
+DIMMA2 Temp      | B1h | ok  | 32.65 | 39 degrees C
+DIMMB1 Temp      | B4h | ok  | 32.68 | 38 degrees C
+DIMMB2 Temp      | B5h | ok  | 32.69 | 36 degrees C
+DIMMC1 Temp      | B8h | ok  | 32.72 | 38 degrees C
+DIMMC2 Temp      | B9h | ok  | 32.73 | 38 degrees C
+DIMMD1 Temp      | BCh | ok  | 32.76 | 36 degrees C
+DIMMD2 Temp      | BDh | ok  | 32.77 | 36 degrees C
+FAN1             | 41h | ok  | 29.1 | 900 RPM
+FAN2             | 42h | ns  | 29.2 | No Reading
+FAN3             | 43h | ok  | 29.3 | 800 RPM
+FAN4             | 44h | ok  | 29.4 | 3900 RPM
+FAN5             | 45h | ns  | 29.5 | No Reading
+FANA             | 47h | ns  | 29.7 | No Reading
+FANB             | 48h | ok  | 29.8 | 900 RPM
+FANC             | 49h | ns  | 29.9 | No Reading
+12V              | 30h | ok  |  7.17 | 11.94 Volts
+5VCC             | 31h | ok  |  7.33 | 4.97 Volts
+3.3VCC           | 32h | ok  |  7.32 | 3.30 Volts
+VBAT             | 33h | ok  |  7.18 | 3.16 Volts
+Vcpu             | 34h | ok  |  3.2 | 1.80 Volts
+VDIMMAB          | 35h | ok  | 32.1 | 1.20 Volts
+VDIMMCD          | 37h | ok  | 32.2 | 1.20 Volts
+5VSB             | 38h | ok  |  7.15 | 4.95 Volts
+3.3VSB           | 39h | ok  |  7.16 | 3.28 Volts
+1.5V PCH         | 3Ch | ok  |  7.19 | 1.50 Volts
+1.2V BMC         | 3Dh | ok  |  7.20 | 1.21 Volts
+1.05V PCH        | 3Eh | ok  |  7.21 | 1.05 Volts
+Chassis Intru    | AAh | ok  | 23.1 | 

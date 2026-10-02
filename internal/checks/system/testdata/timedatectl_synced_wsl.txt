@@ -1,0 +1,7 @@
+               Local time: Fri 2026-10-02 14:37:42 +07
+           Universal time: Fri 2026-10-02 07:37:42 UTC
+                 RTC time: Fri 2026-10-02 07:37:41
+                Time zone: Asia/Bangkok (+07, +0700)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no

@@ -1,0 +1,129 @@
+# dmidecode 3.4
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2.0 present.
+Table at 0x68D2F000.
+
+Handle 0x0000, DMI type 0, 26 bytes
+BIOS Information
+	Vendor: Dell Inc.
+	Version: 2.22.1
+	Release Date: 08/09/2024
+	Address: 0xF0000
+	Runtime Size: 64 kB
+	ROM Size: 32 MB
+	Characteristics:
+		ISA is supported
+		PCI is supported
+		PNP is supported
+		BIOS is upgradeable
+		BIOS shadowing is allowed
+		Boot from CD is supported
+		Selectable boot is supported
+		EDD is supported
+		Japanese floppy for Toshiba 1.2 MB is supported (int 13h)
+		5.25"/360 kB floppy services are supported (int 13h)
+		5.25"/1.2 MB floppy services are supported (int 13h)
+		3.5"/720 kB floppy services are supported (int 13h)
+		8042 keyboard services are supported (int 9h)
+		Serial services are supported (int 14h)
+		CGA/mono video services are supported (int 10h)
+		ACPI is supported
+		USB legacy is supported
+		BIOS boot specification is supported
+		Function key-initiated network boot is supported
+		Targeted content distribution is supported
+		UEFI is supported
+	BIOS Revision: 2.22
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+	Manufacturer: Dell Inc.
+	Product Name: PowerEdge R740
+	Version: Not Specified
+	Serial Number: --
+	UUID: --
+	Wake-up Type: Power Switch
+	SKU Number: SKU=0715;ModelName=PowerEdge R740
+	Family: PowerEdge
+
+Handle 0x0200, DMI type 2, 8 bytes
+Base Board Information
+	Manufacturer: Dell Inc.
+	Product Name: 01YM03
+	Version: A02
+	Serial Number: --
+
+Handle 0x0300, DMI type 3, 22 bytes
+Chassis Information
+	Manufacturer: Dell Inc.
+	Type: Rack Mount Chassis
+	Lock: Present
+	Version: Not Specified
+	Serial Number: --
+	Asset Tag: --
+	Boot-up State: Safe
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: Unknown
+	OEM Information: 0x00000000
+	Height: 2 U
+	Number Of Power Cords: Unspecified
+	Contained Elements: 0
+	SKU Number: Not Specified
+
+Handle 0x0C00, DMI type 12, 5 bytes
+System Configuration Options
+	Option 1: NVRAM_CLR: Clear user settable NVRAM areas and set defaults
+	Option 2: PWRD_EN: Close to enable password
+
+Handle 0x0D00, DMI type 13, 22 bytes
+BIOS Language Information
+	Language Description Format: Long
+	Installable Languages: 1
+		en|US|iso8859-1
+	Currently Installed Language: en|US|iso8859-1
+
+Handle 0x2000, DMI type 32, 11 bytes
+System Boot Information
+	Status: No errors detected
+
+Handle 0x2900, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Integrated NIC 1
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 1
+	Bus Address: 0000:18:00.0
+
+Handle 0x2901, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Integrated NIC 2
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 2
+	Bus Address: 0000:18:00.1
+
+Handle 0x2902, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Integrated NIC 3
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 3
+	Bus Address: 0000:19:00.0
+
+Handle 0x2903, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Integrated NIC 4
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 4
+	Bus Address: 0000:19:00.1
+
+Handle 0x2904, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded Video
+	Type: Video
+	Status: Enabled
+	Type Instance: 1
+	Bus Address: 0000:03:00.0
+

@@ -1,0 +1,17 @@
+# Build outputs
+/dist/
+/bin/
+*.exe
+*.test
+*.test.linux
+
+# Saved bundles and generated reports from local runs
+*.dwb
+diagward-*.html
+diagward-*.md
+
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

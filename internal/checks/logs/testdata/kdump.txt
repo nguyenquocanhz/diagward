@@ -1,0 +1,8 @@
+# now=1790845220 root=1
+d /var/crash
+f 1790712764 2147483648 /var/crash/127.0.0.1-2026-09-30-03:12:44/vmcore
+f 1790712764 65536 /var/crash/127.0.0.1-2026-09-30-03:12:44/vmcore-dmesg.txt
+p /var/crash/127.0.0.1-2026-09-30-03:12:44/vmcore-dmesg.txt	[81234.567890] mce: [Hardware Error]: CPU 0: Machine Check Exception: 5 Bank 4: b200000000070f0f
+p /var/crash/127.0.0.1-2026-09-30-03:12:44/vmcore-dmesg.txt	[81234.567999] Kernel panic - not syncing: Fatal machine check
+f 1699974780 1073741824 /var/crash/202311142213/dump.202311142213
+f 1699974780 98304 /var/crash/202311142213/dmesg.202311142213

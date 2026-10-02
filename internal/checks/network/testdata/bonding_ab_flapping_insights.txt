@@ -1,0 +1,27 @@
+Ethernet Channel Bonding Driver: v3.7.1 (April 27, 2011)
+
+Bonding Mode: fault-tolerance (active-backup)
+Primary Slave: em3 (primary_reselect failure)
+Currently Active Slave: em3
+MII Status: up
+MII Polling Interval (ms): 0
+Up Delay (ms): 0
+Down Delay (ms): 0
+ARP Polling Interval (ms): 1000
+ARP IP target/s (n.n.n.n form): 10.152.1.1
+
+Slave Interface: em3
+MII Status: up
+Speed: 1000 Mbps
+Duplex: full
+Link Failure Count: 92028
+Permanent HW addr: 00:1f:f3:af:d3:f1
+Slave queue ID: 0
+
+Slave Interface: p2p3
+MII Status: up
+Speed: 1000 Mbps
+Duplex: full
+Link Failure Count: 71524
+Permanent HW addr: 00:1f:f3:af:d3:f1
+Slave queue ID: 0

@@ -1,0 +1,166 @@
+# dmidecode 3.1
+Getting SMBIOS data from sysfs.
+SMBIOS 3.2.1 present.
+# SMBIOS implementations newer than version 3.1.1 are not
+# fully supported by this version of dmidecode.
+Table at 0x94F34000.
+
+Handle 0x0003, DMI type 0, 26 bytes
+BIOS Information
+	Vendor: HPE
+	Version: I41
+	Release Date: 04/18/2019
+	Address: 0xF0000
+	Runtime Size: 64 kB
+	ROM Size: 64 MB
+	Characteristics:
+		PCI is supported
+		PNP is supported
+		BIOS is upgradeable
+		BIOS shadowing is allowed
+		ESCD support is available
+		Boot from CD is supported
+		Selectable boot is supported
+		EDD is supported
+		5.25"/360 kB floppy services are supported (int 13h)
+		5.25"/1.2 MB floppy services are supported (int 13h)
+		3.5"/720 kB floppy services are supported (int 13h)
+		Print screen service is supported (int 5h)
+		8042 keyboard services are supported (int 9h)
+		Serial services are supported (int 14h)
+		Printer services are supported (int 17h)
+		CGA/mono video services are supported (int 10h)
+		ACPI is supported
+		USB legacy is supported
+		BIOS boot specification is supported
+		Function key-initiated network boot is supported
+		Targeted content distribution is supported
+		UEFI is supported
+	BIOS Revision: 2.4
+	Firmware Revision: 1.40
+
+Handle 0x0063, DMI type 1, 27 bytes
+System Information
+	Manufacturer: HPE
+	Product Name: ProLiant BL460c Gen10
+	Version: Not Specified
+	Serial Number: --
+	UUID: --
+	Wake-up Type: Power Switch
+	SKU Number: 863442-B21
+	Family: ProLiant
+
+Handle 0x006B, DMI type 3, 17 bytes
+Chassis Information
+	Manufacturer: HPE
+	Type: Blade
+	Lock: Not Present
+	Version: Not Specified
+	Serial Number: --
+	Asset Tag: --
+	...
+	Power Supply State: Unknown
+	Thermal State: Unknown
+	Security Status: Unknown
+	OEM Information: 0x00000000
+
+Handle 0x0079, DMI type 2, 15 bytes
+Base Board Information
+	Manufacturer: HPE
+	Product Name: ProLiant BL460c Gen10
+	Version: Not Specified
+	Serial Number: --
+	Asset Tag: --
+	...
+		Board is a hosting board
+		Board is removable
+		Board is replaceable
+	Location In Chassis: Chassis Bay Number: 12
+	Chassis Handle: 0x006B
+	Type: Motherboard
+	Contained Object Handles: 0
+
+Handle 0x007C, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 1
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 1
+	Bus Address: 0000:37:00.0
+
+Handle 0x007D, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 2
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 2
+	Bus Address: 0000:37:00.1
+
+Handle 0x007E, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 3
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 3
+	Bus Address: 0000:37:00.2
+
+Handle 0x007F, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 4
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 4
+	Bus Address: 0000:37:00.3
+
+Handle 0x0080, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 5
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 5
+	Bus Address: 0000:37:00.4
+
+Handle 0x0081, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 6
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 6
+	Bus Address: 0000:37:00.5
+
+Handle 0x0082, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 7
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 7
+	Bus Address: 0000:37:00.6
+
+Handle 0x0083, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded FlexibleLOM 1 Port 8
+	Type: Ethernet
+	Status: Enabled
+	Type Instance: 8
+	Bus Address: 0000:37:00.7
+
+Handle 0x0084, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded RAID 1
+	Type: SAS Controller
+	Status: Enabled
+	Type Instance: 1
+	Bus Address: 0000:38:00.0
+
+Handle 0x0085, DMI type 41, 11 bytes
+Onboard Device
+	Reference Designation: Embedded Device
+	Type: Video
+	Status: Enabled
+	Type Instance: 1
+	Bus Address: 0000:01:00.1
+
+Handle 0x008B, DMI type 32, 11 bytes
+System Boot Information
+	Status: No errors detected
+

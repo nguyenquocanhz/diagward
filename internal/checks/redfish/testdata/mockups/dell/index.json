@@ -1,0 +1,19 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#ServiceRoot.ServiceRoot",
+  "@odata.id": "/redfish/v1",
+  "@odata.type": "#ServiceRoot.v1_11_0.ServiceRoot",
+  "AccountService": {"@odata.id": "/redfish/v1/AccountService"},
+  "Chassis": {"@odata.id": "/redfish/v1/Chassis"},
+  "Description": "Root Service",
+  "Id": "RootService",
+  "Links": {"Sessions": {"@odata.id": "/redfish/v1/SessionService/Sessions"}},
+  "Managers": {"@odata.id": "/redfish/v1/Managers"},
+  "Name": "Root Service",
+  "Oem": {"Dell": {"@odata.type": "#DellServiceRoot.v1_0_0.DellServiceRoot", "IsBranded": 0, "ManagerMACAddress": "d0:94:66:00:00:01", "ServiceTag": "CLFV7M2"}},
+  "Product": "Integrated Dell Remote Access Controller",
+  "ProtocolFeaturesSupported": {"ExpandQuery": {"ExpandAll": true, "Levels": true, "Links": true, "MaxLevels": 1, "NoLinks": true}, "FilterQuery": true, "SelectQuery": true},
+  "RedfishVersion": "1.11.0",
+  "SessionService": {"@odata.id": "/redfish/v1/SessionService"},
+  "Systems": {"@odata.id": "/redfish/v1/Systems"},
+  "Vendor": "Dell"
+}

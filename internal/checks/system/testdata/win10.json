@@ -1,0 +1,81 @@
+{
+ "finished": "2026-10-02T14:57:53.24484+07:00",
+ "format": 1,
+ "host": "test-host",
+ "options": {
+  "maxLines": 0,
+  "sinceDays": 7,
+  "timeout": 0
+ },
+ "os": "windows",
+ "sections": [
+  {
+   "ms": 720,
+   "name": "meta.ident",
+   "out": "[{\"hostname\":\"dw-testhost\",\"fqdn\":\"dw-testhost\",\"user\":\"dw-testhost\\\\admin\",\"admin\":false,\"caption\":\"Microsoft Windows 10 Pro\",\"version\":\"10.0.19045\",\"build\":\"19045\",\"arch\":\"AMD64\",\"lastBoot\":\"2026-10-01T03:16:30.5000000Z\",\"now\":\"2026-10-02T07:57:35.7083838Z\",\"ps\":\"5.1.19041.6456\",\"collector\":\"dev\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 40,
+   "name": "meta.virt",
+   "out": "[{\"manufacturer\":\"Acer\",\"model\":\"AN515-55\",\"hypervisorPresent\":true,\"biosManufacturer\":\"Insyde Corp.\",\"biosVersion\":\"V1.10\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 52,
+   "name": "system.win_computer",
+   "out": "[{\"Manufacturer\":\"Acer\",\"Model\":\"AN515-55\",\"SystemFamily\":\"Type1Family\",\"SystemSKUNumber\":\"0000000000000000\",\"TotalPhysicalMemory\":17002713088,\"NumberOfProcessors\":1,\"NumberOfLogicalProcessors\":8,\"SystemType\":\"x64-based PC\",\"Domain\":\"WORKGROUP\",\"PartOfDomain\":false,\"HypervisorPresent\":true}]",
+   "rc": 0
+  },
+  {
+   "ms": 40,
+   "name": "system.win_bios",
+   "out": "[{\"Manufacturer\":\"Insyde Corp.\",\"SerialNumber\":\"1234567890123456789012\",\"SMBIOSBIOSVersion\":\"V1.10\",\"ReleaseDate\":\"2020-11-19T00:00:00.0000000Z\",\"Version\":\"ACRSYS - 2\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 13,
+   "name": "system.win_baseboard",
+   "out": "[{\"Manufacturer\":\"CML\",\"Product\":\"Karoq_CMS\",\"SerialNumber\":\"BOARDSERIAL0001\",\"Version\":\"V1.10\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 47,
+   "name": "system.win_enclosure",
+   "out": "[{\"Manufacturer\":\"Acer\",\"SerialNumber\":\"Chassis Serial Number\",\"SMBIOSAssetTag\":\"                      \",\"ChassisTypes\":[10]}]",
+   "rc": 0
+  },
+  {
+   "ms": 153,
+   "name": "system.win_os",
+   "out": "[{\"Caption\":\"Microsoft Windows 10 Pro\",\"Version\":\"10.0.19045\",\"BuildNumber\":\"19045\",\"OSArchitecture\":\"64-bit\",\"LastBootUpTime\":\"2026-10-01T03:16:30.5000000Z\",\"InstallDate\":\"2025-12-20T10:30:30.0000000Z\",\"LocalDateTime\":\"2026-10-02T07:57:36.1360000Z\",\"TotalVisibleMemorySize\":16604212,\"FreePhysicalMemory\":1305704}]",
+   "rc": 0
+  },
+  {
+   "ms": 1057,
+   "name": "system.win_cpu",
+   "out": "[{\"Name\":\"Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz\",\"Manufacturer\":\"GenuineIntel\",\"NumberOfCores\":4,\"NumberOfLogicalProcessors\":8,\"SocketDesignation\":\"U3E1\",\"MaxClockSpeed\":2496}]",
+   "rc": 0
+  },
+  {
+   "ms": 259,
+   "name": "system.win_reboot",
+   "out": "[{\"cbsRebootPending\":false,\"wuRebootRequired\":false,\"pendingFileRename\":true}]",
+   "rc": 0
+  },
+  {
+   "ms": 4578,
+   "name": "system.win_perf",
+   "out": "[{\"ProcessorQueueLength\":0,\"PercentProcessorTime\":36,\"DiskPercentIdleTime\":98,\"DiskAvgQueueLength\":0,\"SystemUpTime\":103267},{\"ProcessorQueueLength\":0,\"PercentProcessorTime\":23,\"DiskPercentIdleTime\":99,\"DiskAvgQueueLength\":0,\"SystemUpTime\":103269},{\"ProcessorQueueLength\":0,\"PercentProcessorTime\":73,\"DiskPercentIdleTime\":98,\"DiskAvgQueueLength\":0,\"SystemUpTime\":103271}]",
+   "rc": 0
+  },
+  {
+   "ms": 3,
+   "name": "meta.done",
+   "out": "[{\"now\":\"2026-10-02T07:57:53.2050559Z\"}]",
+   "rc": 0
+  }
+ ],
+ "started": "2026-10-02T14:57:32.7891506+07:00",
+ "tool": "dwdev"
+}

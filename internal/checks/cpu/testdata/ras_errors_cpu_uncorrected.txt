@@ -1,0 +1,19 @@
+No Memory errors.
+
+PCIe AER events:
+1 2026-09-28 03:11:09 +0700 0000:3b:00.0 Corrected error: Receiver Error
+
+No Extlog errors.
+
+No devlink errors.
+
+Disk errors
+1 2026-09-29 08:00:01 +0700 error: dev=8:0, sector=12345, nr_sector=8, error='I/O error', rwbs='R', cmd='',
+
+No Memory failure errors.
+
+MCE events:
+1 2026-06-01 10:00:00 +0700 error: Generic CACHE Level-2 Generic Error, bank 2, mcg mcgstatus=0, mci Corrected_error Error_enabled, mcgcap=0x0f000c14, status=0x9000004000010005, cpu=0x00000003, socketid=0x00000000, bank=0x00000002
+2 2026-09-29 22:14:05 +0700 error: Generic CACHE Level-2 Generic Error, bank 2, mcg mcgstatus=0, mci Corrected_error Error_enabled, mcgcap=0x0f000c14, status=0x9000004000010005, cpu=0x00000003, socketid=0x00000000, bank=0x00000002
+3 2026-09-30 01:02:03 +0700 error: Data CACHE Level-0 Data-Read Error, bank 1, mcg mcgstatus=0x0000000f, mci Uncorrected_error Error_enabled SRAR, mcgcap=0x0f000c14, status=0xbd80000000100134, addr=0x6696d1040, cpu=0x00000015, socketid=0x00000000, bank=0x00000001
+

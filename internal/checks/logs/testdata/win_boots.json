@@ -1,0 +1,2 @@
+[{"t":"2026-09-29T20:33:20.8419991Z","p":"User32","id":1074,"l":4,"m":"The process C:\\Windows\\system32\\shutdown.exe (SRV01) has initiated the restart of computer SRV01 on behalf of user CORP\\admin for the following reason: Operating System: Service pack (Planned)","x":["C:\\Windows\\system32\\shutdown.exe (SRV01)","SRV01","Operating System: Service pack (Planned)","0x80020010"]},
+{"t":"2026-09-29T20:35:00.0000000Z","p":"EventLog","id":6005,"l":4,"m":"The Event log service was started.","x":[""]}]

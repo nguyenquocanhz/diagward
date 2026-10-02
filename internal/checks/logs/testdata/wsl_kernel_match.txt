@@ -1,0 +1,36 @@
+# source=journal persistent=1 tz=+0700
+2026-10-02T14:31:40+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:31:41+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:31:52+07:00 devbox kernel: bond9: now running without any active interface!
+2026-10-02T14:32:20+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:32:20+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:32:20+07:00 devbox kernel: bond9: now running without any active interface!
+2026-10-02T14:32:24+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:32:24+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:32:24+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:33:42+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:33:42+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:33:42+07:00 devbox kernel: bond9: now running without any active interface!
+2026-10-02T14:33:42+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:33:42+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:33:42+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:34:24+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:34:24+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:34:24+07:00 devbox kernel: bond9: now running without any active interface!
+2026-10-02T14:34:24+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:34:24+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:34:24+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:35:41+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:35:41+07:00 devbox kernel: bond9: (slave dw9b): link status definitely down, disabling slave
+2026-10-02T14:35:41+07:00 devbox kernel: bond9: now running without any active interface!
+2026-10-02T14:35:41+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:35:41+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:35:41+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:36:54+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:36:54+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:36:54+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:42:01+07:00 devbox kernel: EXT4-fs (loop1): error count since last fsck: 3
+2026-10-02T14:42:01+07:00 devbox kernel: EXT4-fs (loop1): initial error at time 1789979400: ext4_lookup:0
+2026-10-02T14:42:01+07:00 devbox kernel: EXT4-fs (loop1): last error at time 1790648100: ext4_lookup:0
+# rc=0
+

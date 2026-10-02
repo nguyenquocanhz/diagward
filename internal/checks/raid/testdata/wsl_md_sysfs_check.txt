@@ -1,0 +1,5 @@
+/sys/block/md91/md/array_state=clean
+/sys/block/md91/md/degraded=0
+/sys/block/md91/md/sync_action=check
+/sys/block/md91/md/sync_completed=0 / 258048
+/sys/block/md91/md/mismatch_cnt=0

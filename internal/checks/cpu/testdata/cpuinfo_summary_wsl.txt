@@ -1,0 +1,11 @@
+2	processors
+2	hypervisor
+2	cpu family=6
+2	vendor_id=GenuineIntel
+2	cpu cores=1
+2	model=165
+2	model name=Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz
+2	microcode=0xffffffff
+2	stepping=2
+2	siblings=2
+2	physical id=0

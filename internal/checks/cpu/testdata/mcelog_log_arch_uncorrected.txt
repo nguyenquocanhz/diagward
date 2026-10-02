@@ -1,0 +1,17 @@
+Hardware event. This is not a software error.
+MCE 0
+CPU 0 BANK 5
+MISC 178a0000086 ADDR fef873c0
+TIME 1468330671 Tue Jul 12 21:37:51 2016
+MCG status:
+MCi status:
+Error overflow
+Uncorrected error
+MCi_MISC register valid
+MCi_ADDR register valid
+Processor context corrupt
+MCA: corrected filtering (some unreported errors in same region)
+Generic CACHE Level-2 Generic Error
+STATUS ee0000000040110a MCGSTATUS 0
+MCGCAP c07 APICID 0 SOCKETID 0
+CPUID Vendor Intel Family 6 Model 69

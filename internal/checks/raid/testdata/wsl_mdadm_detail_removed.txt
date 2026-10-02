@@ -1,0 +1,26 @@
+/dev/md90:
+           Version : 1.2
+     Creation Time : Fri Oct  2 14:24:30 2026
+        Raid Level : raid1
+        Array Size : 130048 (127.00 MiB 133.17 MB)
+     Used Dev Size : 130048 (127.00 MiB 133.17 MB)
+      Raid Devices : 2
+     Total Devices : 1
+       Persistence : Superblock is persistent
+
+       Update Time : Fri Oct  2 14:24:41 2026
+             State : clean, degraded 
+    Active Devices : 1
+   Working Devices : 1
+    Failed Devices : 0
+     Spare Devices : 0
+
+Consistency Policy : resync
+
+              Name : DESKTOP-ARP8AJ1:90  (local to host DESKTOP-ARP8AJ1)
+              UUID : 878d1e52:792ab0c1:bf176ccf:0d162be6
+            Events : 20
+
+    Number   Major   Minor   RaidDevice State
+       0       7        0        0      active sync   /dev/loop0
+       -       0        0        1      removed

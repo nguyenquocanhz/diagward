@@ -1,0 +1,6 @@
+Personalities : [raid1] [raid4] [raid5] [raid6] 
+md90 : active raid1 loop1[1] loop0[0]
+      130048 blocks super 1.2 [2/2] [UU]
+      [>....................]  resync =  3.1% (4096/130048) finish=1.0min speed=2048K/sec
+      
+unused devices: <none>

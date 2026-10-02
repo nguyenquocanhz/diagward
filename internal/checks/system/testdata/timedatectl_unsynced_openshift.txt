@@ -1,0 +1,7 @@
+               Local time: Tue 2020-03-10 18:20:02 UTC
+           Universal time: Tue 2020-03-10 18:20:02 UTC
+                 RTC time: Tue 2020-03-10 18:36:53
+                Time zone: UTC (UTC, +0000)
+System clock synchronized: no
+              NTP service: active
+          RTC in local TZ: no

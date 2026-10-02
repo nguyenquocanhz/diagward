@@ -1,0 +1,24 @@
+Memory errors
+SOCKET 1 CHANNEL any DIMM any
+corrected memory errors:
+	2654 total
+	100 in 24h
+uncorrected memory errors:
+	0 total
+	0 in 24h
+
+SOCKET 1 CHANNEL 3 DIMM any
+corrected memory errors:
+	1003 total
+	10 in 24h
+uncorrected memory errors:
+	0 total
+	0 in 24h
+
+SOCKET 1 CHANNEL 3 DIMM 0
+corrected memory errors:
+	1651 total
+	10 in 24h
+uncorrected memory errors:
+	0 total
+	0 in 24h

@@ -117,7 +117,7 @@ func RemoteCommand(os string) string {
 // psBootstrap reads the whole script from stdin as UTF-8 and runs it. It is
 // passed with -EncodedCommand so no shell on the way can mangle it.
 func psBootstrap() string {
-	const boot = `$ErrorActionPreference='Continue';` +
+	const boot = `$ProgressPreference='SilentlyContinue';$ErrorActionPreference='Continue';` +
 		`$in=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),(New-Object System.Text.UTF8Encoding $false));` +
 		`$s=$in.ReadToEnd();Invoke-Expression $s`
 	u := utf16.Encode([]rune(boot))

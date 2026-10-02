@@ -108,11 +108,15 @@ function DW-Text([string]$Name, [scriptblock]$Script) {
   DW-Emit $Name $out ($errs -join "`n") $rc $sw.ElapsedMilliseconds ''
 }
 
-# DW-Exe NAME EXE [ARGS...] — run an external program under the timeout.
-# Records missing=EXE when it cannot be found.
-function DW-Exe([string]$Name, [string]$Exe, [string[]]$ArgList = @()) {
+# DW-Run EXE [ARGS] [WORKDIR] [TIMEOUT_S] — run an external program under the
+# timeout and RETURN @{Out; Err; Rc; Ms; Flags; Path} without emitting, for
+# snippets that post-process output (loop over devices, redact). Returns
+# $null when EXE cannot be found. WORKDIR keeps vendor CLIs from dropping
+# log files in the caller's directory.
+function DW-Run([string]$Exe, [string[]]$ArgList = @(), [string]$WorkDir = '', [int]$TimeoutS = 0) {
   $path = DW-FindExe $Exe
-  if (-not $path) { DW-Missing $Name $Exe; return }
+  if (-not $path) { return $null }
+  if ($TimeoutS -le 0) { $TimeoutS = $DW_TIMEOUT_S }
   $sw = [Diagnostics.Stopwatch]::StartNew()
   $quoted = foreach ($a in $ArgList) {
     if ($a -match '[\s"]') { '"' + ($a -replace '"', '\"') + '"' } else { $a }
@@ -124,12 +128,15 @@ function DW-Exe([string]$Name, [string]$Exe, [string[]]$ArgList = @()) {
   $psi.RedirectStandardOutput = $true
   $psi.RedirectStandardError = $true
   $psi.CreateNoWindow = $true
+  if ($WorkDir) { $psi.WorkingDirectory = $WorkDir }
   $flags = ''
+  $out = ''
+  $err = ''
   try {
     $p = [Diagnostics.Process]::Start($psi)
     $ot = $p.StandardOutput.ReadToEndAsync()
     $et = $p.StandardError.ReadToEndAsync()
-    if ($p.WaitForExit($DW_TIMEOUT_S * 1000)) {
+    if ($p.WaitForExit($TimeoutS * 1000)) {
       $p.WaitForExit()
       $rc = $p.ExitCode
     } else {
@@ -141,10 +148,17 @@ function DW-Exe([string]$Name, [string]$Exe, [string[]]$ArgList = @()) {
     $err = $et.Result
   } catch {
     $rc = 1
-    $out = ''
     $err = $_.ToString()
   }
-  DW-Emit $Name $out $err $rc $sw.ElapsedMilliseconds $flags
+  return @{ Out = $out; Err = $err; Rc = $rc; Ms = $sw.ElapsedMilliseconds; Flags = $flags; Path = $path }
+}
+
+# DW-Exe NAME EXE [ARGS...] [WORKDIR] — run an external program under the
+# timeout and emit it. Records missing=EXE when it cannot be found.
+function DW-Exe([string]$Name, [string]$Exe, [string[]]$ArgList = @(), [string]$WorkDir = '') {
+  $r = DW-Run $Exe $ArgList $WorkDir
+  if ($null -eq $r) { DW-Missing $Name $Exe; return }
+  DW-Emit $Name $r.Out $r.Err $r.Rc $r.Ms $r.Flags
 }
 
 # DW-Missing NAME WHAT / DW-Skip NAME REASON

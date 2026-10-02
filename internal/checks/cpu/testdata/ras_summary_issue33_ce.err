@@ -1,0 +1,2 @@
+DBD::SQLite::db prepare failed: no such table: devlink_event at /usr/sbin/ras-mc-ctl line 1183.
+Can't call method "execute" on an undefined value at /usr/sbin/ras-mc-ctl line 1184.

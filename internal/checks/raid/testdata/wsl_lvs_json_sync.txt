@@ -1,0 +1,17 @@
+  {
+      "report": [
+          {
+              "lv": [
+                  {"lv_name":"dwlv", "vg_name":"dwvg", "segtype":"raid1", "lv_health_status":"", "sync_percent":"12.56", "raid_mismatch_count":"0", "lv_attr":"rwi-a-r---", "devices":"dwlv_rimage_0(0),dwlv_rimage_1(0)"},
+                  {"lv_name":"[dwlv_rimage_0]", "vg_name":"dwvg", "segtype":"linear", "lv_health_status":"", "sync_percent":"", "raid_mismatch_count":"", "lv_attr":"iwi-aor---", "devices":"/dev/loop2(1)"},
+                  {"lv_name":"[dwlv_rimage_1]", "vg_name":"dwvg", "segtype":"linear", "lv_health_status":"", "sync_percent":"", "raid_mismatch_count":"", "lv_attr":"Iwi-aor---", "devices":"/dev/loop3(1)"},
+                  {"lv_name":"[dwlv_rmeta_0]", "vg_name":"dwvg", "segtype":"linear", "lv_health_status":"", "sync_percent":"", "raid_mismatch_count":"", "lv_attr":"ewi-aor---", "devices":"/dev/loop2(0)"},
+                  {"lv_name":"[dwlv_rmeta_1]", "vg_name":"dwvg", "segtype":"linear", "lv_health_status":"", "sync_percent":"", "raid_mismatch_count":"", "lv_attr":"ewi-aor---", "devices":"/dev/loop3(0)"},
+                  {"lv_name":"plain", "vg_name":"dwvg", "segtype":"linear", "lv_health_status":"", "sync_percent":"", "raid_mismatch_count":"", "lv_attr":"-wi-a-----", "devices":"/dev/loop2(51)"}
+              ]
+          }
+      ]
+      ,
+      "log": [
+      ]
+  }

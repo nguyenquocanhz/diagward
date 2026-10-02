@@ -1,0 +1,43 @@
+{
+"Controllers":[
+{
+	"Command Status" : {
+		"CLI Version" : "007.1616.0000.0000 Dec 24, 2020",
+		"Operating system" : "Linux 5.10.0-23-amd64",
+		"Controller" : 0,
+		"Status" : "Success",
+		"Description" : "None"
+	},
+	"Response Data" : {
+		"Cachevault_Info" : [
+			{
+				"Property" : "Type",
+				"Value" : "CVPM02"
+			},
+			{
+				"Property" : "Temperature",
+				"Value" : "28 C"
+			},
+			{
+				"Property" : "State",
+				"Value" : "Failed"
+			}
+		],
+		"Firmware_Status" : [
+			{
+				"Property" : "Replacement required",
+				"Value" : "Yes"
+			},
+			{
+				"Property" : "No space to cache offload",
+				"Value" : "No"
+			},
+			{
+				"Property" : "Module microcode update required",
+				"Value" : "No"
+			}
+		]
+	}
+}
+]
+}

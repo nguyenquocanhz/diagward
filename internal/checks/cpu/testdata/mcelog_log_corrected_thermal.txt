@@ -1,0 +1,40 @@
+Hardware event. This is not a software error.
+MCE 0
+CPU 6 BANK 7 TSC 1a2b3c4d5e6f
+MISC 140000086 ADDR 1a3f2c400
+TIME 1790000000 Mon Sep 21 14:13:20 2026
+MCG status:
+MCi status:
+Corrected error
+Error enabled
+MCi_MISC register valid
+MCi_ADDR register valid
+MCA: MEMORY CONTROLLER RD_CHANNEL1_ERR
+Transaction: Memory read error
+STATUS 8c00004000010091 MCGSTATUS 0
+MCGCAP 1000c16 APICID c SOCKETID 0
+CPUID Vendor Intel Family 6 Model 63
+Hardware event. This is not a software error.
+MCE 1
+CPU 2 THERMAL EVENT TSC 2b3c4d5e6f70
+TIME 1790500000 Sun Sep 27 09:06:40 2026
+Processor 2 heated above trip temperature. Throttling enabled.
+Please check your system cooling. Performance will be impacted
+STATUS 88060000 MCGSTATUS 0
+MCGCAP 1000c16 APICID 2 SOCKETID 0
+CPUID Vendor Intel Family 6 Model 63
+Hardware event. This is not a software error.
+MCE 2
+CPU 4 BANK 3 TSC 3c4d5e6f7081
+TIME 1790600000 Mon Sep 28 12:53:20 2026
+MCG status:
+MCi status:
+Corrected error
+Error enabled
+Threshold based error status: yellow
+Large number of corrected cache errors. System operating, but might lead
+to uncorrected errors soon
+MCA: Generic CACHE Level-2 Generic Error
+STATUS 9020000000010005 MCGSTATUS 0
+MCGCAP 1000c16 APICID 8 SOCKETID 1
+CPUID Vendor Intel Family 6 Model 63

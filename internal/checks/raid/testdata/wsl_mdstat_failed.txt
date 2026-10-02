@@ -1,0 +1,8 @@
+Personalities : [raid1] [raid4] [raid5] [raid6] 
+md91 : active raid5 loop4[4] loop5[3](S) loop3[1] loop2[0]
+      258048 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/3] [UUU]
+      
+md90 : active raid1 loop1[1](F) loop0[0]
+      130048 blocks super 1.2 [2/1] [U_]
+      
+unused devices: <none>

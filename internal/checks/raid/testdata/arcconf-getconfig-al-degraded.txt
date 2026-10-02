@@ -1,0 +1,168 @@
+Controllers found: 1
+----------------------------------------------------------------------
+Controller information
+----------------------------------------------------------------------
+   Controller Status                        : Optimal
+   Controller Mode                          : RAID (Expose RAW)
+   Channel description                      : SAS/SATA
+   Controller Model                         : Adaptec ASR8805
+   Controller Serial Number                 : 7A4567890AB
+   Controller World Wide Name               : 50000D1100000000
+   Physical Slot                            : 1
+   Temperature                              : 52 C/ 125 F (Normal)
+   Installed memory                         : 1024 MB
+   Copyback                                 : Disabled
+   Background consistency check             : Disabled
+   Automatic Failover                       : Enabled
+   Global task priority                     : High
+   Defunct disk drive count                 : 1
+   Logical devices/Failed/Degraded          : 1/0/1
+   NCQ status                               : Enabled
+   --------------------------------------------------------
+   Controller Version Information
+   --------------------------------------------------------
+   BIOS                                     : 7.5-0 (32033)
+   Firmware                                 : 7.5-0 (32033)
+   Driver                                   : 1.2-1 (41010)
+   Boot Flash                               : 7.5-0 (32033)
+   --------------------------------------------------------
+   Controller ZMM Information
+   --------------------------------------------------------
+   Status                                   : ZMM Failed
+   Supercap Status                          : Failed
+
+----------------------------------------------------------------------
+Logical Device number 0
+   Logical Device name                      : LogicalDrv 0
+   Block Size of member drives              : 512 Bytes
+   RAID level                               : 10
+   Unique Identifier                        : 488046B2
+   Status of Logical Device                 : Degraded
+   Additional details                       : Quick initialized
+   Size                                     : 915446 MB
+   Parity space                             : 915456 MB
+   Stripe-unit size                         : 256 KB
+   Interface Type                           : Serial ATA
+   Device Type                              : HDD
+   Read-cache setting                       : Enabled
+   Read-cache status                        : On
+   Write-cache setting                      : Enabled
+   Write-cache status                       : On
+   Partitioned                              : Yes
+   Protected by Hot-Spare                   : No
+   Bootable                                 : Yes
+   Failed stripes                           : No
+   Power settings                           : Disabled
+   --------------------------------------------------------
+   Logical Device segment information
+   --------------------------------------------------------
+   Group 0, Segment 0                       : Present (457862MB, SATA, SSD, Connector:0, Device:0) 7CS009RP
+   Group 0, Segment 1                       : Missing
+   Group 1, Segment 0                       : Present (457862MB, SATA, SSD, Connector:0, Device:2) 7CS00AAD
+   Group 1, Segment 1                       : Present (457862MB, SATA, SSD, Connector:0, Device:3) 7CS00AAH
+
+Physical Device information
+----------------------------------------------------------------------
+      Device #0
+         Device is a Hard drive
+         State                              : Online
+         Block Size                         : 512 Bytes
+         Supported                          : Yes
+         Transfer Speed                     : SATA 6.0 Gb/s
+         Reported Channel,Device(T:L)       : 0,0(0:0)
+         Reported Location                  : Connector 0, Device 0
+         Vendor                             : ATA
+         Model                              : XF1230-1A0480
+         Firmware                           : ST200354
+         Serial number                      : 7CS009RP
+         World-wide name                    : 5000C500813BF05B
+         Reserved Size                      : 138008 KB
+         Used Size                          : 457728 MB
+         Unused Size                        : 64 KB
+         Total Size                         : 457862 MB
+         Write Cache                        : Disabled (write-through)
+         FRU                                : None
+         S.M.A.R.T.                         : No
+         S.M.A.R.T. warnings                : 0
+         Power State                        : Full rpm
+         Supported Power States             : Full power,Powered off
+         SSD                                : Yes
+         NCQ status                         : Enabled
+      Device #1
+         Device is a Hard drive
+         State                              : Failed
+         Block Size                         : 512 Bytes
+         Supported                          : Yes
+         Transfer Speed                     : SATA 6.0 Gb/s
+         Reported Channel,Device(T:L)       : 0,1(1:0)
+         Reported Location                  : Connector 0, Device 1
+         Vendor                             : ATA
+         Model                              : XF1230-1A0480
+         Firmware                           : ST200354
+         Serial number                      : 7CS009RQ
+         World-wide name                    : 5000C500813BF05C
+         Reserved Size                      : 138008 KB
+         Used Size                          : 457728 MB
+         Unused Size                        : 64 KB
+         Total Size                         : 457862 MB
+         Write Cache                        : Disabled (write-through)
+         FRU                                : None
+         S.M.A.R.T.                         : No
+         S.M.A.R.T. warnings                : 0
+         Power State                        : Full rpm
+         Supported Power States             : Full power,Powered off
+         SSD                                : Yes
+         NCQ status                         : Enabled
+      Device #2
+         Device is a Hard drive
+         State                              : Online
+         Block Size                         : 512 Bytes
+         Supported                          : Yes
+         Transfer Speed                     : SATA 6.0 Gb/s
+         Reported Channel,Device(T:L)       : 0,2(2:0)
+         Reported Location                  : Connector 0, Device 2
+         Vendor                             : ATA
+         Model                              : XF1230-1A0480
+         Firmware                           : ST200354
+         Serial number                      : 7CS00AAD
+         World-wide name                    : 5000C500813BF320
+         Reserved Size                      : 138008 KB
+         Used Size                          : 457728 MB
+         Unused Size                        : 64 KB
+         Total Size                         : 457862 MB
+         Write Cache                        : Disabled (write-through)
+         FRU                                : None
+         S.M.A.R.T.                         : No
+         S.M.A.R.T. warnings                : 3
+         Power State                        : Full rpm
+         Supported Power States             : Full power,Powered off
+         SSD                                : Yes
+         NCQ status                         : Enabled
+      Device #3
+         Device is a Hard drive
+         State                              : Online
+         Block Size                         : 512 Bytes
+         Supported                          : Yes
+         Transfer Speed                     : SATA 6.0 Gb/s
+         Reported Channel,Device(T:L)       : 0,3(3:0)
+         Reported Location                  : Connector 0, Device 3
+         Vendor                             : ATA
+         Model                              : XF1230-1A0480
+         Firmware                           : ST200354
+         Serial number                      : 7CS00AAH
+         World-wide name                    : 5000C500813BF324
+         Reserved Size                      : 138008 KB
+         Used Size                          : 457728 MB
+         Unused Size                        : 64 KB
+         Total Size                         : 457862 MB
+         Write Cache                        : Disabled (write-through)
+         FRU                                : None
+         S.M.A.R.T.                         : No
+         S.M.A.R.T. warnings                : 0
+         Power State                        : Full rpm
+         Supported Power States             : Full power,Powered off
+         SSD                                : Yes
+         NCQ status                         : Enabled
+
+
+Command completed successfully.

@@ -1,0 +1,53 @@
+acpitz-virtual-0
+temp1:
+  temp1_input: 8.300
+  temp1_crit: 31.300
+
+power_meter-acpi-0
+power1:
+  power1_average: 0.000
+  power1_average_interval: 300.000
+
+coretemp-isa-0000
+Physical id 0:
+  temp1_input: 77.000
+  temp1_max: 82.000
+  temp1_crit: 92.000
+  temp1_crit_alarm: 0.000
+Core 0:
+  temp2_input: 75.000
+  temp2_max: 82.000
+  temp2_crit: 92.000
+  temp2_crit_alarm: 0.000
+Core 1:
+  temp3_input: 77.000
+  temp3_max: 82.000
+  temp3_crit: 92.000
+  temp3_crit_alarm: 0.000
+
+coretemp-isa-0001
+Physical id 1:
+  temp1_input: 70.000
+  temp1_max: 82.000
+  temp1_crit: 92.000
+  temp1_crit_alarm: 0.000
+Core 0:
+  temp2_input: 66.000
+  temp2_max: 82.000
+  temp2_crit: 92.000
+  temp2_crit_alarm: 0.000
+Core 1:
+  temp3_input: 70.000
+  temp3_max: 82.000
+  temp3_crit: 92.000
+  temp3_crit_alarm: 0.000
+
+atk0110-acpi-0
+Vcore Voltage:
+  in0_input: 1.136
+  in0_min: 0.800
+  in0_max: 1.600
+ +3.3 Voltage:
+  in1_input: 3.360
+  in1_min: 2.970
+  in1_max: 3.630

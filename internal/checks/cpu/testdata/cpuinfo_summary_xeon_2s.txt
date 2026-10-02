@@ -1,0 +1,11 @@
+40	processors
+40	vendor_id=GenuineIntel
+40	model name=Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz
+40	microcode=0xb000040
+40	cpu family=6
+40	model=79
+40	stepping=1
+40	cpu cores=10
+40	siblings=20
+20	physical id=0
+20	physical id=1

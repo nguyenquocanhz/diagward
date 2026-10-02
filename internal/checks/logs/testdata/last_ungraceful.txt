@@ -1,0 +1,8 @@
+# args=-x -F reboot shutdown tz=+0000 now=1790845220
+reboot   system boot  4.18.0-147.5.1.e Wed Sep 30 07:16:25 2026   still running
+reboot   system boot  4.18.0-147.5.1.e Mon Sep 28 07:10:56 2026   still running
+shutdown system down  4.18.0-147.5.1.e Mon Sep 28 06:33:01 2026 - Mon Sep 28 07:10:56 2026  (00:37)
+reboot   system boot  4.18.0-147.5.1.e Thu Sep 24 06:20:11 2026 - Mon Sep 28 06:33:01 2026 (4+00:12)
+reboot   system boot  4.18.0-147.5.1.e Thu Sep 10 06:20:11 2026 - crash                    (14+00:00)
+
+wtmp begins Sat Aug  1 10:00:01 2026

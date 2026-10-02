@@ -1,0 +1,92 @@
+{
+ "finished": "2026-10-02T14:57:02.6318679+07:00",
+ "format": 1,
+ "host": "test-host",
+ "options": {
+  "maxLines": 0,
+  "sinceDays": 7,
+  "timeout": 0
+ },
+ "os": "linux",
+ "sections": [
+  {
+   "name": "meta.ident",
+   "out": "hostname=dw-testhost\nfqdn=dw-testhost.localdomain\nuid=0\nuser=root\nkernel=6.18.40.1-microsoft-standard-WSL2\narch=x86_64\nnow=2026-10-02T07:56:56Z\nuptime=1718.72\ncollector=dev\nshell=/usr/bin/dash\n",
+   "rc": 0
+  },
+  {
+   "name": "meta.osrelease",
+   "out": "PRETTY_NAME=\"Ubuntu 26.04.1 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"26.04\"\nVERSION=\"26.04.1 LTS (Resolute Raccoon)\"\nVERSION_CODENAME=resolute\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=resolute\nLOGO=ubuntu-logo\n",
+   "rc": 0
+  },
+  {
+   "name": "meta.virt",
+   "out": "vm=microsoft\ncontainer=wsl\nwsl=1\nhypervisor_flag=1\npid1_container=wsl\n",
+   "rc": 0
+  },
+  {
+   "ms": 1000,
+   "name": "meta.pm",
+   "out": "apt-get=1\nsudo=1\ntimeout=1\nsystemctl=1\njournalctl=1\n",
+   "rc": 0
+  },
+  {
+   "name": "system.dmidecode",
+   "rc": 0,
+   "skipped": "container"
+  },
+  {
+   "missing": "/sys/class/dmi/id",
+   "name": "system.dmi",
+   "rc": 127
+  },
+  {
+   "name": "system.uptime",
+   "out": "1719.73 3156.11\n",
+   "rc": 0
+  },
+  {
+   "name": "system.loadavg",
+   "out": "0.09 0.10 0.19 1/175 19875\n",
+   "rc": 0
+  },
+  {
+   "name": "system.nproc",
+   "out": "2\n",
+   "rc": 0
+  },
+  {
+   "name": "system.cpuinfo",
+   "out": "processor\t: 0\nvendor_id\t: GenuineIntel\nmodel name\t: Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz\nphysical id\t: 0\nsiblings\t: 2\ncore id\t\t: 0\ncpu cores\t: 1\nprocessor\t: 1\nvendor_id\t: GenuineIntel\nmodel name\t: Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz\nphysical id\t: 0\nsiblings\t: 2\ncore id\t\t: 0\ncpu cores\t: 1\n",
+   "rc": 0
+  },
+  {
+   "name": "system.meminfo",
+   "out": "MemTotal:        1952476 kB\nMemAvailable:    1505560 kB\nSwapTotal:       2097152 kB\nSwapFree:        2097152 kB\n",
+   "rc": 0
+  },
+  {
+   "name": "system.pressure",
+   "out": "cpu some avg10=1.65 avg60=0.32 avg300=0.17 total=26740115\ncpu full avg10=0.00 avg60=0.00 avg300=0.00 total=0\nio some avg10=0.45 avg60=0.10 avg300=0.20 total=24834798\nio full avg10=0.45 avg60=0.10 avg300=0.18 total=19465834\nmemory some avg10=0.00 avg60=0.00 avg300=0.00 total=0\nmemory full avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+   "rc": 0
+  },
+  {
+   "ms": 1000,
+   "name": "system.stat",
+   "out": "cpu  14690 59 7905 315669 3353 0 2079 0 0 0\nbtime 1790926097\nprocs_running 2\nprocs_blocked 0\ncpu  14696 59 7932 315825 3363 0 2082 0 0 0\n",
+   "rc": 0
+  },
+  {
+   "name": "system.tainted",
+   "out": "0\n",
+   "rc": 0
+  },
+  {
+   "name": "meta.done",
+   "out": "now=2026-10-02T07:57:02Z\n",
+   "rc": 0
+  }
+ ],
+ "started": "2026-10-02T14:56:56.0940277+07:00",
+ "tool": "dwdev"
+}

@@ -1,0 +1,8 @@
+  WARNING: Couldn't find device with uuid 3Kx4vM-JpV9-SPsF-mpk6-btDj-XVKX-zgzF6G.
+  WARNING: VG dwvg is missing PV 3Kx4vM-JpV9-SPsF-mpk6-btDj-XVKX-zgzF6G (last written to /dev/loop3).
+  dwlv|dwvg|raid1|partial|100.00|0|rwi-a-r-p-|dwlv_rimage_0(0),dwlv_rimage_1(0)
+  [dwlv_rimage_0]|dwvg|linear||||iwi-aor---|/dev/loop2(1)
+  [dwlv_rimage_1]|dwvg|linear|partial|||Iwi-aor-p-|[unknown](1)
+  [dwlv_rmeta_0]|dwvg|linear||||ewi-aor---|/dev/loop2(0)
+  [dwlv_rmeta_1]|dwvg|linear|partial|||ewi-aor-p-|[unknown](0)
+  plain|dwvg|linear||||-wi-a-----|/dev/loop2(51)

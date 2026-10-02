@@ -196,7 +196,11 @@ type Coverage struct {
 	Name      Text   `json:"name"`             // "S.M.A.R.T. health"
 	State     string `json:"state"`            // one of the Cov* constants
 	Reason    Text   `json:"reason,omitempty"` // why it was skipped/partial
-	Fix       Text   `json:"fix,omitempty"`    // how to enable it, e.g. an install command
+	Fix       Text   `json:"fix,omitempty"`    // how to enable it, in words
+	// Cmd is the one command that enables the check, ready to copy and
+	// paste (e.g. "dnf install -y smartmontools"). Optional; when set, Fix
+	// should not repeat it.
+	Cmd string `json:"cmd,omitempty"`
 }
 
 // Result is what one domain check returns.
@@ -254,6 +258,10 @@ type ComponentSummary struct {
 	Warn      int      `json:"warn"`
 	Info      int      `json:"info"`
 	Checked   bool     `json:"checked"` // at least one check for it ran
+	// Partial is set when the component was checked but some of its checks
+	// were skipped, partial or failed (e.g. disks listed but S.M.A.R.T.
+	// unreadable without root).
+	Partial bool `json:"partial,omitempty"`
 }
 
 // Report is the complete result of one diagnosis.

@@ -1,0 +1,9 @@
+/sys/block/md90/md/array_state=write-pending
+/sys/block/md90/md/degraded=1
+/sys/block/md90/md/sync_action=recover
+/sys/block/md90/md/sync_completed=none
+/sys/block/md90/md/mismatch_cnt=0
+/sys/block/md90/md/raid_disks=2
+/sys/block/md90/md/level=raid1
+/sys/block/md90/md/dev-loop0/state=in_sync
+/sys/block/md90/md/dev-loop1/state=faulty

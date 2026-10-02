@@ -1,0 +1,103 @@
+# dmidecode 2.11
+SMBIOS 2.7 present.
+188 structures occupying 5463 bytes.
+Table at 0xBFFCB000.
+
+Handle 0x0000, DMI type 0, 24 bytes
+BIOS Information
+	Vendor: HP
+	Version: P70
+	Release Date: 03/01/2013
+	Address: 0xF0000
+	Runtime Size: 64 kB
+	ROM Size: 8192 kB
+	Characteristics:
+		PCI is supported
+		PNP is supported
+		BIOS is upgradeable
+		BIOS shadowing is allowed
+		ESCD support is available
+		Boot from CD is supported
+		Selectable boot is supported
+		EDD is supported
+		5.25"/360 kB floppy services are supported (int 13h)
+		5.25"/1.2 MB floppy services are supported (int 13h)
+		3.5"/720 kB floppy services are supported (int 13h)
+		Print screen service is supported (int 5h)
+		j042 keyboard services are supported (int 9h)
+		Serial services are supported (int 14h)
+		Printer services are supported (int 17h)
+		CGA/mono video services are supported (int 10h)
+		ACPI is supported
+		USB legacy is supported
+		BIOS boot specification is supported
+		Function key-initiated network boot is supported
+		Targeted content distribution is supported
+	Firmware Revision: 1.22
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+	Manufacturer: HP
+	Product Name: ProLiant DL380p Gen8
+	Version: Not Specified
+	Serial Number: 2M23360006
+	UUID: 34373936-3439-4D32-3233-333630303036
+	Wake-up Type: Power Switch
+	SKU Number: 697494-S01
+	Family: ProLiant
+
+Handle 0x0300, DMI type 3, 21 bytes
+chassis information
+	manufacturer: hp
+	type: rack mount chassis
+	lock: not present
+	version: not specified
+	serial number: 2m23360006
+	asset Tag:
+	Boot-up State: Safe
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: Unknown
+	OEM Information: 0x00000000
+	Height: 2 U
+	Number Of Power Cords: 2
+	Contained Elements: 0
+
+Handle 0x0401, DMI type 4, 32 bytes
+Processor Information
+	Socket Designation: CPU 1
+	Type: Central Processor
+	Family: Other
+	Manufacturer: Bochs
+	ID: A1 06 02 00 FD FB 8B 17
+	Version: Not Specified
+	Voltage: Unknown
+	External Clock: Unknown
+	Max Speed: 2000 MHz
+	Current Speed: 2000 MHz
+	Status: Populated, Enabled
+	Upgrade: Other
+	L1 Cache Handle: Not Provided
+	L2 Cache Handle: Not Provided
+	L3 Cache Handle: Not Provided
+
+Handle 0x0402, DMI type 4, 32 bytes
+Processor Information
+	Socket Designation: CPU 2
+	Type: Central Processor
+	Family: Other
+	Manufacturer: Bochs
+	ID: A1 06 02 00 FD FB 8B 17
+	Version: Not Specified
+	Voltage: Unknown
+	External Clock: Unknown
+	Max Speed: 2000 MHz
+	Current Speed: 2000 MHz
+	Status: Populated, Enabled
+	Upgrade: Other
+	L1 Cache Handle: Not Provided
+	L2 Cache Handle: Not Provided
+	L3 Cache Handle: Not Provided
+
+Handle 0x0037, DMI type 127, 4 bytes.
+End Of Table

@@ -1,0 +1,54 @@
+{
+"Controllers":[
+{
+	"Command Status" : {
+		"CLI Version" : "007.1616.0000.0000 Dec 24, 2020",
+		"Operating system" : "Linux 5.10.0-23-amd64",
+		"Controller" : 0,
+		"Status" : "Success",
+		"Description" : "None"
+	},
+	"Response Data" : {
+		"/c0/v0" : [
+			{
+				"DG/VD" : "0/0",
+				"TYPE" : "RAID6",
+				"State" : "Optl",
+				"Access" : "RW",
+				"Consist" : "Yes",
+				"Cache" : "RWBD",
+				"Cac" : "-",
+				"sCC" : "OFF",
+				"Size" : "1.745 TB",
+				"Name" : ""
+			}
+		],
+		"PDs for VD 0" : [
+			{"EID:Slt" : "252:0", "DID" : 2, "State" : "Onln", "DG" : 0, "Size" : "893.750 GB", "Intf" : "SATA", "Med" : "SSD", "SED" : "N", "PI" : "N", "SeSz" : "512B", "Model" : "Micron_5200_MTFDDAK960TDC", "Sp" : "U", "Type" : "-"},
+			{"EID:Slt" : "252:1", "DID" : 3, "State" : "Onln", "DG" : 0, "Size" : "893.750 GB", "Intf" : "SATA", "Med" : "SSD", "SED" : "N", "PI" : "N", "SeSz" : "512B", "Model" : "Micron_5200_MTFDDAK960TDC", "Sp" : "U", "Type" : "-"},
+			{"EID:Slt" : "252:5", "DID" : 6, "State" : "Onln", "DG" : 0, "Size" : "893.750 GB", "Intf" : "SATA", "Med" : "SSD", "SED" : "N", "PI" : "N", "SeSz" : "512B", "Model" : "Micron_5200_MTFDDAK960TDC", "Sp" : "U", "Type" : "-"},
+			{"EID:Slt" : "252:4", "DID" : 7, "State" : "Onln", "DG" : 0, "Size" : "893.750 GB", "Intf" : "SATA", "Med" : "SSD", "SED" : "N", "PI" : "N", "SeSz" : "512B", "Model" : "Micron_5200_MTFDDAK960TDC", "Sp" : "U", "Type" : "-"}
+		],
+		"VD0 Properties" : {
+			"Strip Size" : "256 KB",
+			"Number of Blocks" : 3747610624,
+			"VD has Emulated PD" : "No",
+			"Span Depth" : 1,
+			"Number of Drives Per Span" : 4,
+			"Write Cache(initial setting)" : "WriteBack",
+			"Disk Cache Policy" : "Disk's Default",
+			"Encryption" : "None",
+			"Data Protection" : "Disabled",
+			"Active Operations" : "None",
+			"Exposed to OS" : "Yes",
+			"OS Drive Name" : "/dev/sda",
+			"Creation Date" : "12-10-2021",
+			"Creation Time" : "03:45:41 PM",
+			"Emulation type" : "default",
+			"Is LD Ready for OS Requests" : "Yes",
+			"SCSI NAA Id" : "600300570256f1302902a7f5a8e9e2fc"
+		}
+	}
+}
+]
+}

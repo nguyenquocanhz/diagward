@@ -1,0 +1,12 @@
+  pool: rpool
+ state: ONLINE
+  scan: scrub repaired 0B in 00:12:41 with 0 errors on Sun Sep 13 00:36:42 2026
+config:
+
+        NAME                                                  STATE     READ WRITE CKSUM
+        rpool                                                 ONLINE       0     0     0
+          mirror-0                                            ONLINE       0     0     0
+            /dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K0123456-part3  ONLINE       0     0     0
+            /dev/disk/by-id/ata-WDC_WD40EFRX-68N32N0_WD-WCC7K0654321-part3  ONLINE       0     0     0
+
+errors: No known data errors

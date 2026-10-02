@@ -1,0 +1,18 @@
+Memory controller events:
+1 2026-09-20 17:12:47 +0000 6 Corrected error(s): memory read error at CPU1_E0 location: 3:1:0:-1, addr 141633847040, grain 5, syndrome 0  OVERFLOW err_code:0x0101:0x0091 socket:1 imc:1 rank:0 bg:0 ba:0 row:0xf40 col:0x370
+2 2026-09-30 17:12:48 +0000 2 Corrected error(s): memory read error at CPU1_E0 location: 3:1:0:-1, addr 143661227776, grain 5, syndrome 0  OVERFLOW err_code:0x0101:0x0091 socket:1 imc:1 rank:0 bg:0 ba:0 row:0xe76 col:0x370
+3 2026-09-30 21:40:02 +0000 9 Corrected error(s): memory read error at CPU1_E0 location: 3:1:0:-1, addr 143661227776, grain 5, syndrome 0  err_code:0x0101:0x0091 socket:1 imc:1 rank:0 bg:0 ba:0 row:0xe76 col:0x370
+
+No PCIe AER errors.
+
+No Extlog errors.
+
+No devlink errors.
+
+No disk errors.
+
+No Memory failure errors.
+
+MCE events:
+1 2026-09-30 17:12:48 +0000 error: MEMORY CONTROLLER RD_CHANNEL1_ERR Transaction: Memory read error MscodDataRdErr, bank 8, mcg mcgstatus=0, mci Error_overflow Corrected_error Error_enabled, mcgcap=0x0f000c14, status=0xdc00008001010091, addr=0x21730d5f00, misc=0x200400c028201086, cpu=0x00000018, socketid=0x00000001, bank=0x00000008
+

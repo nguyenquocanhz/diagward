@@ -111,7 +111,7 @@ func InstallCommand(env model.Env, pkgs ...string) string {
 	case "yum":
 		cmd = "yum install -y "
 	case "apt":
-		cmd = "apt-get install -y "
+		cmd = "apt-get install -y --no-install-recommends "
 	case "zypper":
 		cmd = "zypper install -y "
 	case "apk":
@@ -123,7 +123,7 @@ func InstallCommand(env model.Env, pkgs ...string) string {
 		case "rhel":
 			cmd = "dnf install -y "
 		case "debian":
-			cmd = "apt-get install -y "
+			cmd = "apt-get install -y --no-install-recommends "
 		default:
 			return ""
 		}
@@ -167,6 +167,32 @@ func Install(env model.Env, tool string) model.Text {
 		return model.Tf("Enable EPEL and install it: %s && %s", "Bật kho EPEL rồi cài: %s && %s", epel, cmd)
 	}
 	return model.Tf("Install it: %s", "Cài đặt: %s", cmd)
+}
+
+// InstallFix returns the coverage Fix text without the command, and the
+// command itself for Coverage.Cmd (copy-paste ready). cmd is "" when there
+// is nothing to run (vendor tools, Windows, unknown package manager); the
+// text then says where to get the tool.
+func InstallFix(env model.Env, tool string) (fix model.Text, cmd string) {
+	if env.OS == "windows" {
+		return Install(env, tool), ""
+	}
+	if t, ok := vendorTools[tool]; ok {
+		return t, ""
+	}
+	pkg := Package(env, tool)
+	if pkg == "" {
+		return model.Tf("Install %s and run Diagward again.", "Cài %s rồi chạy lại Diagward.", tool), ""
+	}
+	cmd = InstallCommand(env, pkg)
+	if cmd == "" {
+		return model.Tf("Install the %s package and run Diagward again.", "Cài gói %s rồi chạy lại Diagward.", pkg), ""
+	}
+	if needsEPEL[pkg] && Family(env) == "rhel" {
+		return model.Tf("Enable EPEL, install %s, then run Diagward again.", "Bật kho EPEL, cài %s rồi chạy lại Diagward.", pkg),
+			InstallCommand(env, "epel-release") + " && " + cmd
+	}
+	return model.Tf("Install %s, then run Diagward again.", "Cài %s rồi chạy lại Diagward.", pkg), cmd
 }
 
 // NeedRoot is the coverage reason for checks that need root/Administrator.

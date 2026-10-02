@@ -1,0 +1,151 @@
+DIAGWARD · Server hardware report
+  Server                srv-db01.khachhang.vn
+  Vendor / model        Dell Inc. PowerEdge R740
+  Serial / service tag  7XK9Q73
+  Operating system      AlmaLinux 9.4 (Seafoam Ocelot)
+  Kernel / build        5.14.0-427.13.1.el9_4.x86_64 x86_64
+  CPU                   2 × Intel Xeon Silver 4214 (24 cores, 48 threads)
+  Memory                192 GiB
+  Mainboard             0YWR7D
+  BIOS                  2.12.2 (2021-07-09)
+  BMC                   iDRAC9 4.40.00.00
+  Uptime                12 days 3 hours
+  Virtual machine       no (physical server)
+  Ran as                normal user (some checks skipped)
+  Collected at          2026-10-01 16:00:20 +07:00
+  Collection took       23 s
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ ✗  ACTION NEEDED NOW                                                                             │
+│    4 critical problems · 3 warnings · 1 note · 8 of 12 components checked                        │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+── COMPONENTS ──────────────────────────────────────────────────────────────────────────────────────
+  – System                        – CPU                           ⚠ Memory (RAM) (1)
+  ✗ Disks (3)                     ✗ RAID & storage pools (1)      – Filesystems
+  ✓ Temperature                   ✓ Fans                          ✗ Power supply (1)
+  – Network                       i Management controller (BMC)   ⚠ System logs (1)
+  ✓ ok  ⚠ warning  ✗ critical  i note  – not checked
+
+── PROBLEMS FOUND (8) ──────────────────────────────────────────────────────────────────────────────
+  1. ✗ Critical · Disks · /dev/sda
+     Disk /dev/sda is failing: 24 sectors could not be read
+     S.M.A.R.T. attribute 197 Current_Pending_Sector = 24 and 198 Offline_Uncorrectable = 24.
+     Sectors that cannot be read mean data on them may already be lost, and the count usually grows
+     quickly.
+     → What to do: Back up the data now. Replace disk /dev/sda (serial ZC1234AB). If it is in a
+       RAID, check the array has rebuilt before pulling the disk.
+     Evidence:
+       │ 197 Current_Pending_Sector  0x0012   100   100   000    Old_age   Always       -       24
+       │ 198 Offline_Uncorrectable   0x0010   100   100   000    Old_age   Offline      -       24
+       │ <script>alert("x")</script>" onmouseover="alert(1)" '><img src=x onerror=alert(2)>
+       │ line with  [31mANSI [0m escape and a    tab and bell 
+
+  2. ✗ Critical · Disks · /dev/sda
+     Disk /dev/sda failed its last self-test
+     → What to do: Replace the disk.
+
+  3. ✗ Critical · RAID & storage pools · md0
+     RAID md0 is degraded [_U]: one member is missing
+     /proc/mdstat shows [2/1] [_U].
+     The array has no redundancy left.
+     → What to do: Back up now, then replace the failed member and re-add it: mdadm --manage
+       /dev/md0 --add /dev/sdX1
+     Evidence:
+       │ md0 : active raid1 sdb1[1]
+       │       976630464 blocks super 1.2 [2/1] [_U]
+
+  4. ✗ Critical · Power supply · PSU2
+     Power supply PSU2 has failed (AC input lost)
+     → What to do: Check the power cord and PDU of PSU2; if power is present, replace PSU2.
+
+  5. ⚠ Warning · Memory (RAM) · DIMM_A1
+     Corrected ECC errors on DIMM_A1 (152 in 7 days)
+     EDAC reports corrected errors on one module. They are fixed by ECC but often precede
+     uncorrectable errors.
+     → What to do: Plan to replace DIMM_A1 at the next maintenance window. Run memtester or the
+       vendor diagnostics to confirm.
+
+  6. ⚠ Warning · Disks · <script>alert("x")</script>" onmouseover="alert(1)" '><img src=x onerror=a…
+     Cable errors on <script>alert("x")</script>" onmouseover="alert(1)" '><img src=x
+     onerror=alert(2)>
+     UDMA_CRC_Error_Count = 31
+     → What to do: Reseat or replace the SATA/SAS cable and backplane slot.
+
+  7. ⚠ Warning · System logs · kernel
+     3 unexpected reboots in 7 days
+     ログ: 予期しない再起動 — 服务器意外重启 🔥 (unicode test)
+     → What to do: Check the BMC event log around each reboot time for power or thermal events.
+
+  8. i Note · Management controller (BMC)
+     SEL is 71% full
+     Old events may be dropped soon.
+
+── CHECKED AND HEALTHY (3) ─────────────────────────────────────────────────────────────────────────
+  ✓ 3 disks passed S.M.A.R.T.
+  ✓ All temperatures below warning thresholds
+  ✓ 6 fans spinning normally
+
+── PARTS TO REPLACE · FOR THE WARRANTY / RMA CASE ──────────────────────────────────────────────────
+  1. ✗ Disk: Seagate ST4000NM0035-1V4107 4.0 TB
+     Serial: ZC1234AB · Location: /dev/sda (bay 3) · Firmware: TN03
+     Reason: Disk /dev/sda is failing: 24 sectors could not be read; Disk /dev/sda failed its last
+     self-test
+
+  2. ✗ Power supply (PSU): Dell 0PJMDN 750W
+     Location: PSU2
+     Reason: Power supply PSU2 has failed (AC input lost)
+
+  3. ⚠ Memory module (DIMM): Samsung M393A4K40CB2-CVF 32 GiB
+     Serial: 4C1A2B3D · Location: CPU1 DIMM_A1
+     Reason: Corrected ECC errors on DIMM_A1 (152 in 7 days)
+
+── NOT CHECKED (7) ─────────────────────────────────────────────────────────────────────────────────
+  ✗ FRU inventory (check failed)
+    ipmitool fru timed out: <script>alert("x")</script>" onmouseover="alert(1)" '><img src=x
+    onerror=alert(2)>
+
+  ◐ MegaRAID controller (partly checked)
+    Controller found but storcli could not read the battery.
+
+  – NVMe error log (not checked)
+    nvme is not installed.
+    Install it:
+      dnf install -y nvme-cli
+
+  – Disk speed test (not checked)
+    Disabled by default; it writes a test file.
+    Run:
+      diagward check --bench --bench-dir /var/tmp --bench-mb 1024 \
+        --some-very-long-option-name-to-force-wrapping=value
+
+  – DIMM inventory, hwmon (not checked)
+    Needs root.
+    Run it as root:
+      sudo diagward
+
+  – lm-sensors (not checked)
+    sensors is not installed.
+    Install it:
+      dnf install -y lm_sensors
+
+── CHECKED (5) ─────────────────────────────────────────────────────────────────────────────────────
+  ✓ S.M.A.R.T. health, Linux software RAID, ECC error counters, IPMI sensors, Kernel log
+
+── INVENTORY AND MEASUREMENTS ──────────────────────────────────────────────────────────────────────
+  Disks
+     Device        Model            Serial           Size    Temp   Power-on         Health
+     ────────────  ───────────────  ───────────────  ──────  ─────  ───────────────  ───────────────
+  ✗  /dev/sda      ST4000NM0035-1…  ZC1234AB         4.0 TB  41 °C  5 năm 2 tháng …  FAILING: 24 pe…
+  ⚠  /dev/sdb      WDC WD40EFRX-6…  WD-WCC7K1234567  4.0 TB  38 °C  2 năm            <script>alert(…
+  ✓  /dev/nvme0n1  SAMSUNG MZQL29…  S64FNE0R123456   960 GB  35 °C  1 năm            OK
+  Values from smartctl -a.
+
+── NOTES ───────────────────────────────────────────────────────────────────────────────────────────
+  • Diagward ran without root, so some checks were skipped. Run it again with sudo for a complete
+    report.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────
+HTML report: diagward check --html report.html
+Vietnamese: --lang vi
+Diagward 0.1.0-test · https://github.com/nguyenquocanhz/diagward

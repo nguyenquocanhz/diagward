@@ -1,0 +1,9 @@
+SEL              | 72h | ns  |  7.1 | No Reading
+Intrusion        | 73h | ok  |  7.1 |
+Fan1             | 30h | ok  |  7.1 | 5040 RPM
+Inlet Temp       | 04h | ok  |  7.1 | 25 degrees C
+USB Cable Pres   | 50h | ok  |  7.1 | Connected
+Unable to send command: Invalid argument
+Current 1        | 6Ah | ok  | 10.1 | 7.20 Amps
+Unable to send command: Invalid argument
+Power Supply 1   | 03h | ok  | 10.1 | 110 Watts, Presence detected

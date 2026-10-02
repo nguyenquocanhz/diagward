@@ -1,0 +1,16 @@
+{
+   "blockdevices": [
+      {"name": "sda", "kname": "sda", "type": "disk", "size": "4000787030016", "rota": "1", "tran": "sata", "model": "ST4000NM0035-1V4107", "serial": "ZC18ABCD", "vendor": "ATA     ", "rev": "TN03", "state": "running", "hctl": "0:0:0:0", "wwn": "0x5000c500a1b2c3d4", "mountpoint": null, "fstype": "linux_raid_member", "pkname": null,
+         "children": [
+            {"name": "sda1", "kname": "sda1", "type": "part", "size": "1073741824", "rota": "1", "tran": null, "model": null, "serial": null, "vendor": null, "rev": null, "state": null, "hctl": null, "wwn": "0x5000c500a1b2c3d4", "mountpoint": null, "fstype": "linux_raid_member", "pkname": "sda",
+               "children": [
+                  {"name": "md0", "kname": "md0", "type": "raid1", "size": "1072693248", "rota": "1", "tran": null, "model": null, "serial": null, "vendor": null, "rev": null, "state": null, "hctl": null, "wwn": null, "mountpoint": "/boot", "fstype": "xfs", "pkname": "sda1"}
+               ]
+            }
+         ]
+      },
+      {"name": "sdb", "kname": "sdb", "type": "disk", "size": "4000787030016", "rota": "1", "tran": "sata", "model": "ST4000NM0035-1V4107", "serial": "ZC18EFGH", "vendor": "ATA     ", "rev": "TN03", "state": "running", "hctl": "1:0:0:0", "wwn": "0x5000c500a1b2c3e5", "mountpoint": null, "fstype": "linux_raid_member", "pkname": null},
+      {"name": "sr0", "kname": "sr0", "type": "rom", "size": "1073741312", "rota": "1", "tran": "sata", "model": "DVD+-RW DU-8A5LH", "serial": "KZ5E8BD1624", "vendor": "PLDS    ", "rev": "6D1M", "state": "running", "hctl": "4:0:0:0", "wwn": null, "mountpoint": null, "fstype": null, "pkname": null},
+      {"name": "nvme0n1", "kname": "nvme0n1", "type": "disk", "size": "960197124096", "rota": "0", "tran": "nvme", "model": "SAMSUNG MZQLB960HAJR-00007", "serial": "S437NA0M123456", "vendor": null, "rev": "EDA5402Q", "state": "live", "hctl": null, "wwn": "eui.34333730524001230025384500000001", "mountpoint": "/var/lib/mysql", "fstype": "xfs", "pkname": null}
+   ]
+}

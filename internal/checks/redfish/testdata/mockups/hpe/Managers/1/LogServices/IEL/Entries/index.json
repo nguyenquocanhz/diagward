@@ -1,0 +1,11 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#LogEntryCollection.LogEntryCollection",
+  "@odata.id": "/redfish/v1/Managers/1/LogServices/IEL/Entries/",
+  "@odata.type": "#LogEntryCollection.LogEntryCollection",
+  "Description": "iLO Event Log view",
+  "Members": [
+    {"@odata.id": "/redfish/v1/Managers/1/LogServices/IEL/Entries/1/", "@odata.type": "#LogEntry.v1_0_0.LogEntry", "Created": "2026-09-29T07:12:40Z", "EntryType": "Oem", "Id": "1", "Message": "Browser login: admin - 10.0.0.9(DNS name not found).", "Name": "iLO Event Log", "Oem": {"Hpe": {"@odata.type": "#HpeLogEntry.v2_1_0.HpeLogEntry", "Class": 35, "Code": 7, "Count": 1, "Updated": "2026-09-29T07:12:40Z"}}, "OemRecordFormat": "Hpe-iLOEventLog", "Severity": "OK"}
+  ],
+  "Members@odata.count": 1,
+  "Name": "iLO Event Log"
+}

@@ -1,0 +1,3 @@
+# now=1790927505 root=1
+d /var/crash
+

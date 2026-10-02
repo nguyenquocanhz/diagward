@@ -1,0 +1,16 @@
+#
+# /etc/fstab
+# Created by anaconda on Fri May  6 19:51:54 2016
+#
+/dev/mapper/rhel_hadoop--test--1-root /                       xfs     defaults        0 0
+UUID=2c839365-37c7-4bd5-ac47-040fba761735 /boot               xfs     defaults        0 0
+/dev/mapper/rhel_hadoop--test--1-home /home                   xfs     defaults        0 0
+/dev/mapper/rhel_hadoop--test--1-swap swap                    swap    defaults        0 0
+ 
+/dev/sdb1 /hdfs/data1 xfs rw,relatime,seclabel,attr2,inode64,noquota 0 0
+/dev/sdc1 /hdfs/data2 xfs rw,relatime,seclabel,attr2,inode64,noquota 0 0
+/dev/sdd1 /hdfs/data3 xfs rw,relatime,seclabel,attr2,inode64,noquota 0 0
+localhost:/ /mnt/hdfs nfs rw,vers=3,proto=tcp,nolock,timeo=600 0 0
+ 
+/dev/mapper/vg0-lv2 /test1             ext4 defaults,data=writeback     1 1
+nfs_hostname.example.com:/nfs_share/data     /srv/rdu/data/000  nfs     ro,defaults,hard,intr,bg,noatime,nodev,nosuid,nfsvers=3,tcp,rsize=32768,wsize=32768     0

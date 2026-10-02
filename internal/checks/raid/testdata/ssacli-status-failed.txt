@@ -1,0 +1,6 @@
+
+Smart Array P440ar in Slot 0 (Embedded)
+   Controller Status: OK
+   Cache Status: Temporarily Disabled
+   Battery/Capacitor Status: Failed (Replace Batteries/Capacitors)
+

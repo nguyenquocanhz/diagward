@@ -1,0 +1,11 @@
+/sys/block/md91/md/array_state=clean
+/sys/block/md91/md/degraded=1
+/sys/block/md91/md/sync_action=recover
+/sys/block/md91/md/sync_completed=0 / 258048
+/sys/block/md91/md/mismatch_cnt=0
+/sys/block/md91/md/raid_disks=3
+/sys/block/md91/md/level=raid5
+/sys/block/md91/md/dev-loop2/state=in_sync
+/sys/block/md91/md/dev-loop3/state=faulty
+/sys/block/md91/md/dev-loop4/state=in_sync
+/sys/block/md91/md/dev-loop5/state=spare

@@ -1,0 +1,6 @@
+/sys/devices/system/cpu/online=0-19,21-39
+/sys/devices/system/cpu/offline=20
+/sys/devices/system/cpu/present=0-39
+/sys/devices/system/cpu/possible=0-39
+/sys/devices/system/cpu/smt/control=on
+/sys/devices/system/cpu/smt/active=1

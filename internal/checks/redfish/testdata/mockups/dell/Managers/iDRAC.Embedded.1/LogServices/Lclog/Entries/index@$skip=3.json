@@ -1,0 +1,14 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#LogEntryCollection.LogEntryCollection",
+  "@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries",
+  "@odata.type": "#LogEntryCollection.LogEntryCollection",
+  "Description": "LC Logs for this manager",
+  "Members": [
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries/5003", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-09-27T08:02:44-05:00", "Description": "Log Entry 5003", "EntryType": "Oem", "Id": "5003", "Message": "Correctable memory error rate exceeded for DIMM_A1.", "MessageArgs": ["DIMM_A1"], "MessageId": "MEM0701", "Name": "Log Entry 5003", "OemRecordFormat": "Dell", "Severity": "Warning"},
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries/4810", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-09-12T13:40:02-05:00", "Description": "Log Entry 4810", "EntryType": "Oem", "Id": "4810", "Message": "Fan 3A RPM is less than the lower critical threshold.", "MessageArgs": ["3A"], "MessageId": "FAN0002", "Name": "Log Entry 4810", "OemRecordFormat": "Dell", "Severity": "Critical"},
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries/4700", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-08-01T10:00:00-05:00", "Description": "Log Entry 4700", "EntryType": "Oem", "Id": "4700", "Message": "Drive 3 is removed from disk drive bay 1.", "MessageArgs": ["3", "1"], "MessageId": "PDR1016", "Name": "Log Entry 4700", "OemRecordFormat": "Dell", "Severity": "Warning"},
+    {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices/Lclog/Entries/4699", "@odata.type": "#LogEntry.v1_6_1.LogEntry", "Created": "2026-07-30T10:00:00-05:00", "Description": "Log Entry 4699", "EntryType": "Oem", "Id": "4699", "Message": "The system inlet temperature is greater than the upper critical threshold.", "MessageArgs": [], "MessageId": "TMP0120", "Name": "Log Entry 4699", "OemRecordFormat": "Dell", "Severity": "Critical"}
+  ],
+  "Members@odata.count": 7,
+  "Name": "Log Entry Collection"
+}

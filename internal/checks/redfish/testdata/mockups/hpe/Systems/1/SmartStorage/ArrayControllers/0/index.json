@@ -1,0 +1,27 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#HpeSmartStorageArrayController.HpeSmartStorageArrayController",
+  "@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/",
+  "@odata.type": "#HpeSmartStorageArrayController.v2_2_0.HpeSmartStorageArrayController",
+  "AdapterType": "SmartArray",
+  "BackupPowerSourceStatus": "Present",
+  "CacheMemorySizeMiB": 2048,
+  "CacheModuleStatus": {"Health": "OK"},
+  "ControllerBoard": {"Status": {"Health": "OK"}},
+  "ControllerPartNumber": "836260-001",
+  "CurrentOperatingMode": "Mixed",
+  "Description": "HPE Smart Storage Array Controller View",
+  "FirmwareVersion": {"Current": {"VersionString": "3.53"}},
+  "Id": "0",
+  "Links": {
+    "LogicalDrives": {"@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/LogicalDrives/"},
+    "PhysicalDrives": {"@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/DiskDrives/"},
+    "StorageEnclosures": {"@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/StorageEnclosures/"},
+    "UnconfiguredDrives": {"@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/UnconfiguredDrives/"}
+  },
+  "Location": "Slot 0",
+  "LocationFormat": "PCISlot",
+  "Model": "HPE Smart Array P408i-a SR Gen10",
+  "Name": "HpeSmartStorageArrayController",
+  "SerialNumber": "PEYHB0ARHC0123",
+  "Status": {"Health": "OK", "State": "Enabled"}
+}

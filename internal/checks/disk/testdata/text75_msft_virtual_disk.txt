@@ -1,0 +1,13 @@
+smartctl 7.5 2025-04-30 r5714 [x86_64-linux-6.18.40.1-microsoft-standard-WSL2] (local build)
+Copyright (C) 2002-25, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Vendor:               Msft
+Product:              Virtual Disk
+Revision:             1.0
+Compliance:           SPC-3
+User Capacity:        758,038,528 bytes [758 MB]
+Logical block size:   512 bytes
+LU is thin provisioned, LBPRZ=0
+>> Terminate command early due to bad response to IEC mode page
+A mandatory SMART command failed: exiting. To continue, add one or more '-T permissive' options.

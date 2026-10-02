@@ -1,0 +1,16 @@
+# source=dmesg boot=1790700000 tz=+0000
+[    1.204312] ata3: SATA link down (SStatus 0 SControl 300)
+[ 9512.112233] ata2.00: exception Emask 0x10 SAct 0x0 SErr 0x400100 action 0x6 frozen
+[ 9512.112240] ata2.00: irq_stat 0x08000000, interface fatal error
+[ 9512.112245] ata2: SError: { UnrecovData Handshk }
+[ 9512.112250] ata2.00: failed command: WRITE DMA EXT
+[ 9512.112260] ata2.00: error: { ICRC ABRT }
+[ 9512.112300] ata2: hard resetting link
+[ 9513.002000] ata2: SError: { BadCRC }
+[ 9600.000000] bnxt_en 0000:19:00.0 eno1np0: TX timeout detected, starting reset task!
+[ 9700.000000] NETDEV WATCHDOG: eno2 (tg3): transmit queue 0 timed out
+[ 9800.000000] Uhhuh. NMI received for unknown reason 2d on CPU 0.
+[ 9800.000100] Dazed and confused, but trying to continue
+[ 9900.000000] watchdog: Watchdog detected hard LOCKUP on cpu 5
+[10000.000000] BUG: unable to handle kernel NULL pointer dereference at 0000000000000008
+garbage line without timestamp

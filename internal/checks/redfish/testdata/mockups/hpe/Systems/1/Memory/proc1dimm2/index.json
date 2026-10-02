@@ -1,0 +1,12 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#Memory.Memory",
+  "@odata.id": "/redfish/v1/Systems/1/Memory/proc1dimm2/",
+  "@odata.type": "#Memory.v1_7_1.Memory",
+  "CapacityMiB": 0,
+  "DeviceLocator": "PROC 1 DIMM 2",
+  "Id": "proc1dimm2",
+  "MemoryLocation": {"Channel": 6, "MemoryController": 2, "Slot": 2, "Socket": 1},
+  "Name": "proc1dimm2",
+  "Oem": {"Hpe": {"@odata.type": "#HpeMemoryExt.v2_5_0.HpeMemoryExt", "DIMMStatus": "NotPresent"}},
+  "Status": {"State": "Absent"}
+}

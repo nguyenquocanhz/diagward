@@ -1,0 +1,80 @@
+{
+ "finished": "2026-10-02T14:57:53.24484+07:00",
+ "format": 1,
+ "host": "test-host",
+ "options": {
+  "maxLines": 0,
+  "sinceDays": 7,
+  "timeout": 0
+ },
+ "os": "windows",
+ "sections": [
+  {
+   "ms": 720,
+   "name": "meta.ident",
+   "out": "[{\"hostname\":\"dw-testhost\",\"fqdn\":\"dw-testhost\",\"user\":\"dw-testhost\\\\admin\",\"admin\":false,\"caption\":\"Microsoft Windows 10 Pro\",\"version\":\"10.0.19045\",\"build\":\"19045\",\"arch\":\"AMD64\",\"lastBoot\":\"2026-10-01T03:16:30.5000000Z\",\"now\":\"2026-10-02T07:57:35.7083838Z\",\"ps\":\"5.1.19041.6456\",\"collector\":\"dev\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 40,
+   "name": "meta.virt",
+   "out": "[{\"manufacturer\":\"Acer\",\"model\":\"AN515-55\",\"hypervisorPresent\":true,\"biosManufacturer\":\"Insyde Corp.\",\"biosVersion\":\"V1.10\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 4578,
+   "name": "system.win_perf",
+   "out": "[{\"ProcessorQueueLength\":0,\"PercentProcessorTime\":36,\"DiskPercentIdleTime\":98,\"DiskAvgQueueLength\":0,\"SystemUpTime\":103267},{\"ProcessorQueueLength\":0,\"PercentProcessorTime\":23,\"DiskPercentIdleTime\":99,\"DiskAvgQueueLength\":0,\"SystemUpTime\":103269},{\"ProcessorQueueLength\":0,\"PercentProcessorTime\":73,\"DiskPercentIdleTime\":98,\"DiskAvgQueueLength\":0,\"SystemUpTime\":103271}]",
+   "rc": 0
+  },
+  {
+   "ms": 176,
+   "name": "network.win_adapter",
+   "out": "[{\"Name\":\"Wi-Fi\",\"InterfaceDescription\":\"Intel(R) Wi-Fi 6 AX201 160MHz\",\"InterfaceIndex\":18,\"Status\":\"Up\",\"MediaConnectionState\":\"Connected\",\"LinkSpeed\":\"1.7 Gbps\",\"ReceiveLinkSpeed\":2162000000,\"TransmitLinkSpeed\":1729000000,\"FullDuplex\":false,\"MacAddress\":\"02-00-5E-10-00-01\",\"DriverProvider\":\"Intel\",\"DriverVersionString\":\"23.170.0.1\",\"DriverDate\":\"2025-09-09\",\"NdisPhysicalMedium\":9,\"PnPDeviceID\":\"PCI\\\\VEN_8086\\u0026DEV_06F0\\u0026SUBSYS_00748086\\u0026REV_00\\\\3\\u002611583659\\u00260\\u0026A3\"},{\"Name\":\"Ethernet\",\"InterfaceDescription\":\"Killer E2600 Gigabit Ethernet Controller\",\"InterfaceIndex\":10,\"Status\":\"Disconnected\",\"MediaConnectionState\":\"Disconnected\",\"LinkSpeed\":\"0 bps\",\"ReceiveLinkSpeed\":null,\"TransmitLinkSpeed\":null,\"FullDuplex\":null,\"MacAddress\":\"02-00-5E-10-00-02\",\"DriverProvider\":\"Microsoft\",\"DriverVersionString\":\"9.1.410.2015\",\"DriverDate\":\"2015-04-10\",\"NdisPhysicalMedium\":14,\"PnPDeviceID\":\"PCI\\\\VEN_10EC\\u0026DEV_2600\\u0026SUBSYS_143D1025\\u0026REV_21\\\\0100000000000000\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 35,
+   "name": "network.win_adapter_stats",
+   "out": "[{\"Name\":\"Wi-Fi\",\"ReceivedUnicastPackets\":1172085,\"ReceivedMulticastPackets\":0,\"ReceivedBroadcastPackets\":1827,\"SentUnicastPackets\":513447,\"SentMulticastPackets\":1649,\"SentBroadcastPackets\":309,\"ReceivedPacketErrors\":0,\"OutboundPacketErrors\":0,\"ReceivedDiscardedPackets\":0,\"OutboundDiscardedPackets\":0},{\"Name\":\"vEthernet (WSL)\",\"ReceivedUnicastPackets\":7325,\"ReceivedMulticastPackets\":216,\"ReceivedBroadcastPackets\":42,\"SentUnicastPackets\":17223,\"SentMulticastPackets\":9927,\"SentBroadcastPackets\":3517,\"ReceivedPacketErrors\":0,\"OutboundPacketErrors\":0,\"ReceivedDiscardedPackets\":0,\"OutboundDiscardedPackets\":0},{\"Name\":\"vEthernet (Default Switch)\",\"ReceivedUnicastPackets\":0,\"ReceivedMulticastPackets\":0,\"ReceivedBroadcastPackets\":0,\"SentUnicastPackets\":0,\"SentMulticastPackets\":21508,\"SentBroadcastPackets\":4480,\"ReceivedPacketErrors\":0,\"OutboundPacketErrors\":0,\"ReceivedDiscardedPackets\":0,\"OutboundDiscardedPackets\":0},{\"Name\":\"Ethernet\",\"ReceivedUnicastPackets\":0,\"ReceivedMulticastPackets\":0,\"ReceivedBroadcastPackets\":0,\"SentUnicastPackets\":0,\"SentMulticastPackets\":0,\"SentBroadcastPackets\":0,\"ReceivedPacketErrors\":0,\"OutboundPacketErrors\":0,\"ReceivedDiscardedPackets\":0,\"OutboundDiscardedPackets\":0}]",
+   "rc": 0
+  },
+  {
+   "ms": 54,
+   "name": "network.win_speedduplex",
+   "out": "[{\"Name\":\"Ethernet\",\"RegistryValue\":\"0\",\"ValidRegistryValues\":[\"0\",\"1\",\"2\",\"3\",\"4\",\"6\"],\"DisplayValue\":\"Auto Negotiation\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 58,
+   "name": "network.win_ip",
+   "out": "[{\"InterfaceIndex\":52,\"InterfaceAlias\":\"vEthernet (WSL)\",\"IPAddress\":\"fe80::6239:a3e2:d0ec:622b%52\",\"PrefixLength\":64,\"AddressFamily\":\"IPv6\",\"AddressState\":\"Preferred\"},{\"InterfaceIndex\":27,\"InterfaceAlias\":\"vEthernet (Default Switch)\",\"IPAddress\":\"fe80::8aee:4d99:2f7:93d3%27\",\"PrefixLength\":64,\"AddressFamily\":\"IPv6\",\"AddressState\":\"Preferred\"},{\"InterfaceIndex\":1,\"InterfaceAlias\":\"Loopback Pseudo-Interface 1\",\"IPAddress\":\"::1\",\"PrefixLength\":128,\"AddressFamily\":\"IPv6\",\"AddressState\":\"Preferred\"},{\"InterfaceIndex\":52,\"InterfaceAlias\":\"vEthernet (WSL)\",\"IPAddress\":\"172.29.208.1\",\"PrefixLength\":20,\"AddressFamily\":\"IPv4\",\"AddressState\":\"Preferred\"},{\"InterfaceIndex\":27,\"InterfaceAlias\":\"vEthernet (Default Switch)\",\"IPAddress\":\"172.26.112.1\",\"PrefixLength\":20,\"AddressFamily\":\"IPv4\",\"AddressState\":\"Preferred\"},{\"InterfaceIndex\":19,\"InterfaceAlias\":\"Local Area Connection* 2\",\"IPAddress\":\"169.254.92.109\",\"PrefixLength\":16,\"AddressFamily\":\"IPv4\",\"AddressState\":\"Tentative\"},{\"InterfaceIndex\":4,\"InterfaceAlias\":\"Local Area Connection* 1\",\"IPAddress\":\"169.254.56.226\",\"PrefixLength\":16,\"AddressFamily\":\"IPv4\",\"AddressState\":\"Tentative\"},{\"InterfaceIndex\":10,\"InterfaceAlias\":\"Ethernet\",\"IPAddress\":\"169.254.207.234\",\"PrefixLength\":16,\"AddressFamily\":\"IPv4\",\"AddressState\":\"Tentative\"},{\"InterfaceIndex\":18,\"InterfaceAlias\":\"Wi-Fi\",\"IPAddress\":\"192.168.100.143\",\"PrefixLength\":24,\"AddressFamily\":\"IPv4\",\"AddressState\":\"Preferred\"},{\"InterfaceIndex\":1,\"InterfaceAlias\":\"Loopback Pseudo-Interface 1\",\"IPAddress\":\"127.0.0.1\",\"PrefixLength\":8,\"AddressFamily\":\"IPv4\",\"AddressState\":\"Preferred\"}]",
+   "rc": 0
+  },
+  {
+   "ms": 10,
+   "name": "network.win_lbfo_team",
+   "out": "[]",
+   "rc": 0
+  },
+  {
+   "ms": 11,
+   "name": "network.win_lbfo_member",
+   "out": "[]",
+   "rc": 0
+  },
+  {
+   "name": "network.win_vmswitch",
+   "rc": 0,
+   "skipped": "not-admin"
+  },
+  {
+   "ms": 3,
+   "name": "meta.done",
+   "out": "[{\"now\":\"2026-10-02T07:57:53.2050559Z\"}]",
+   "rc": 0
+  }
+ ],
+ "started": "2026-10-02T14:57:32.7891506+07:00",
+ "tool": "dwdev"
+}

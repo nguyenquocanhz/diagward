@@ -1,0 +1,25 @@
+# persistent=1 tz=+0700
+#list
+ -3 e1dbd8f133f643d1a816605d96f3ca07 Fri 2026-09-25 22:31:25 +07—Sat 2026-09-26 01:02:51 +07
+ -2 1969253689e842deaea06ca32f4650c7 Sat 2026-09-26 01:10:00 +07—Mon 2026-09-28 08:29:42 +07
+ -1 9a6b0d1c2e3f40516273849506172839 Mon 2026-09-28 08:35:11 +07—Wed 2026-09-30 02:14:09 +07
+  0 26a4a2ff48594778850d917a7e2ad195 Wed 2026-09-30 02:16:20 +07—Thu 2026-10-01 15:59:00 +07
+#boot -3
+Sep 26 01:02:51 a72.example.com systemd[1]: Stopped Create Static Device Nodes in /dev.
+Sep 26 01:02:51 a72.example.com systemd[1]: Stopping Create Static Device Nodes in /dev...
+Sep 26 01:02:51 a72.example.com systemd[1]: Reached target Shutdown.
+Sep 26 01:02:51 a72.example.com systemd[1]: Starting Shutdown.
+Sep 26 01:02:51 a72.example.com systemd[1]: Reached target Final Step.
+Sep 26 01:02:51 a72.example.com systemd[1]: Starting Final Step.
+Sep 26 01:02:51 a72.example.com systemd[1]: Starting Reboot...
+Sep 26 01:02:51 a72.example.com systemd[1]: Shutting down.
+Sep 26 01:02:51 a72.example.com systemd-shutdown[1]: Sending SIGTERM to remaining processes...
+Sep 26 01:02:51 a72.example.com systemd-journal[483]: Journal stopped
+#boot -2
+2026-09-28T08:29:40+07:00 a72.example.com systemd[1]: Started Session 4211 of user root.
+2026-09-28T08:29:41+07:00 a72.example.com CROND[99812]: (root) CMD (/usr/lib64/sa/sa1 1 1)
+2026-09-28T08:29:42+07:00 a72.example.com kernel: mce: [Hardware Error]: Machine check events logged
+#boot -1
+2026-09-30T02:14:02+07:00 a72.example.com systemd[1]: Stopping User Manager for UID 1000...
+2026-09-30T02:14:03+07:00 a72.example.com systemd[1]: Stopped target Graphical Interface.
+2026-09-30T02:14:09+07:00 a72.example.com systemd[1]: Stopped target Multi-User System.

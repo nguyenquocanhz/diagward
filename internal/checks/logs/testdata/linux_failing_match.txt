@@ -1,0 +1,60 @@
+# source=journal persistent=1 tz=+0700
+2026-09-24T09:12:01+07:00 srv01 kernel: ata1.00: ATA-9: ST4000NM0035-1V4107, TN03, max UDMA/133
+2026-09-24T09:12:01+07:00 srv01 kernel: ata5: SATA link down (SStatus 0 SControl 300)
+2026-09-24T09:12:02+07:00 srv01 kernel: blk_update_request: I/O error, dev fd0, sector 0
+2026-09-24T09:12:03+07:00 srv01 kernel: ACPI: LAPIC_NMI (acpi_id[0x01] dfl dfl lint[0x1])
+2026-09-24T09:12:03+07:00 srv01 kernel: ACPI Error: AE_NOT_FOUND, While resolving a named reference package element - \_SB_.PCI0.LPCB.HPET (20210730/dspkginit-438)
+2026-09-30T10:00:01+07:00 srv01 kernel: ata1.00: exception Emask 0x0 SAct 0x3 SErr 0x0 action 0x6 frozen
+2026-09-30T10:00:01+07:00 srv01 kernel: ata1.00: failed command: READ FPDMA QUEUED
+2026-09-30T10:00:01+07:00 srv01 kernel: ata1.00: cmd 60/08:00:38:08:00/00:00:00:00:00/40 tag 0 ncq 4096 in
+2026-09-30T10:00:01+07:00 srv01 kernel: ata1.00: status: { DRDY ERR }
+2026-09-30T10:00:01+07:00 srv01 kernel: ata1.00: error: { UNC }
+2026-09-30T10:00:02+07:00 srv01 kernel: ata1: hard resetting link
+2026-09-30T10:00:02+07:00 srv01 kernel: ata1: SATA link up 6.0 Gbps (SStatus 133 SControl 300)
+2026-09-30T10:00:02+07:00 srv01 kernel: sd 0:0:0:0: [sda] tag#3 FAILED Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+2026-09-30T10:00:02+07:00 srv01 kernel: sd 0:0:0:0: [sda] tag#3 Sense Key : Medium Error [current]
+2026-09-30T10:00:02+07:00 srv01 kernel: sd 0:0:0:0: [sda] tag#3 Add. Sense: Unrecovered read error
+2026-09-30T10:00:02+07:00 srv01 kernel: blk_update_request: I/O error, dev sda, sector 658332184 op 0x0:(READ) flags 0x0 phys_seg 1 prio class 0
+2026-09-30T10:00:03+07:00 srv01 kernel: XFS (dm-0): metadata I/O error in "xfs_imap_to_bp+0x51/0x90 [xfs]" at daddr 0x2740c0 len 32 error 5
+2026-09-30T10:05:00+07:00 srv01 kernel: blk_update_request: I/O error, dev sda, sector 3270728 op 0x9:(WRITE_ZEROES) flags 0x800 phys_seg 0 prio class 0
+2026-09-30T10:05:01+07:00 srv01 kernel: Buffer I/O error on dev sda1, logical block 1953506624, async page read
+2026-10-01T11:20:00+07:00 srv01 kernel: nvme nvme1: I/O 448 QID 5 timeout, aborting
+2026-10-01T11:20:30+07:00 srv01 kernel: nvme nvme1: I/O 448 QID 5 timeout, reset controller
+2026-10-01T11:21:01+07:00 srv01 kernel: nvme nvme1: Device not ready; aborting reset, CSTS=0x1
+2026-10-01T11:21:01+07:00 srv01 kernel: nvme nvme1: Removing after probe failure status: -19
+2026-10-01T11:21:02+07:00 srv01 kernel: blk_update_request: I/O error, dev nvme1n1, sector 1920993784 op 0x1:(WRITE) flags 0x0 phys_seg 1 prio class 0
+2026-10-01T11:21:02+07:00 srv01 kernel: Buffer I/O error on dev nvme1n1p1, lost async page write
+2026-10-01T11:21:03+07:00 srv01 kernel: EXT4-fs error (device nvme1n1p1): __ext4_find_entry:1535: inode #57278595: comm rsync: reading directory lblock 0
+2026-10-01T11:21:03+07:00 srv01 kernel: EXT4-fs (nvme1n1p1): I/O error while writing superblock
+2026-10-01T11:21:04+07:00 srv01 kernel: EXT4-fs (nvme1n1p1): Remounting filesystem read-only
+2026-09-29T03:00:00+07:00 srv01 kernel: mce: [Hardware Error]: Machine check events logged
+2026-09-29T03:00:00+07:00 srv01 kernel: EDAC sbridge MC1: HANDLING MCE MEMORY ERROR
+2026-09-29T03:00:00+07:00 srv01 kernel: EDAC sbridge MC1: CPU 1: Machine Check Event: 0 Bank 7: cc00008000010090
+2026-09-29T03:00:00+07:00 srv01 kernel: EDAC MC1: 1 CE memory scrubbing error on CPU_SrcID#1_Ha#0_Chan#1_DIMM#0 (channel:1 slot:0 page:0x1a2b3c offset:0x0 grain:32 syndrome:0x0 - area:DRAM err_code:0008:00c1 socket:1 ha:0 channel_mask:2 rank:0)
+2026-10-01T14:00:00+07:00 srv01 kernel: EDAC MC1: 1 CE memory scrubbing error on CPU_SrcID#1_Ha#0_Chan#1_DIMM#0 (channel:1 slot:0 page:0x1a2b3d offset:0x0 grain:32 syndrome:0x0 - area:DRAM err_code:0008:00c1 socket:1 ha:0 channel_mask:2 rank:0)
+2026-09-30T12:00:00+07:00 srv01 kernel: pcieport 0000:00:03.0: AER: Multiple Uncorrected (Non-Fatal) error received: 0000:01:00.0
+2026-09-30T12:00:00+07:00 srv01 kernel: vfio-pci 0000:01:00.0: PCIe Bus Error: severity=Uncorrected (Non-Fatal), type=Transaction Layer, (Requester ID)
+2026-09-30T12:00:00+07:00 srv01 kernel: vfio-pci 0000:01:00.0:   device [10de:1e84] error status/mask=00100000/00000000
+2026-09-30T12:00:00+07:00 srv01 kernel: vfio-pci 0000:01:00.0:    [20] UnsupReq               (First)
+2026-09-30T12:00:00+07:00 srv01 kernel: pcieport 0000:00:03.0: AER: device recovery successful
+2026-09-30T12:10:00+07:00 srv01 kernel: mpt3sas 0000:04:00.0: PCIe Bus Error: severity=Corrected, type=Physical Layer, (Receiver ID)
+2026-09-30T12:10:00+07:00 srv01 kernel: mpt3sas 0000:04:00.0:   device [1000:0087] error status/mask=00000001/00002000
+2026-09-30T12:10:00+07:00 srv01 kernel: mpt3sas 0000:04:00.0:    [ 0] RxErr
+2026-09-30T12:20:00+07:00 srv01 kernel: mpt3sas 0000:04:00.0: PCIe Bus Error: severity=Corrected, type=Physical Layer, (Receiver ID)
+2026-09-30T13:00:00+07:00 srv01 kernel: CPU3: Core temperature above threshold, cpu clock throttled (total events = 1253)
+2026-09-30T13:00:00+07:00 srv01 kernel: CPU3: Package temperature above threshold, cpu clock throttled (total events = 1254)
+2026-09-30T13:05:00+07:00 srv01 kernel: CPU3: Core temperature/speed normal
+2026-10-01T08:00:00+07:00 srv01 kernel: igb 0000:01:00.0 eno1: igb: eno1 NIC Link is Down
+2026-10-01T08:00:05+07:00 srv01 kernel: igb 0000:01:00.0 eno1: igb: eno1 NIC Link is Up 1000 Mbps Full Duplex, Flow Control: RX/TX
+2026-10-01T09:00:00+07:00 srv01 kernel: igb 0000:01:00.0 eno1: igb: eno1 NIC Link is Down
+2026-10-01T10:00:00+07:00 srv01 kernel: igb 0000:01:00.0 eno1: igb: eno1 NIC Link is Down
+2026-10-01T11:00:00+07:00 srv01 kernel: igb 0000:01:00.0 eno1: igb: eno1 NIC Link is Down
+2026-09-25T08:00:00+07:00 srv01 kernel: e1000e 0000:00:19.0 eth0: NIC Link is Down
+2026-09-30T15:00:00+07:00 srv01 kernel: watchdog: BUG: soft lockup - CPU#2 stuck for 23s! [kworker/2:1:1234]
+2026-09-30T15:02:00+07:00 srv01 kernel: INFO: task jbd2/sda1-8:312 blocked for more than 120 seconds.
+2026-09-30T16:00:00+07:00 srv01 kernel: java invoked oom-killer: gfp_mask=0x100cca(GFP_HIGHUSER_MOVABLE), order=0, oom_score_adj=0
+2026-09-30T16:00:00+07:00 srv01 kernel: Out of memory: Killed process 4321 (java) total-vm:12345678kB, anon-rss:8123456kB, file-rss:0kB, shmem-rss:0kB, UID:1001 pgtables:16384kB oom_score_adj:0
+2026-09-30T16:30:00+07:00 srv01 kernel: traps: java[1234] general protection fault ip:7f3c2a1b2c3d sp:7f3c1a2b3c40 error:0 in libjvm.so[7f3c29000000+1000000]
+2026-10-01T06:00:00+07:00 srv01 kernel: md/raid1:md0: Disk failure on sdb1, disabling device.
+2026-10-01T06:00:00+07:00 srv01 kernel: md/raid1:md0: Operation continuing on 1 devices.
+# rc=0

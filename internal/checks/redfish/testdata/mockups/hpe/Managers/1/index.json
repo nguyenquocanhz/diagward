@@ -1,0 +1,13 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#Manager.Manager",
+  "@odata.id": "/redfish/v1/Managers/1/",
+  "@odata.type": "#Manager.v1_5_1.Manager",
+  "Description": "Manager View",
+  "FirmwareVersion": "iLO 5 v2.72",
+  "Id": "1",
+  "LogServices": {"@odata.id": "/redfish/v1/Managers/1/LogServices/"},
+  "ManagerType": "BMC",
+  "Model": "iLO 5",
+  "Name": "Manager",
+  "Status": {"Health": "OK", "State": "Enabled"}
+}

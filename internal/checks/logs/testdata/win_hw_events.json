@@ -1,0 +1,21 @@
+[
+{"t":"2026-10-01T02:10:00.0000000Z","p":"Microsoft-Windows-WHEA-Logger","id":18,"l":2,"m":"Đã xảy ra lỗi phần cứng nghiêm trọng. Thành phần báo cáo: Processor Core. Nguồn lỗi: Machine Check Exception.","x":["3","0","1","0"]},
+{"t":"2026-10-01T02:12:31.5000000Z","p":"Microsoft-Windows-Kernel-Power","id":41,"l":1,"m":"Hệ thống đã khởi động lại mà không tắt sạch trước.","x":["292","0","18446708889337462784","3187671040"]},
+{"t":"2026-10-01T02:13:05.1000000Z","p":"Microsoft-Windows-WER-SystemErrorReporting","id":1001,"l":2,"m":"Máy tính đã khởi động lại sau lỗi bugcheck. Bugcheck là: 0x00000124 (0x0000000000000000, 0xffffb38f9a8f4028, 0x00000000be000000, 0x0000000000800400).","x":["0x00000124 (0x0000000000000000, 0xffffb38f9a8f4028, 0x00000000be000000, 0x0000000000800400)","C:\\Windows\\MEMORY.DMP","0b1c2d3e-4f50-6172-8394-a5b6c7d8e9f0"]},
+{"t":"2026-09-30T11:00:00.0000000Z","p":"Microsoft-Windows-Kernel-Power","id":41,"l":1,"m":"The system has rebooted without cleanly shutting down first.","x":["0","0x0","0x0","0x0","0","131728546170882432"]},
+{"t":"2026-09-30T11:00:04.0000000Z","p":"EventLog","id":6008,"l":2,"m":"The previous system shutdown at 5:58:12 PM on 9/30/2026 was unexpected.","x":["5:58:12 PM","9/30/2026","",""]},
+{"t":"2026-09-30T08:00:00.0000000Z","p":"Microsoft-Windows-WHEA-Logger","id":47,"l":3,"m":"A corrected hardware error has occurred. Component: Memory","x":["","","",""]},
+{"t":"2026-09-30T09:00:00.0000000Z","p":"Microsoft-Windows-WHEA-Logger","id":47,"l":3,"m":"A corrected hardware error has occurred. Component: Memory","x":["","","",""]},
+{"t":"2026-09-30T10:00:00.0000000Z","p":"Microsoft-Windows-WHEA-Logger","id":17,"l":3,"m":"A corrected hardware error has occurred. Component: PCI Express Root Port","x":["","","",""]},
+{"t":"2026-09-30T12:00:00.0000000Z","p":"disk","id":7,"l":2,"m":"Thiết bị \\Device\\Harddisk2\\DR2 có khối hỏng.","x":["\\Device\\Harddisk2\\DR2",""]},
+{"t":"2026-09-30T12:05:00.0000000Z","p":"disk","id":52,"l":3,"m":"The driver has detected that device \\Device\\Harddisk2\\DR2 has predicted that it will fail.","x":["\\Device\\Harddisk2\\DR2",""]},
+{"t":"2026-09-30T13:00:00.0000000Z","p":"storahci","id":129,"l":3,"m":"Reset to device, \\Device\\RaidPort0, was issued.","x":["\\Device\\RaidPort0",""]},
+{"t":"2026-09-30T14:00:00.0000000Z","p":"e1dexpress","id":27,"l":3,"m":"Intel(R) Ethernet Connection (7) I219-LM Network link is disconnected.","x":["",""]},
+{"t":"2026-09-30T15:00:00.0000000Z","p":"e1dexpress","id":27,"l":3,"m":"Intel(R) Ethernet Connection (7) I219-LM Network link is disconnected.","x":["",""]},
+{"t":"2026-10-01T03:00:00.0000000Z","p":"e1dexpress","id":27,"l":3,"m":"Intel(R) Ethernet Connection (7) I219-LM Network link is disconnected.","x":["",""]},
+{"t":"2026-09-30T16:00:00.0000000Z","p":"Microsoft-Windows-Kernel-Processor-Power","id":37,"l":3,"m":"The speed of processor 3 in group 0 is being limited by system firmware.","x":["3","0","58","71"]},
+{"t":"2026-09-30T17:00:00.0000000Z","p":"Microsoft-Windows-MemoryDiagnostics-Results","id":1101,"l":3,"m":"memory domain owns this","x":[]},
+{"t":"2026-09-30T18:00:00.0000000Z","p":"Microsoft-Windows-NDIS","id":10400,"l":3,"m":"The network interface \"Intel(R) Ethernet Connection (7) I219-LM\" has begun resetting.","x":["Intel(R) Ethernet Connection (7) I219-LM"]},
+{"t":"2026-09-01T18:00:00.0000000Z","p":"disk","id":7,"l":2,"m":"old event outside the window","x":["\\Device\\Harddisk5\\DR5"]},
+{"t":"not-a-time","p":"disk","id":153,"l":3,"m":"bad time","x":null}
+]

@@ -1,0 +1,7 @@
+fdec | 04/07/2008 | 16:42:15 | Power Unit Pwr Unit Stat | AC lost | Asserted
+fe00 | 04/10/2008 | 14:49:53 | Power Unit Pwr Unit Stat | AC lost | Deasserted
+fe14 | 04/10/2008 | 14:49:54 | Power Supply PS1 Status | Presence detected | Asserted
+fe28 | 04/10/2008 | 14:49:54 | Power Supply PS2 Status | Presence detected | Asserted
+fe3c | 04/10/2008 | 14:50:13 | Power Unit Power Redundancy | Fully Redundant
+fe50 | 04/10/2008 | 14:52:49 | Button Button | Power Button pressed | Asserted
+fe64 | 04/10/2008 | 14:52:54 | Fan Fan Redundancy | Fully Redundant

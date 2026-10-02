@@ -1,0 +1,8 @@
+installed=1
+active_smartd=inactive
+enabled_smartd=alias
+active_smartmontools=inactive
+enabled_smartmontools=enabled
+process=0
+conffile=/etc/smartd.conf
+conf=DEVICESCAN -d removable -n standby -m root -M exec /usr/share/smartmontools/smartd-runner

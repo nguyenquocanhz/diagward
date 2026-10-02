@@ -1,0 +1,204 @@
+# source=journal persistent=1 tz=+0700
+2026-10-02T14:28:21+07:00 devbox kernel: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+2026-10-02T14:28:21+07:00 devbox kernel: PCI: Fatal: No config space access function found
+2026-10-02T14:28:21+07:00 devbox kernel: PCI: System does not support PCI
+2026-10-02T14:28:21+07:00 devbox kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+2026-10-02T14:28:21+07:00 devbox kernel: hv_balloon: Cold memory discard hypercall failed with status 1900000005
+2026-10-02T14:28:21+07:00 devbox kernel: hv_balloon: Underlying Hyper-V does not support order less than 9. Hypercall failed
+2026-10-02T14:28:21+07:00 devbox kernel: hv_balloon: Defaulting to page_reporting_order 9
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -22
+2026-10-02T14:28:21+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:21+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:28:21+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:28:21+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:28:21+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:28:22+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:28:23+07:00 devbox kernel: misc dxg: dxgk: dxgkio_query_adapter_info: Ioctl failed: -2
+2026-10-02T14:29:52+07:00 devbox kernel: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+2026-10-02T14:29:52+07:00 devbox kernel: PCI: Fatal: No config space access function found
+2026-10-02T14:29:52+07:00 devbox kernel: PCI: System does not support PCI
+2026-10-02T14:29:52+07:00 devbox kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+2026-10-02T14:29:52+07:00 devbox kernel: hv_balloon: Cold memory discard hypercall failed with status 1900000005
+2026-10-02T14:29:52+07:00 devbox kernel: hv_balloon: Underlying Hyper-V does not support order less than 9. Hypercall failed
+2026-10-02T14:29:52+07:00 devbox kernel: hv_balloon: Defaulting to page_reporting_order 9
+2026-10-02T14:29:52+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:29:52+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:29:52+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:29:52+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:29:52+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:29:52+07:00 devbox unknown: WSL (89) ERROR: CheckConnection: getaddrinfo() failed: -5
+2026-10-02T14:29:52+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:29:52+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:29:52+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:31:00+07:00 devbox kernel: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+2026-10-02T14:31:00+07:00 devbox kernel: PCI: Fatal: No config space access function found
+2026-10-02T14:31:00+07:00 devbox kernel: PCI: System does not support PCI
+2026-10-02T14:31:00+07:00 devbox kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+2026-10-02T14:31:00+07:00 devbox kernel: hv_balloon: Cold memory discard hypercall failed with status 1900000005
+2026-10-02T14:31:00+07:00 devbox kernel: hv_balloon: Underlying Hyper-V does not support order less than 9. Hypercall failed
+2026-10-02T14:31:00+07:00 devbox kernel: hv_balloon: Defaulting to page_reporting_order 9
+2026-10-02T14:31:00+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:31:00+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:31:00+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:31:00+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:31:00+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:31:00+07:00 devbox unknown: WSL (89) ERROR: CheckConnection: getaddrinfo() failed: -5
+2026-10-02T14:31:00+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:31:00+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:31:00+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:31:00+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:31:00+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:31:00+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:20+07:00 devbox kernel: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+2026-10-02T14:32:20+07:00 devbox kernel: PCI: Fatal: No config space access function found
+2026-10-02T14:32:20+07:00 devbox kernel: PCI: System does not support PCI
+2026-10-02T14:32:20+07:00 devbox kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+2026-10-02T14:32:20+07:00 devbox kernel: hv_balloon: Cold memory discard hypercall failed with status 1900000005
+2026-10-02T14:32:20+07:00 devbox kernel: hv_balloon: Underlying Hyper-V does not support order less than 9. Hypercall failed
+2026-10-02T14:32:20+07:00 devbox kernel: hv_balloon: Defaulting to page_reporting_order 9
+2026-10-02T14:32:20+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:32:20+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:20+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:20+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:20+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:20+07:00 devbox unknown: WSL (89) ERROR: CheckConnection: getaddrinfo() failed: -5
+2026-10-02T14:32:20+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:32:20+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:32:20+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:20+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:32:20+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:32:20+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:20+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:32:20+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:32:20+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:32:24+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:32:24+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:32:24+07:00 devbox kernel: Aborting journal on device loop2-8.
+2026-10-02T14:32:24+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:33:42+07:00 devbox kernel: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+2026-10-02T14:33:42+07:00 devbox kernel: PCI: Fatal: No config space access function found
+2026-10-02T14:33:42+07:00 devbox kernel: PCI: System does not support PCI
+2026-10-02T14:33:42+07:00 devbox kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+2026-10-02T14:33:42+07:00 devbox kernel: hv_balloon: Cold memory discard hypercall failed with status 1900000005
+2026-10-02T14:33:42+07:00 devbox kernel: hv_balloon: Underlying Hyper-V does not support order less than 9. Hypercall failed
+2026-10-02T14:33:42+07:00 devbox kernel: hv_balloon: Defaulting to page_reporting_order 9
+2026-10-02T14:33:42+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox unknown: WSL (89) ERROR: CheckConnection: getaddrinfo() failed: -5
+2026-10-02T14:33:42+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:33:42+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:33:42+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:33:42+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:33:42+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:33:42+07:00 devbox kernel: Aborting journal on device loop2-8.
+2026-10-02T14:33:42+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:33:42+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:33:42+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:33:42+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox kernel: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+2026-10-02T14:34:24+07:00 devbox kernel: PCI: Fatal: No config space access function found
+2026-10-02T14:34:24+07:00 devbox kernel: PCI: System does not support PCI
+2026-10-02T14:34:24+07:00 devbox kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+2026-10-02T14:34:24+07:00 devbox kernel: hv_balloon: Cold memory discard hypercall failed with status 1900000005
+2026-10-02T14:34:24+07:00 devbox kernel: hv_balloon: Underlying Hyper-V does not support order less than 9. Hypercall failed
+2026-10-02T14:34:24+07:00 devbox kernel: hv_balloon: Defaulting to page_reporting_order 9
+2026-10-02T14:34:24+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: WSL (89) ERROR: CheckConnection: getaddrinfo() failed: -5
+2026-10-02T14:34:24+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:34:24+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:34:24+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:34:24+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:34:24+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:34:24+07:00 devbox kernel: Aborting journal on device loop2-8.
+2026-10-02T14:34:24+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:34:24+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:34:24+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:34:24+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:34:24+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:34:24+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox kernel: MMIO Stale Data CPU bug present and SMT on, data leak possible. See https://www.kernel.org/doc/html/latest/admin-guide/hw-vuln/processor_mmio_stale_data.html for more details.
+2026-10-02T14:35:41+07:00 devbox kernel: PCI: Fatal: No config space access function found
+2026-10-02T14:35:41+07:00 devbox kernel: PCI: System does not support PCI
+2026-10-02T14:35:41+07:00 devbox kernel: device-mapper: core: CONFIG_IMA_DISABLE_HTABLE is disabled. Duplicate IMA measurements will not be recorded in the IMA log.
+2026-10-02T14:35:41+07:00 devbox kernel: hv_balloon: Cold memory discard hypercall failed with status 1900000005
+2026-10-02T14:35:41+07:00 devbox kernel: hv_balloon: Underlying Hyper-V does not support order less than 9. Hypercall failed
+2026-10-02T14:35:41+07:00 devbox kernel: hv_balloon: Defaulting to page_reporting_order 9
+2026-10-02T14:35:41+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: WSL (89) ERROR: CheckConnection: getaddrinfo() failed: -5
+2026-10-02T14:35:41+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:35:41+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:35:41+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:35:41+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:35:41+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:35:41+07:00 devbox kernel: Aborting journal on device loop2-8.
+2026-10-02T14:35:41+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:35:41+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:35:41+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:35:41+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:35:41+07:00 devbox unknown: WSL (2 - init-systemd(Ubuntu)) ERROR: InitTerminateInstanceInternal:2843: systemctl poweroff did not terminate the instance in 10000 ms, calling reboot(RB_POWER_OFF)
+2026-10-02T14:35:41+07:00 devbox kernel: misc dxg: dxgk: dxgkio_is_feature_enabled: Ioctl failed: -22
+2026-10-02T14:35:41+07:00 devbox unknown: Failed to connect to system scope bus via local transport: No such file or directory
+2026-10-02T14:36:54+07:00 devbox kernel: EXT4-fs (loop1): warning: mounting fs with errors, running e2fsck is recommended
+2026-10-02T14:36:54+07:00 devbox kernel: EXT4-fs error (device loop2): ext4_lookup:1789: inode #13: comm ls: deleted inode referenced: 15
+2026-10-02T14:36:54+07:00 devbox kernel: Aborting journal on device loop2-8.
+2026-10-02T14:36:54+07:00 devbox kernel: EXT4-fs (loop2): Remounting filesystem read-only
+2026-10-02T14:38:17+07:00 devbox kernel: NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+2026-10-02T14:44:04+07:00 devbox systemd-sysv-generator[9086]: SysV service '/etc/init.d/openipmi' lacks a native systemd unit file, automatically generating a unit file for compatibility.
+2026-10-02T14:44:04+07:00 devbox systemd-sysv-generator[9086]: Please update package to include a native systemd unit file.
+2026-10-02T14:44:04+07:00 devbox systemd-sysv-generator[9086]: ! This compatibility logic is deprecated, expect removal soon. !
+2026-10-02T14:45:59+07:00 devbox unknown: WSL (2 - Interop) ERROR: CreateLoginSession:2840: Timed out waiting for user session for uid=65534
+# rc=0
+

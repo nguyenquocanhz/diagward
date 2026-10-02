@@ -1,0 +1,1187 @@
+{
+  "tool": "diagward",
+  "version": "0.1.0-test",
+  "host": {
+    "hostname": "srv-db01.khachhang.vn",
+    "os": "AlmaLinux 9.4 (Seafoam Ocelot)",
+    "kernel": "5.14.0-427.13.1.el9_4.x86_64",
+    "arch": "x86_64",
+    "vendor": "Dell Inc.",
+    "model": "PowerEdge R740",
+    "serial": "7XK9Q73",
+    "bios": "2.12.2 (2021-07-09)",
+    "board": "0YWR7D",
+    "cpu": "2 × Intel Xeon Silver 4214 (24 cores, 48 threads)",
+    "memBytes": 206158430208,
+    "uptime": 1047720,
+    "bmc": "iDRAC9 4.40.00.00"
+  },
+  "env": {
+    "os": "linux",
+    "root": false,
+    "distro": "almalinux",
+    "distroVer": "9.4",
+    "pm": "dnf",
+    "sinceDays": 7,
+    "now": "0001-01-01T00:00:00Z"
+  },
+  "collected": "2026-10-01T16:00:20+07:00",
+  "seconds": 23.4,
+  "verdict": "crit",
+  "summary": [
+    {
+      "component": "system",
+      "name": {
+        "en": "System",
+        "vi": "Hệ thống"
+      },
+      "severity": "ok",
+      "crit": 0,
+      "warn": 0,
+      "info": 0,
+      "checked": false
+    },
+    {
+      "component": "cpu",
+      "name": {
+        "en": "CPU",
+        "vi": "CPU"
+      },
+      "severity": "ok",
+      "crit": 0,
+      "warn": 0,
+      "info": 0,
+      "checked": false
+    },
+    {
+      "component": "memory",
+      "name": {
+        "en": "Memory (RAM)",
+        "vi": "Bộ nhớ (RAM)"
+      },
+      "severity": "warn",
+      "crit": 0,
+      "warn": 1,
+      "info": 0,
+      "checked": true
+    },
+    {
+      "component": "disk",
+      "name": {
+        "en": "Disks",
+        "vi": "Ổ cứng"
+      },
+      "severity": "crit",
+      "crit": 2,
+      "warn": 1,
+      "info": 0,
+      "checked": true
+    },
+    {
+      "component": "raid",
+      "name": {
+        "en": "RAID & storage pools",
+        "vi": "RAID & nhóm lưu trữ"
+      },
+      "severity": "crit",
+      "crit": 1,
+      "warn": 0,
+      "info": 0,
+      "checked": true
+    },
+    {
+      "component": "filesystem",
+      "name": {
+        "en": "Filesystems",
+        "vi": "Phân vùng & hệ thống tệp"
+      },
+      "severity": "ok",
+      "crit": 0,
+      "warn": 0,
+      "info": 0,
+      "checked": false
+    },
+    {
+      "component": "thermal",
+      "name": {
+        "en": "Temperature",
+        "vi": "Nhiệt độ"
+      },
+      "severity": "ok",
+      "crit": 0,
+      "warn": 0,
+      "info": 0,
+      "checked": true
+    },
+    {
+      "component": "fan",
+      "name": {
+        "en": "Fans",
+        "vi": "Quạt"
+      },
+      "severity": "ok",
+      "crit": 0,
+      "warn": 0,
+      "info": 0,
+      "checked": true
+    },
+    {
+      "component": "power",
+      "name": {
+        "en": "Power supply",
+        "vi": "Nguồn điện"
+      },
+      "severity": "crit",
+      "crit": 1,
+      "warn": 0,
+      "info": 0,
+      "checked": true
+    },
+    {
+      "component": "network",
+      "name": {
+        "en": "Network",
+        "vi": "Mạng"
+      },
+      "severity": "ok",
+      "crit": 0,
+      "warn": 0,
+      "info": 0,
+      "checked": false
+    },
+    {
+      "component": "bmc",
+      "name": {
+        "en": "Management controller (BMC)",
+        "vi": "Bộ điều khiển quản trị (BMC)"
+      },
+      "severity": "info",
+      "crit": 0,
+      "warn": 0,
+      "info": 1,
+      "checked": true
+    },
+    {
+      "component": "logs",
+      "name": {
+        "en": "System logs",
+        "vi": "Nhật ký hệ thống"
+      },
+      "severity": "warn",
+      "crit": 0,
+      "warn": 1,
+      "info": 0,
+      "checked": true
+    }
+  ],
+  "findings": [
+    {
+      "id": "disk.smart_pending",
+      "component": "disk",
+      "severity": "crit",
+      "target": "/dev/sda",
+      "title": {
+        "en": "Disk /dev/sda is failing: 24 sectors could not be read",
+        "vi": "Ổ /dev/sda sắp hỏng: 24 sector không đọc được"
+      },
+      "detail": {
+        "en": "S.M.A.R.T. attribute 197 Current_Pending_Sector = 24 and 198 Offline_Uncorrectable = 24. Sectors that cannot be read mean data on them may already be lost, and the count usually grows quickly.",
+        "vi": "Thuộc tính S.M.A.R.T. 197 Current_Pending_Sector = 24 và 198 Offline_Uncorrectable = 24. Sector không đọc được nghĩa là dữ liệu trên đó có thể đã mất, và số lượng thường tăng nhanh."
+      },
+      "action": {
+        "en": "Back up the data now. Replace disk /dev/sda (serial ZC1234AB). If it is in a RAID, check the array has rebuilt before pulling the disk.",
+        "vi": "Sao lưu dữ liệu ngay. Thay ổ /dev/sda (serial ZC1234AB). Nếu ổ nằm trong RAID, kiểm tra RAID đã rebuild xong trước khi rút ổ."
+      },
+      "evidence": [
+        "197 Current_Pending_Sector  0x0012   100   100   000    Old_age   Always       -       24",
+        "198 Offline_Uncorrectable   0x0010   100   100   000    Old_age   Offline      -       24",
+        "<script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+        "line with \u001b[31mANSI\u001b[0m escape and a\ttab and bell\u0007"
+      ],
+      "part": {
+        "kind": "disk",
+        "vendor": "Seagate",
+        "model": "ST4000NM0035-1V4107",
+        "serial": "ZC1234AB",
+        "location": "/dev/sda (bay 3)",
+        "firmware": "TN03",
+        "size": "4.0 TB"
+      }
+    },
+    {
+      "id": "disk.smart_selftest_failed",
+      "component": "disk",
+      "severity": "crit",
+      "target": "/dev/sda",
+      "title": {
+        "en": "Disk /dev/sda failed its last self-test",
+        "vi": "Ổ /dev/sda không qua bài tự kiểm tra gần nhất"
+      },
+      "detail": {
+        "en": "",
+        "vi": ""
+      },
+      "action": {
+        "en": "Replace the disk.",
+        "vi": "Thay ổ."
+      },
+      "part": {
+        "kind": "disk",
+        "vendor": "Seagate",
+        "model": "ST4000NM0035-1V4107",
+        "serial": "ZC1234AB",
+        "location": "/dev/sda (bay 3)"
+      }
+    },
+    {
+      "id": "raid.md_degraded",
+      "component": "raid",
+      "severity": "crit",
+      "target": "md0",
+      "title": {
+        "en": "RAID md0 is degraded [_U]: one member is missing",
+        "vi": "RAID md0 bị suy giảm [_U]: thiếu một ổ thành viên"
+      },
+      "detail": {
+        "en": "/proc/mdstat shows [2/1] [_U].\nThe array has no redundancy left.",
+        "vi": "/proc/mdstat cho thấy [2/1] [_U].\nRAID không còn dự phòng."
+      },
+      "action": {
+        "en": "Back up now, then replace the failed member and re-add it: mdadm --manage /dev/md0 --add /dev/sdX1",
+        "vi": "Sao lưu ngay, sau đó thay ổ hỏng và thêm lại: mdadm --manage /dev/md0 --add /dev/sdX1"
+      },
+      "evidence": [
+        "md0 : active raid1 sdb1[1]",
+        "      976630464 blocks super 1.2 [2/1] [_U]"
+      ]
+    },
+    {
+      "id": "ipmi.psu_failed",
+      "component": "power",
+      "severity": "crit",
+      "target": "PSU2",
+      "title": {
+        "en": "Power supply PSU2 has failed (AC input lost)",
+        "vi": "Bộ nguồn PSU2 bị hỏng (mất điện đầu vào)"
+      },
+      "detail": {
+        "en": "",
+        "vi": ""
+      },
+      "action": {
+        "en": "Check the power cord and PDU of PSU2; if power is present, replace PSU2.",
+        "vi": "Kiểm tra dây nguồn và PDU cấp cho PSU2; nếu vẫn có điện thì thay PSU2."
+      },
+      "part": {
+        "kind": "psu",
+        "vendor": "Dell",
+        "model": "0PJMDN 750W",
+        "location": "PSU2"
+      }
+    },
+    {
+      "id": "memory.ce_rising",
+      "component": "memory",
+      "severity": "warn",
+      "target": "DIMM_A1",
+      "title": {
+        "en": "Corrected ECC errors on DIMM_A1 (152 in 7 days)",
+        "vi": "Thanh RAM DIMM_A1 có lỗi ECC đã sửa (152 lỗi trong 7 ngày)"
+      },
+      "detail": {
+        "en": "EDAC reports corrected errors on one module. They are fixed by ECC but often precede uncorrectable errors.",
+        "vi": "EDAC báo lỗi đã sửa trên một thanh RAM. ECC đã sửa được nhưng đây thường là dấu hiệu trước khi xảy ra lỗi không sửa được."
+      },
+      "action": {
+        "en": "Plan to replace DIMM_A1 at the next maintenance window. Run memtester or the vendor diagnostics to confirm.",
+        "vi": "Lên kế hoạch thay thanh RAM DIMM_A1 trong lần bảo trì tới. Chạy memtester hoặc công cụ chẩn đoán của hãng để xác nhận."
+      },
+      "part": {
+        "kind": "dimm",
+        "vendor": "Samsung",
+        "model": "M393A4K40CB2-CVF",
+        "serial": "4C1A2B3D",
+        "location": "CPU1 DIMM_A1",
+        "size": "32 GiB"
+      }
+    },
+    {
+      "id": "disk.crc_errors",
+      "component": "disk",
+      "severity": "warn",
+      "target": "<script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+      "title": {
+        "en": "Cable errors on <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+        "vi": "Lỗi cáp trên <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>"
+      },
+      "detail": {
+        "en": "UDMA_CRC_Error_Count = 31",
+        "vi": "UDMA_CRC_Error_Count = 31"
+      },
+      "action": {
+        "en": "Reseat or replace the SATA/SAS cable and backplane slot.",
+        "vi": "Cắm lại hoặc thay cáp SATA/SAS và khe backplane."
+      }
+    },
+    {
+      "id": "logs.reboots",
+      "component": "logs",
+      "severity": "warn",
+      "target": "kernel",
+      "title": {
+        "en": "3 unexpected reboots in 7 days",
+        "vi": "3 lần khởi động lại bất thường trong 7 ngày"
+      },
+      "detail": {
+        "en": "ログ: 予期しない再起動 — 服务器意外重启 🔥 (unicode test)",
+        "vi": "ログ: 予期しない再起動 — 服务器意外重启 🔥 (kiểm thử unicode)"
+      },
+      "action": {
+        "en": "Check the BMC event log around each reboot time for power or thermal events.",
+        "vi": "Xem nhật ký sự kiện BMC quanh các thời điểm khởi động lại để tìm sự cố nguồn hoặc nhiệt độ."
+      }
+    },
+    {
+      "id": "ipmi.sel_info",
+      "component": "bmc",
+      "severity": "info",
+      "title": {
+        "en": "SEL is 71% full",
+        "vi": "SEL đã đầy 71%"
+      },
+      "detail": {
+        "en": "Old events may be dropped soon.",
+        "vi": "Sự kiện cũ có thể sớm bị ghi đè."
+      },
+      "action": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "disk.smart_ok",
+      "component": "disk",
+      "severity": "ok",
+      "title": {
+        "en": "3 disks passed S.M.A.R.T.",
+        "vi": "3 ổ cứng đạt kiểm tra S.M.A.R.T."
+      },
+      "detail": {
+        "en": "",
+        "vi": ""
+      },
+      "action": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "ipmi.temp_ok",
+      "component": "thermal",
+      "severity": "ok",
+      "title": {
+        "en": "All temperatures below warning thresholds",
+        "vi": "Mọi nhiệt độ đều dưới ngưỡng cảnh báo"
+      },
+      "detail": {
+        "en": "",
+        "vi": ""
+      },
+      "action": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "ipmi.fan_ok",
+      "component": "fan",
+      "severity": "ok",
+      "title": {
+        "en": "6 fans spinning normally",
+        "vi": "6 quạt quay bình thường"
+      },
+      "detail": {
+        "en": "",
+        "vi": ""
+      },
+      "action": {
+        "en": "",
+        "vi": ""
+      }
+    }
+  ],
+  "results": [
+    {
+      "domain": "disk",
+      "findings": [
+        {
+          "id": "disk.smart_pending",
+          "component": "disk",
+          "severity": "crit",
+          "target": "/dev/sda",
+          "title": {
+            "en": "Disk /dev/sda is failing: 24 sectors could not be read",
+            "vi": "Ổ /dev/sda sắp hỏng: 24 sector không đọc được"
+          },
+          "detail": {
+            "en": "S.M.A.R.T. attribute 197 Current_Pending_Sector = 24 and 198 Offline_Uncorrectable = 24. Sectors that cannot be read mean data on them may already be lost, and the count usually grows quickly.",
+            "vi": "Thuộc tính S.M.A.R.T. 197 Current_Pending_Sector = 24 và 198 Offline_Uncorrectable = 24. Sector không đọc được nghĩa là dữ liệu trên đó có thể đã mất, và số lượng thường tăng nhanh."
+          },
+          "action": {
+            "en": "Back up the data now. Replace disk /dev/sda (serial ZC1234AB). If it is in a RAID, check the array has rebuilt before pulling the disk.",
+            "vi": "Sao lưu dữ liệu ngay. Thay ổ /dev/sda (serial ZC1234AB). Nếu ổ nằm trong RAID, kiểm tra RAID đã rebuild xong trước khi rút ổ."
+          },
+          "evidence": [
+            "197 Current_Pending_Sector  0x0012   100   100   000    Old_age   Always       -       24",
+            "198 Offline_Uncorrectable   0x0010   100   100   000    Old_age   Offline      -       24",
+            "<script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+            "line with \u001b[31mANSI\u001b[0m escape and a\ttab and bell\u0007"
+          ],
+          "part": {
+            "kind": "disk",
+            "vendor": "Seagate",
+            "model": "ST4000NM0035-1V4107",
+            "serial": "ZC1234AB",
+            "location": "/dev/sda (bay 3)",
+            "firmware": "TN03",
+            "size": "4.0 TB"
+          }
+        },
+        {
+          "id": "disk.smart_selftest_failed",
+          "component": "disk",
+          "severity": "crit",
+          "target": "/dev/sda",
+          "title": {
+            "en": "Disk /dev/sda failed its last self-test",
+            "vi": "Ổ /dev/sda không qua bài tự kiểm tra gần nhất"
+          },
+          "detail": {
+            "en": "",
+            "vi": ""
+          },
+          "action": {
+            "en": "Replace the disk.",
+            "vi": "Thay ổ."
+          },
+          "part": {
+            "kind": "disk",
+            "vendor": "Seagate",
+            "model": "ST4000NM0035-1V4107",
+            "serial": "ZC1234AB",
+            "location": "/dev/sda (bay 3)"
+          }
+        },
+        {
+          "id": "disk.crc_errors",
+          "component": "disk",
+          "severity": "warn",
+          "target": "<script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+          "title": {
+            "en": "Cable errors on <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+            "vi": "Lỗi cáp trên <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>"
+          },
+          "detail": {
+            "en": "UDMA_CRC_Error_Count = 31",
+            "vi": "UDMA_CRC_Error_Count = 31"
+          },
+          "action": {
+            "en": "Reseat or replace the SATA/SAS cable and backplane slot.",
+            "vi": "Cắm lại hoặc thay cáp SATA/SAS và khe backplane."
+          }
+        },
+        {
+          "id": "disk.smart_ok",
+          "component": "disk",
+          "severity": "ok",
+          "title": {
+            "en": "3 disks passed S.M.A.R.T.",
+            "vi": "3 ổ cứng đạt kiểm tra S.M.A.R.T."
+          },
+          "detail": {
+            "en": "",
+            "vi": ""
+          },
+          "action": {
+            "en": "",
+            "vi": ""
+          }
+        }
+      ],
+      "tables": [
+        {
+          "id": "disk.inventory",
+          "title": {
+            "en": "Disks",
+            "vi": "Ổ cứng"
+          },
+          "columns": [
+            {
+              "en": "Device",
+              "vi": "Thiết bị"
+            },
+            {
+              "en": "Model",
+              "vi": "Model"
+            },
+            {
+              "en": "Serial",
+              "vi": "Serial"
+            },
+            {
+              "en": "Size",
+              "vi": "Dung lượng"
+            },
+            {
+              "en": "Temp",
+              "vi": "Nhiệt độ"
+            },
+            {
+              "en": "Power-on",
+              "vi": "Thời gian chạy"
+            },
+            {
+              "en": "Health",
+              "vi": "Sức khỏe"
+            }
+          ],
+          "rows": [
+            {
+              "status": "crit",
+              "cells": [
+                "/dev/sda",
+                "ST4000NM0035-1V4107",
+                "ZC1234AB",
+                "4.0 TB",
+                "41 °C",
+                "5 năm 2 tháng (45,600 giờ)",
+                "FAILING: 24 pending sectors, đang hỏng dần"
+              ]
+            },
+            {
+              "status": "warn",
+              "cells": [
+                "/dev/sdb",
+                "WDC WD40EFRX-68N32N0",
+                "WD-WCC7K1234567",
+                "4.0 TB",
+                "38 °C",
+                "2 năm",
+                "<script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>"
+              ]
+            },
+            {
+              "status": "ok",
+              "cells": [
+                "/dev/nvme0n1",
+                "SAMSUNG MZQL2960HCJR-00A07",
+                "S64FNE0R123456",
+                "960 GB",
+                "35 °C",
+                "1 năm",
+                "OK"
+              ]
+            }
+          ],
+          "note": {
+            "en": "Values from smartctl -a.",
+            "vi": "Số liệu từ smartctl -a."
+          }
+        }
+      ],
+      "coverage": [
+        {
+          "id": "disk.smart",
+          "component": "disk",
+          "name": {
+            "en": "S.M.A.R.T. health",
+            "vi": "Sức khỏe S.M.A.R.T."
+          },
+          "state": "ran",
+          "reason": {
+            "en": "",
+            "vi": ""
+          },
+          "fix": {
+            "en": "",
+            "vi": ""
+          }
+        },
+        {
+          "id": "disk.nvme_log",
+          "component": "disk",
+          "name": {
+            "en": "NVMe error log",
+            "vi": "Nhật ký lỗi NVMe"
+          },
+          "state": "skipped",
+          "reason": {
+            "en": "nvme is not installed.",
+            "vi": "Chưa cài nvme."
+          },
+          "fix": {
+            "en": "Install it: dnf install -y nvme-cli",
+            "vi": "Cài đặt: dnf install -y nvme-cli"
+          }
+        },
+        {
+          "id": "disk.bench",
+          "component": "disk",
+          "name": {
+            "en": "Disk speed test",
+            "vi": "Đo tốc độ ổ cứng"
+          },
+          "state": "skipped",
+          "reason": {
+            "en": "Disabled by default; it writes a test file.",
+            "vi": "Mặc định tắt vì phải ghi tệp thử."
+          },
+          "fix": {
+            "en": "Run: diagward check --bench --bench-dir /var/tmp --bench-mb 1024 --some-very-long-option-name-to-force-wrapping=value",
+            "vi": "Chạy: diagward check --bench --bench-dir /var/tmp --bench-mb 1024 --some-very-long-option-name-to-force-wrapping=value"
+          }
+        }
+      ]
+    },
+    {
+      "domain": "raid",
+      "findings": [
+        {
+          "id": "raid.md_degraded",
+          "component": "raid",
+          "severity": "crit",
+          "target": "md0",
+          "title": {
+            "en": "RAID md0 is degraded [_U]: one member is missing",
+            "vi": "RAID md0 bị suy giảm [_U]: thiếu một ổ thành viên"
+          },
+          "detail": {
+            "en": "/proc/mdstat shows [2/1] [_U].\nThe array has no redundancy left.",
+            "vi": "/proc/mdstat cho thấy [2/1] [_U].\nRAID không còn dự phòng."
+          },
+          "action": {
+            "en": "Back up now, then replace the failed member and re-add it: mdadm --manage /dev/md0 --add /dev/sdX1",
+            "vi": "Sao lưu ngay, sau đó thay ổ hỏng và thêm lại: mdadm --manage /dev/md0 --add /dev/sdX1"
+          },
+          "evidence": [
+            "md0 : active raid1 sdb1[1]",
+            "      976630464 blocks super 1.2 [2/1] [_U]"
+          ]
+        }
+      ],
+      "coverage": [
+        {
+          "id": "raid.mdstat",
+          "component": "raid",
+          "name": {
+            "en": "Linux software RAID",
+            "vi": "RAID mềm Linux"
+          },
+          "state": "ran",
+          "reason": {
+            "en": "",
+            "vi": ""
+          },
+          "fix": {
+            "en": "",
+            "vi": ""
+          }
+        },
+        {
+          "id": "raid.megaraid",
+          "component": "raid",
+          "name": {
+            "en": "MegaRAID controller",
+            "vi": "Card RAID MegaRAID"
+          },
+          "state": "partial",
+          "reason": {
+            "en": "Controller found but storcli could not read the battery.",
+            "vi": "Có card RAID nhưng storcli không đọc được pin."
+          },
+          "fix": {
+            "en": "",
+            "vi": ""
+          }
+        }
+      ]
+    },
+    {
+      "domain": "memory",
+      "findings": [
+        {
+          "id": "memory.ce_rising",
+          "component": "memory",
+          "severity": "warn",
+          "target": "DIMM_A1",
+          "title": {
+            "en": "Corrected ECC errors on DIMM_A1 (152 in 7 days)",
+            "vi": "Thanh RAM DIMM_A1 có lỗi ECC đã sửa (152 lỗi trong 7 ngày)"
+          },
+          "detail": {
+            "en": "EDAC reports corrected errors on one module. They are fixed by ECC but often precede uncorrectable errors.",
+            "vi": "EDAC báo lỗi đã sửa trên một thanh RAM. ECC đã sửa được nhưng đây thường là dấu hiệu trước khi xảy ra lỗi không sửa được."
+          },
+          "action": {
+            "en": "Plan to replace DIMM_A1 at the next maintenance window. Run memtester or the vendor diagnostics to confirm.",
+            "vi": "Lên kế hoạch thay thanh RAM DIMM_A1 trong lần bảo trì tới. Chạy memtester hoặc công cụ chẩn đoán của hãng để xác nhận."
+          },
+          "part": {
+            "kind": "dimm",
+            "vendor": "Samsung",
+            "model": "M393A4K40CB2-CVF",
+            "serial": "4C1A2B3D",
+            "location": "CPU1 DIMM_A1",
+            "size": "32 GiB"
+          }
+        }
+      ],
+      "coverage": [
+        {
+          "id": "memory.edac",
+          "component": "memory",
+          "name": {
+            "en": "ECC error counters",
+            "vi": "Bộ đếm lỗi ECC"
+          },
+          "state": "ran",
+          "reason": {
+            "en": "",
+            "vi": ""
+          },
+          "fix": {
+            "en": "",
+            "vi": ""
+          }
+        },
+        {
+          "id": "memory.dmi",
+          "component": "memory",
+          "name": {
+            "en": "DIMM inventory",
+            "vi": "Danh sách thanh RAM"
+          },
+          "state": "skipped",
+          "reason": {
+            "en": "Needs root.",
+            "vi": "Cần quyền root."
+          },
+          "fix": {
+            "en": "Run it as root: sudo diagward",
+            "vi": "Chạy với quyền root: sudo diagward"
+          }
+        }
+      ]
+    },
+    {
+      "domain": "ipmi",
+      "findings": [
+        {
+          "id": "ipmi.psu_failed",
+          "component": "power",
+          "severity": "crit",
+          "target": "PSU2",
+          "title": {
+            "en": "Power supply PSU2 has failed (AC input lost)",
+            "vi": "Bộ nguồn PSU2 bị hỏng (mất điện đầu vào)"
+          },
+          "detail": {
+            "en": "",
+            "vi": ""
+          },
+          "action": {
+            "en": "Check the power cord and PDU of PSU2; if power is present, replace PSU2.",
+            "vi": "Kiểm tra dây nguồn và PDU cấp cho PSU2; nếu vẫn có điện thì thay PSU2."
+          },
+          "part": {
+            "kind": "psu",
+            "vendor": "Dell",
+            "model": "0PJMDN 750W",
+            "location": "PSU2"
+          }
+        },
+        {
+          "id": "ipmi.fan_ok",
+          "component": "fan",
+          "severity": "ok",
+          "title": {
+            "en": "6 fans spinning normally",
+            "vi": "6 quạt quay bình thường"
+          },
+          "detail": {
+            "en": "",
+            "vi": ""
+          },
+          "action": {
+            "en": "",
+            "vi": ""
+          }
+        },
+        {
+          "id": "ipmi.temp_ok",
+          "component": "thermal",
+          "severity": "ok",
+          "title": {
+            "en": "All temperatures below warning thresholds",
+            "vi": "Mọi nhiệt độ đều dưới ngưỡng cảnh báo"
+          },
+          "detail": {
+            "en": "",
+            "vi": ""
+          },
+          "action": {
+            "en": "",
+            "vi": ""
+          }
+        },
+        {
+          "id": "ipmi.sel_info",
+          "component": "bmc",
+          "severity": "info",
+          "title": {
+            "en": "SEL is 71% full",
+            "vi": "SEL đã đầy 71%"
+          },
+          "detail": {
+            "en": "Old events may be dropped soon.",
+            "vi": "Sự kiện cũ có thể sớm bị ghi đè."
+          },
+          "action": {
+            "en": "",
+            "vi": ""
+          }
+        }
+      ],
+      "coverage": [
+        {
+          "id": "ipmi.sdr",
+          "component": "bmc",
+          "name": {
+            "en": "IPMI sensors",
+            "vi": "Cảm biến IPMI"
+          },
+          "state": "ran",
+          "reason": {
+            "en": "",
+            "vi": ""
+          },
+          "fix": {
+            "en": "",
+            "vi": ""
+          }
+        },
+        {
+          "id": "ipmi.fru",
+          "component": "bmc",
+          "name": {
+            "en": "FRU inventory",
+            "vi": "Thông tin FRU"
+          },
+          "state": "failed",
+          "reason": {
+            "en": "ipmitool fru timed out: <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+            "vi": "ipmitool fru bị quá thời gian: <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>"
+          },
+          "fix": {
+            "en": "",
+            "vi": ""
+          }
+        }
+      ]
+    },
+    {
+      "domain": "sensors",
+      "findings": null,
+      "coverage": [
+        {
+          "id": "sensors.lm",
+          "component": "thermal",
+          "name": {
+            "en": "lm-sensors",
+            "vi": "lm-sensors"
+          },
+          "state": "skipped",
+          "reason": {
+            "en": "sensors is not installed.",
+            "vi": "Chưa cài sensors."
+          },
+          "fix": {
+            "en": "Install it: dnf install -y lm_sensors",
+            "vi": "Cài đặt: dnf install -y lm_sensors"
+          }
+        },
+        {
+          "id": "sensors.dmi",
+          "component": "thermal",
+          "name": {
+            "en": "hwmon",
+            "vi": "hwmon"
+          },
+          "state": "skipped",
+          "reason": {
+            "en": "Needs root.",
+            "vi": "Cần quyền root."
+          },
+          "fix": {
+            "en": "Run it as root: sudo diagward",
+            "vi": "Chạy với quyền root: sudo diagward"
+          }
+        }
+      ]
+    },
+    {
+      "domain": "logs",
+      "findings": [
+        {
+          "id": "logs.reboots",
+          "component": "logs",
+          "severity": "warn",
+          "target": "kernel",
+          "title": {
+            "en": "3 unexpected reboots in 7 days",
+            "vi": "3 lần khởi động lại bất thường trong 7 ngày"
+          },
+          "detail": {
+            "en": "ログ: 予期しない再起動 — 服务器意外重启 🔥 (unicode test)",
+            "vi": "ログ: 予期しない再起動 — 服务器意外重启 🔥 (kiểm thử unicode)"
+          },
+          "action": {
+            "en": "Check the BMC event log around each reboot time for power or thermal events.",
+            "vi": "Xem nhật ký sự kiện BMC quanh các thời điểm khởi động lại để tìm sự cố nguồn hoặc nhiệt độ."
+          }
+        }
+      ],
+      "coverage": [
+        {
+          "id": "logs.journal",
+          "component": "logs",
+          "name": {
+            "en": "Kernel log",
+            "vi": "Nhật ký kernel"
+          },
+          "state": "ran",
+          "reason": {
+            "en": "",
+            "vi": ""
+          },
+          "fix": {
+            "en": "",
+            "vi": ""
+          }
+        }
+      ]
+    }
+  ],
+  "coverage": [
+    {
+      "id": "disk.smart",
+      "component": "disk",
+      "name": {
+        "en": "S.M.A.R.T. health",
+        "vi": "Sức khỏe S.M.A.R.T."
+      },
+      "state": "ran",
+      "reason": {
+        "en": "",
+        "vi": ""
+      },
+      "fix": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "disk.nvme_log",
+      "component": "disk",
+      "name": {
+        "en": "NVMe error log",
+        "vi": "Nhật ký lỗi NVMe"
+      },
+      "state": "skipped",
+      "reason": {
+        "en": "nvme is not installed.",
+        "vi": "Chưa cài nvme."
+      },
+      "fix": {
+        "en": "Install it: dnf install -y nvme-cli",
+        "vi": "Cài đặt: dnf install -y nvme-cli"
+      }
+    },
+    {
+      "id": "disk.bench",
+      "component": "disk",
+      "name": {
+        "en": "Disk speed test",
+        "vi": "Đo tốc độ ổ cứng"
+      },
+      "state": "skipped",
+      "reason": {
+        "en": "Disabled by default; it writes a test file.",
+        "vi": "Mặc định tắt vì phải ghi tệp thử."
+      },
+      "fix": {
+        "en": "Run: diagward check --bench --bench-dir /var/tmp --bench-mb 1024 --some-very-long-option-name-to-force-wrapping=value",
+        "vi": "Chạy: diagward check --bench --bench-dir /var/tmp --bench-mb 1024 --some-very-long-option-name-to-force-wrapping=value"
+      }
+    },
+    {
+      "id": "raid.mdstat",
+      "component": "raid",
+      "name": {
+        "en": "Linux software RAID",
+        "vi": "RAID mềm Linux"
+      },
+      "state": "ran",
+      "reason": {
+        "en": "",
+        "vi": ""
+      },
+      "fix": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "raid.megaraid",
+      "component": "raid",
+      "name": {
+        "en": "MegaRAID controller",
+        "vi": "Card RAID MegaRAID"
+      },
+      "state": "partial",
+      "reason": {
+        "en": "Controller found but storcli could not read the battery.",
+        "vi": "Có card RAID nhưng storcli không đọc được pin."
+      },
+      "fix": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "memory.edac",
+      "component": "memory",
+      "name": {
+        "en": "ECC error counters",
+        "vi": "Bộ đếm lỗi ECC"
+      },
+      "state": "ran",
+      "reason": {
+        "en": "",
+        "vi": ""
+      },
+      "fix": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "memory.dmi",
+      "component": "memory",
+      "name": {
+        "en": "DIMM inventory",
+        "vi": "Danh sách thanh RAM"
+      },
+      "state": "skipped",
+      "reason": {
+        "en": "Needs root.",
+        "vi": "Cần quyền root."
+      },
+      "fix": {
+        "en": "Run it as root: sudo diagward",
+        "vi": "Chạy với quyền root: sudo diagward"
+      }
+    },
+    {
+      "id": "ipmi.sdr",
+      "component": "bmc",
+      "name": {
+        "en": "IPMI sensors",
+        "vi": "Cảm biến IPMI"
+      },
+      "state": "ran",
+      "reason": {
+        "en": "",
+        "vi": ""
+      },
+      "fix": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "ipmi.fru",
+      "component": "bmc",
+      "name": {
+        "en": "FRU inventory",
+        "vi": "Thông tin FRU"
+      },
+      "state": "failed",
+      "reason": {
+        "en": "ipmitool fru timed out: <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>",
+        "vi": "ipmitool fru bị quá thời gian: <script>alert(\"x\")</script>\" onmouseover=\"alert(1)\" '><img src=x onerror=alert(2)>"
+      },
+      "fix": {
+        "en": "",
+        "vi": ""
+      }
+    },
+    {
+      "id": "sensors.lm",
+      "component": "thermal",
+      "name": {
+        "en": "lm-sensors",
+        "vi": "lm-sensors"
+      },
+      "state": "skipped",
+      "reason": {
+        "en": "sensors is not installed.",
+        "vi": "Chưa cài sensors."
+      },
+      "fix": {
+        "en": "Install it: dnf install -y lm_sensors",
+        "vi": "Cài đặt: dnf install -y lm_sensors"
+      }
+    },
+    {
+      "id": "sensors.dmi",
+      "component": "thermal",
+      "name": {
+        "en": "hwmon",
+        "vi": "hwmon"
+      },
+      "state": "skipped",
+      "reason": {
+        "en": "Needs root.",
+        "vi": "Cần quyền root."
+      },
+      "fix": {
+        "en": "Run it as root: sudo diagward",
+        "vi": "Chạy với quyền root: sudo diagward"
+      }
+    },
+    {
+      "id": "logs.journal",
+      "component": "logs",
+      "name": {
+        "en": "Kernel log",
+        "vi": "Nhật ký kernel"
+      },
+      "state": "ran",
+      "reason": {
+        "en": "",
+        "vi": ""
+      },
+      "fix": {
+        "en": "",
+        "vi": ""
+      }
+    }
+  ],
+  "notes": [
+    {
+      "en": "Diagward ran without root, so some checks were skipped. Run it again with sudo for a complete report.",
+      "vi": "Diagward chạy không có quyền root nên một số mục đã bị bỏ qua. Hãy chạy lại bằng sudo để có báo cáo đầy đủ."
+    }
+  ]
+}

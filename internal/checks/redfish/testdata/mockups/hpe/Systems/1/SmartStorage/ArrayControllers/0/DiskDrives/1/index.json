@@ -1,0 +1,21 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#HpeSmartStorageDiskDrive.HpeSmartStorageDiskDrive",
+  "@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/DiskDrives/1/",
+  "@odata.type": "#HpeSmartStorageDiskDrive.v2_1_0.HpeSmartStorageDiskDrive",
+  "BlockSizeBytes": 512,
+  "CapacityGB": 480,
+  "CapacityMiB": 457862,
+  "Description": "HPE Smart Storage Disk Drive View",
+  "FirmwareVersion": {"Current": {"VersionString": "HPG3"}},
+  "Id": "1",
+  "InterfaceType": "SATA",
+  "Location": "1I:1:2",
+  "LocationFormat": "ControllerPort:Box:Bay",
+  "MediaType": "SSD",
+  "Model": "VK000480GWSRR",
+  "Name": "HpeSmartStorageDiskDrive",
+  "PowerOnHours": 21040,
+  "SSDEnduranceUtilizationPercentage": 5,
+  "SerialNumber": "S4NANA0M800124",
+  "Status": {"Health": "Critical", "State": "Enabled"}
+}

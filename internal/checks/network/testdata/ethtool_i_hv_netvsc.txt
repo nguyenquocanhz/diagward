@@ -1,0 +1,11 @@
+driver: hv_netvsc
+version: 6.18.40.1-microsoft-standard-WS
+firmware-version: N/A
+expansion-rom-version: 
+bus-info: d9f95135-a06f-476e-af67-d087f9a
+supports-statistics: yes
+supports-test: no
+supports-eeprom-access: no
+supports-register-dump: yes
+supports-priv-flags: no
+

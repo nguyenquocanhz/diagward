@@ -1,0 +1,46 @@
+# dmidecode 3.0
+Scanning /dev/mem for entry point.
+SMBIOS 2.8 present.
+13 structures occupying 788 bytes.
+Table at 0xBFFFFCE0.
+
+Handle 0x0000, DMI type 0, 24 bytes
+BIOS Information
+	Vendor: SeaBIOS
+	Version: 1.9.1-5.el7_3.2
+	Release Date: 04/01/2014
+	Address: 0xE8000
+	Runtime Size: 96 kB
+	ROM Size: 64 kB
+	Characteristics:
+		BIOS characteristics not supported
+		Targeted content distribution is supported
+	BIOS Revision: 0.0
+
+Handle 0x0100, DMI type 1, 27 bytes
+System Information
+	Manufacturer: Red Hat
+	Product Name: RHEV Hypervisor
+	Version: 7.3-7.el7
+	Serial Number: 34353737-3035-4E43-3734-353130425732
+	UUID: 10331906-BB22-4716-8876-3DFEF8FA941E
+	Wake-up Type: Power Switch
+	SKU Number: Not Specified
+	Family: Red Hat Enterprise Linux
+
+Handle 0x0300, DMI type 3, 21 bytes
+Chassis Information
+	Manufacturer: Red Hat
+	Type: Other
+	Lock: Not Present
+	Version: RHEL 7.2.0 PC (i440FX + PIIX, 1996)
+	Serial Number: Not Specified
+	Asset Tag: Not Specified
+	Boot-up State: Safe
+	Power Supply State: Safe
+	Thermal State: Safe
+	Security Status: Unknown
+	OEM Information: 0x00000000
+	Height: Unspecified
+	Number Of Power Cords: Unspecified
+	Contained Elements: 0

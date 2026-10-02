@@ -1,0 +1,32 @@
+/dev/md91:
+           Version : 1.2
+     Creation Time : Fri Oct  2 14:24:32 2026
+        Raid Level : raid5
+        Array Size : 258048 (252.00 MiB 264.24 MB)
+     Used Dev Size : 129024 (126.00 MiB 132.12 MB)
+      Raid Devices : 3
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Fri Oct  2 14:24:35 2026
+             State : clean 
+    Active Devices : 3
+   Working Devices : 4
+    Failed Devices : 0
+     Spare Devices : 1
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : DESKTOP-ARP8AJ1:91  (local to host DESKTOP-ARP8AJ1)
+              UUID : cbb07f6d:f7f697a3:41b974e3:db54f0af
+            Events : 18
+
+    Number   Major   Minor   RaidDevice State
+       0       7        2        0      active sync   /dev/loop2
+       1       7        3        1      active sync   /dev/loop3
+       4       7        4        2      active sync   /dev/loop4
+
+       3       7        5        -      spare   /dev/loop5

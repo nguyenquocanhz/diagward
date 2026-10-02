@@ -1,0 +1,4 @@
+Label: 'dwdata'  uuid: 48d4e08b-6b7d-4634-b4e5-7935316c3205
+	Total devices 2 FS bytes used 20.17MiB
+	devid    1 size 300.00MiB used 104.00MiB path /dev/loop0
+	devid    2 size 0 used 0 path  MISSING

@@ -1,0 +1,14 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#Manager.Manager",
+  "@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1",
+  "@odata.type": "#Manager.v1_9_0.Manager",
+  "Description": "BMC",
+  "FirmwareVersion": "4.40.00.00",
+  "Id": "iDRAC.Embedded.1",
+  "LogServices": {"@odata.id": "/redfish/v1/Managers/iDRAC.Embedded.1/LogServices"},
+  "ManagerType": "BMC",
+  "Model": "14G Monolithic",
+  "Name": "Manager",
+  "PowerState": "On",
+  "Status": {"Health": "OK", "State": "Enabled"}
+}

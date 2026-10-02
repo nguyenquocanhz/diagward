@@ -1,0 +1,2 @@
+testpool	960M	2.14M	958M	ONLINE	0%	0%
+zion	-	-	-	FAULTED	-	-

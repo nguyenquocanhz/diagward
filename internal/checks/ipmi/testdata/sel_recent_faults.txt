@@ -1,0 +1,18 @@
+   1 | 08/12/2014 | 11:07:51 | Unknown #0xff |  | Asserted
+   2 | 06/14/2023 | 10:01:17 | Power Supply PS2 Status | Power Supply AC lost | Asserted
+   3 | 06/14/2023 | 10:05:40 | Power Supply PS2 Status | Power Supply AC lost | Deasserted
+   4 |  Pre-Init  |0000000123| System Event #0x01 | Timestamp Clock Sync | Asserted
+  29 | 09/24/2026 | 11:42:11 | Power Supply PSU Redundancy | Redundancy Lost | Asserted
+  2a | 09/24/2026 | 11:42:21 | Power Supply PS2 Status | Failure detected () | Asserted
+  2b | 09/25/26 | 08:15:02 UTC | Memory #0x02 | Uncorrectable ECC (UnCorrectable ECC |  DIMMD7) | Asserted
+  2c | 09/26/2026 | 04:50:09 PM EST | Memory #0x87 | Correctable ECC logging limit reached (DIMM_B2) | Asserted
+  2d | 09/27/2026 | 07:42:09 | Physical Security Chassis Intru | General Chassis intrusion () | Asserted
+  2e | 09/28/2026 | 10:08:38 | Fan FAN3 | Lower Critical going low  | Asserted | Reading 0 < Threshold 300 RPM
+  2f | 09/28/2026 | 10:09:38 | Fan FAN3 | Lower Critical going low  | Deasserted | Reading 3000 > Threshold 300 RPM
+  30 | 09/29/2026 | 01:14:06 | Drive Slot HDD Status | Drive Fault () | Asserted
+  31 | 09/30/2026 | 16:39:09 | Processor #0x09 | IERR (CPU 2 | APIC ID 35 ) | Asserted
+  32 | 09/30/2026 | 21:54:02 | Power Unit Pwr Unit Status | AC lost | Asserted
+  33 | 09/30/2026 | 21:54:03 | Power Unit Pwr Unit Status | AC lost | Deasserted
+  34 | 09/30/2026 | 21:54:41 | System Event BIOS Evt Sensor | OEM System boot event | Asserted
+  35 | Linux kernel panic: Fatal excep
+  36 | 10/01/2026 | 08:10:00 | OEM record c1 | 000000 | 0102030405060708

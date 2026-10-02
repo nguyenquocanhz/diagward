@@ -1,0 +1,16 @@
+{
+  "@odata.context": "/redfish/v1/$metadata#HpeSmartStorageLogicalDrive.HpeSmartStorageLogicalDrive",
+  "@odata.id": "/redfish/v1/Systems/1/SmartStorage/ArrayControllers/0/LogicalDrives/1/",
+  "@odata.type": "#HpeSmartStorageLogicalDrive.v2_3_0.HpeSmartStorageLogicalDrive",
+  "CapacityMiB": 457830,
+  "Description": "HPE Smart Storage Logical Drive View",
+  "Id": "1",
+  "InterfaceType": "SATA",
+  "LogicalDriveName": "OS",
+  "LogicalDriveNumber": 1,
+  "MediaType": "SSD",
+  "Name": "HpeSmartStorageLogicalDrive",
+  "Raid": "1",
+  "Status": {"Health": "Warning", "State": "Enabled"},
+  "StripeSizeBytes": 262144
+}

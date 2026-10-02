@@ -1,0 +1,122 @@
+Temp             | 01h | ns  |  3.1 | Disabled
+Temp             | 02h | ns  |  3.2 | Disabled
+Temp             | 05h | ns  | 10.1 | Disabled
+Temp             | 06h | ns  | 10.2 | Disabled
+Ambient Temp     | 0Eh | ok  |  7.1 | 29 degrees C
+Planar Temp      | 0Fh | ns  |  7.1 | Disabled
+CMOS Battery     | 10h | ok  |  7.1 |
+VCORE PG         | 12h | ok  |  3.1 | State Deasserted
+VCORE PG         | 13h | ok  |  3.2 | State Deasserted
+0.75 VTT PG      | 14h | ok  |  3.2 | State Deasserted
+0.75 VTT PG      | 15h | ok  |  3.1 | State Deasserted
+CPU VTT PG       | 16h | ok  |  7.1 | State Deasserted
+1.5V PG          | 17h | ok  |  7.1 | State Deasserted
+1.8V PG          | 18h | ok  |  7.1 | State Deasserted
+5V PG            | 1Ah | ok  |  7.1 | State Deasserted
+MEM CPU2 FAIL    | 1Bh | ok  |  7.1 | State Deasserted
+5V Riser PG      | 1Ch | ok  | 16.1 | State Deasserted
+MEM CPU1 FAIL    | 1Eh | ok  |  7.1 | State Deasserted
+VTT CPU2 FAIL    | 1Fh | ok  |  7.1 | State Deasserted
+VTT CPU1 FAIL    | 20h | ok  |  7.1 | State Deasserted
+0.9V PG          | 21h | ok  |  7.1 | State Deasserted
+CPU2 1.8 PLL PG  | 22h | ok  |  7.1 | State Deasserted
+CPU1 1.8 PLL PG  | 24h | ok  |  7.1 | State Deasserted
+1.1 FAIL         | 28h | ok  |  7.1 | State Deasserted
+1.0 LOM FAIL     | 29h | ok  |  7.1 | State Deasserted
+1.0 AUX FAIL     | 2Ah | ok  |  7.1 | State Deasserted
+Heatsink Pres    | 52h | ok  |  7.1 | Present
+iDRAC6 Ent Pres  | 70h | ok  |  7.1 | Present
+USB Cable Pres   | 59h | ok  |  7.1 | Present
+Stor Adapt Pres  | 5Ah | ns  |  7.1 | No Reading
+Riser Presence   | 5Ch | ok  |  7.1 | Present
+FAN MOD 1A RPM   | 30h | ok  |  7.1 | 5160 RPM
+FAN MOD 1B RPM   | 31h | ok  |  7.1 | 5160 RPM
+FAN MOD 2A RPM   | 32h | ok  |  7.1 | 5160 RPM
+FAN MOD 2B RPM   | 33h | ok  |  7.1 | 5160 RPM
+FAN MOD 3A RPM   | 34h | ok  |  7.1 | 5160 RPM
+PFault Fail Safe | 5Fh | ns  |  7.1 | No Reading
+FAN MOD 3B RPM   | 35h | ok  |  7.1 | 5160 RPM
+FAN MOD 4A RPM   | 36h | ok  |  7.1 | 5160 RPM
+Presence         | 50h | ok  |  3.1 | Present
+Presence         | 51h | ok  |  3.2 | Present
+Presence         | 54h | ok  | 10.1 | Absent
+Presence         | 55h | ok  | 10.2 | Present
+Presence         | 56h | ok  | 26.1 | Present
+Status           | 60h | ok  |  3.1 | Presence detected
+Status           | 61h | ok  |  3.2 | Presence detected
+Status           | 64h | ns  | 10.1 | Disabled
+Current          | 94h | ns  | 10.1 | No Reading
+Current          | 95h | ok  | 10.2 | 1.80 Amps
+Voltage          | 96h | ns  | 10.1 | No Reading
+Voltage          | 97h | ok  | 10.2 | 118 Volts
+Status           | 65h | ok  | 10.2 | Presence detected
+Status           | 66h | ok  |  7.1 | Connected
+OS Watchdog      | 71h | ok  |  7.1 |
+SEL              | 72h | ns  |  7.1 | No Reading
+Intrusion        | 73h | ok  |  7.1 |
+PS Redundancy    | 74h | ns  |  7.1 | No Reading
+Fan Redundancy   | 75h | ok  |  7.1 | Fully Redundant
+CPU Temp IF      | 76h | ns  |  7.1 | Disabled
+System Level     | 98h | ok  |  7.1 | 224 Watts
+Power Optimized  | 99h | ok  |  7.1 |
+Drive            | 80h | ok  | 26.1 | Drive Present
+Drive A          | 8Ah | ok  | 26.1 |
+Drive B          | 8Bh | ok  | 26.1 | Drive Present
+Cable SAS A      | 90h | ok  | 26.1 | Connected
+Cable SAS B      | 91h | ok  | 26.1 | Connected
+DKM Status       | A0h | ok  |  7.1 |
+iDRAC6           | 00h | ok  |  7.1 | Dynamic MC @ 20h
+System Board     | 00h | ns  |  7.1 | Logical FRU @00h
+CPU1             | 00h | ns  |  3.1 | Physical FRU @B0h
+CPU2             | 00h | ns  |  3.2 | Physical FRU @B0h
+PS 1             | 00h | ns  | 10.1 | Logical FRU @02h
+PS 2             | 00h | ns  | 10.2 | Logical FRU @03h
+Storage          | 00h | ns  | 26.1 | Logical FRU @05h
+Riser1           | 00h | ns  | 16.1 | Physical FRU @B0h
+Riser2           | 00h | ns  | 16.2 | Physical FRU @B1h
+ECC Corr Err     | 01h | ns  | 34.1 | No Reading
+ECC Uncorr Err   | 02h | ns  | 34.1 | No Reading
+I/O Channel Chk  | 03h | ns  | 34.1 | No Reading
+PCI Parity Err   | 04h | ns  | 34.1 | No Reading
+PCI System Err   | 05h | ns  | 34.1 | No Reading
+SBE Log Disabled | 06h | ns  | 34.1 | No Reading
+Logging Disabled | 07h | ns  | 34.1 | No Reading
+Unknown          | 08h | ns  | 34.1 | No Reading
+CPU Protocol Err | 0Ah | ns  | 34.1 | No Reading
+CPU Bus PERR     | 0Bh | ns  | 34.1 | No Reading
+CPU Init Err     | 0Ch | ns  | 34.1 | No Reading
+CPU Machine Chk  | 0Dh | ns  | 34.1 | No Reading
+Memory Spared    | 11h | ns  | 34.1 | No Reading
+Memory Mirrored  | 12h | ns  | 34.1 | No Reading
+Memory RAID      | 13h | ns  | 34.1 | No Reading
+Memory Added     | 14h | ns  | 34.1 | No Reading
+Memory Removed   | 15h | ns  | 34.1 | No Reading
+Memory Cfg Err   | 16h | ns  | 34.1 | No Reading
+Mem Redun Gain   | 17h | ns  | 34.1 | No Reading
+PCIE Fatal Err   | 18h | ns  | 34.1 | No Reading
+Chipset Err      | 19h | ns  | 34.1 | No Reading
+Err Reg Pointer  | 1Ah | ns  | 34.1 | No Reading
+Mem ECC Warning  | 1Bh | ns  | 34.1 | No Reading
+Mem CRC Err      | 1Ch | ns  | 34.1 | No Reading
+USB Over-current | 1Dh | ns  | 34.1 | No Reading
+POST Err         | 1Eh | ns  | 34.1 | No Reading
+Hdwr version err | 1Fh | ns  | 34.1 | No Reading
+Mem Overtemp     | 20h | ns  | 34.1 | No Reading
+Mem Fatal SB CRC | 21h | ns  | 34.1 | No Reading
+Mem Fatal NB CRC | 22h | ns  | 34.1 | No Reading
+OS Watchdog Time | 23h | ns  | 34.1 | No Reading
+Non Fatal PCI Er | 26h | ns  | 34.1 | No Reading
+Fatal IO Error   | 27h | ns  | 34.1 | No Reading
+MSR Info Log     | 28h | ns  | 34.1 | No Reading
+Temp             | 0Ah | ns  |  8.1 | Disabled
+Temp             | 0Bh | ns  |  8.1 | Disabled
+Temp             | 0Ch | ns  |  8.1 | Disabled
+ROMB Battery     | 11h | ns  | 26.3 | Disabled
+Storage          | 00h | ns  | 26.3 | Logical FRU @04h
+FAN MOD 4B RPM   | 37h | ok  |  7.1 | 5160 RPM
+FAN MOD 5B RPM   | 3Ah | ok  |  7.1 | 5160 RPM
+FAN MOD 5A RPM   | 3Bh | ok  |  7.1 | 5160 RPM
+Ambient Temp     | 07h | ns  | 10.1 | Disabled
+Ambient Temp     | 08h | ns  | 10.2 | Disabled
+vFlash           | D3h | ok  | 11.2 |
+iDRAC6 Upgrade   | 77h | ns  |  7.1 | No Reading
