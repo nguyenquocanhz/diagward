@@ -130,7 +130,7 @@ else
 				[ -r "$_dk_b/device/model" ] || continue
 				_dk_v=$(cat "$_dk_b/device/vendor" 2>/dev/null)
 				_dk_m=$(cat "$_dk_b/device/model" 2>/dev/null)
-				case "$_dk_v" in HP* | HPE*) ;; *) continue ;; esac
+				case "$_dk_v" in HP*) ;; *) continue ;; esac # HP and HPE
 				case "$_dk_m" in *LOGICAL*VOLUME*) ;; *) continue ;; esac
 				_dk_h=$(readlink -f "$_dk_b/device" 2>/dev/null)
 				_dk_h=${_dk_h##*/}

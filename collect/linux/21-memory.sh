@@ -80,6 +80,8 @@ else
 	*) _mm_mb=$_mm_n ;;
 	esac
 	_mm_av=$(awk '/^MemAvailable:/ { print $2 }' /proc/meminfo 2>/dev/null)
+	# ulimit -l is not POSIX but dash, bash and busybox ash all have it.
+	# shellcheck disable=SC3045
 	_mm_ml=$(ulimit -l 2>/dev/null)
 	# memtester needs about 10 minutes per GB on a slow core (measured
 	# ~4.3 min/GB on a 2-core VM); never less than 15 minutes.
