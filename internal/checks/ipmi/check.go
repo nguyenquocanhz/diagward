@@ -96,6 +96,9 @@ type checker struct {
 	psus     []*PSU
 	frus     []*FRU
 	psuFRU   map[int]*FRU
+	// sdrIdx maps a sensor to the index of its current-state finding, so a
+	// SEL event on the same sensor can be folded into it (foldSEL).
+	sdrIdx map[*Sensor]int
 
 	sdrParsed, selParsed, chassisParsed bool
 }
@@ -214,6 +217,11 @@ func sensorTarget(s *Sensor) string {
 	if genericNames[strings.ToLower(s.Name)] && s.Entity != "" {
 		return s.Name + " (entity " + s.Entity + ")"
 	}
+	// Dell's aggregate "Drive" sensor names no slot: the entity (26 = disk
+	// drive bay, instance) is all the SDR says about where it is.
+	if s.Class == clDisk && !hasInstance(s.Name) && s.Entity != "" {
+		return s.Name + " (entity " + s.Entity + ")"
+	}
 	return s.Name
 }
 
@@ -250,6 +258,7 @@ func (c *checker) sdr() {
 		}
 	}
 	c.facts.PSUs = c.psus
+	c.sdrIdx = map[*Sensor]int{}
 
 	seen := map[string]bool{}
 	worst := model.OK
@@ -275,14 +284,18 @@ func (c *checker) sdr() {
 		if seen[k] {
 			// same problem reported by several sensors of one PSU: keep the evidence
 			for i := range c.res.Findings {
-				if c.res.Findings[i].ID == f.ID && c.res.Findings[i].Target == f.Target && len(c.res.Findings[i].Evidence) < 10 {
-					c.res.Findings[i].Evidence = append(c.res.Findings[i].Evidence, sn.line)
+				if c.res.Findings[i].ID == f.ID && c.res.Findings[i].Target == f.Target {
+					c.sdrIdx[sn] = i
+					if len(c.res.Findings[i].Evidence) < 10 {
+						c.res.Findings[i].Evidence = append(c.res.Findings[i].Evidence, sn.line)
+					}
 				}
 			}
 			continue
 		}
 		seen[k] = true
 		c.add(f)
+		c.sdrIdx[sn] = len(c.res.Findings) - 1
 	}
 	if worst < model.Warn && readable > 0 {
 		c.add(model.Finding{ID: domain + ".sensors_ok", Component: model.CompBMC, Severity: model.OK,
@@ -380,6 +393,9 @@ func (c *checker) sensorFinding(sn *Sensor) (model.Finding, bool) {
 	}
 	if sn.Class == clFan && (sn.key == "fan_failed" || f.ID == domain+".sensor_critical") {
 		f.Part = &model.Part{Kind: "fan", Location: sn.Name}
+	}
+	if sn.key == "drive_fault" && useKey {
+		f.Part = &model.Part{Kind: "disk", Location: target}
 	}
 	return f, true
 }
@@ -646,6 +662,10 @@ func (c *checker) sel() {
 		switch {
 		case g.Severity >= model.Warn:
 			problems++
+			if i, ok := c.sdrFindingFor(g); ok {
+				c.foldSEL(i, g) // the SDR already reports it: one fault, one finding
+				continue
+			}
 			c.add(c.selFinding(g))
 		case g.v.key == "sel_cleared" && g.Recent > 0:
 			c.add(model.Finding{ID: domain + ".sel_cleared", Component: model.CompBMC, Severity: model.Info, Target: "SEL",
@@ -661,8 +681,11 @@ func (c *checker) sel() {
 		var ev []string
 		for _, g := range history {
 			state := ""
-			if g.Recovered() {
+			switch {
+			case g.Recovered():
 				state = ", recovered"
+			case g.healthyNow:
+				state = ", healthy now"
 			}
 			last := "time unknown"
 			if !g.Last.IsZero() {
@@ -673,8 +696,8 @@ func (c *checker) sel() {
 		c.add(model.Finding{ID: domain + ".sel_history", Component: model.CompBMC, Severity: model.Info, Target: "SEL",
 			Title: model.T(plural(len(history), "older or recovered hardware event type", "older or recovered hardware event types")+" in the BMC log",
 				fmt.Sprintf("%d loại sự kiện phần cứng cũ hoặc đã phục hồi trong nhật ký BMC", len(history))),
-			Detail: model.Tf("These happened more than %d days ago, have no usable time stamp, or were cleared (deasserted) afterwards. Useful history when the same part fails again.",
-				"Các sự kiện này xảy ra hơn %d ngày trước, không có thời gian hợp lệ, hoặc sau đó đã hết (deasserted). Hữu ích để đối chiếu khi linh kiện đó hỏng lại.", c.window),
+			Detail: model.Tf("These happened more than %d days ago, have no usable time stamp, or are over: cleared (deasserted) afterwards, or the live BMC sensor shows the part healthy now. Useful history when the same part fails again.",
+				"Các sự kiện này xảy ra hơn %d ngày trước, không có thời gian hợp lệ, hoặc đã qua: sau đó đã hết (deasserted), hay cảm biến BMC hiện tại cho thấy linh kiện đã bình thường. Hữu ích để đối chiếu khi linh kiện đó hỏng lại.", c.window),
 			Evidence: units.Evidence(ev, 10)})
 	}
 	if problems == 0 {
@@ -754,32 +777,66 @@ func plural(n int, one, many string) string {
 	return strconv.Itoa(n) + " " + many
 }
 
-// currentState lowers a Crit SEL group one step when the live SDR shows
-// the same part healthy now: the SEL is history, Crit means "failing now".
-// Only for PSU and threshold events, where the SDR state is unambiguous.
+// currentState lowers a SEL group one step when the live SDR shows the
+// same sensor healthy now: the SEL is history, Crit means "failing now".
+// Only where the SDR state is unambiguous: a PSU by number, threshold and
+// drive sensors matched by name (matchSensors), and a PSU redundancy
+// sensor that reads "Fully Redundant" again (Warn -> Info, history).
 func (c *checker) currentState(g *selGroup) {
 	if g.v.key == "redundancy_lost" && g.Severity == model.Warn && c.sdrParsed && (g.Class == clPowerUnit || g.Class == clPSU) && c.singlePSU() {
 		g.Severity = model.Info // one PSU by design: see singlePSU
 		return
 	}
-	if g.Severity != model.Crit || !c.sdrParsed {
+	if g.Severity < model.Warn || !c.sdrParsed {
 		return
 	}
 	_, sname, _ := splitSELSensor(g.Sensor)
+	healthy := false
 	switch {
 	case g.v.key == "psu_failed" || g.v.key == "psu_ac_lost":
 		n := psuNumber(sname)
 		for _, p := range c.psus {
 			if p.Number == n && n > 0 && p.Present != nil && *p.Present && !p.Failed && !p.InputLost {
-				g.Severity, g.healthyNow = model.Warn, true
+				healthy = true
 			}
 		}
 	case strings.HasPrefix(g.v.key, "sensor_"):
-		for _, sn := range c.sensors {
-			if sn.Name == sname && sn.Status == "ok" && sn.Value != nil {
-				g.Severity, g.healthyNow = model.Warn, true
+		ms := c.matchSensors(g)
+		healthy = len(ms) > 0
+		for _, sn := range ms { // every sensor of that name: "Temp" can be several
+			if sn.Status != "ok" || sn.Value == nil {
+				healthy = false
 			}
 		}
+	case strings.HasPrefix(g.v.key, "drive_"):
+		ms := c.matchSensors(g)
+		healthy = len(ms) > 0
+		for _, sn := range ms {
+			if !sn.Readable() || len(sn.States) == 0 || sn.Severity >= model.Warn {
+				healthy = false
+			}
+		}
+	case g.v.key == "redundancy_lost":
+		ms := c.matchSensors(g)
+		healthy = len(ms) > 0
+		for _, sn := range ms {
+			full := false
+			for _, st := range sn.States {
+				full = full || normEvent(st) == "fully redundant"
+			}
+			if !sn.Readable() || !full || sn.Severity >= model.Warn {
+				healthy = false
+			}
+		}
+	}
+	if !healthy {
+		return
+	}
+	switch {
+	case g.Severity == model.Crit:
+		g.Severity, g.healthyNow = model.Warn, true
+	case g.v.key == "redundancy_lost":
+		g.Severity, g.healthyNow = model.Info, true
 	}
 }
 
@@ -840,6 +897,12 @@ func (c *checker) selFinding(g *selGroup) model.Finding {
 	}
 	if key == "fan_failed" {
 		part = &model.Part{Kind: "fan", Location: sname}
+	}
+	if strings.HasPrefix(key, "drive_") {
+		target = driveTarget(g.Sensor, sname, g.Event)
+		if key == "drive_fault" {
+			part = &model.Part{Kind: "disk", Location: target}
+		}
 	}
 	var t keyText
 	if strings.HasPrefix(key, "sensor_") {

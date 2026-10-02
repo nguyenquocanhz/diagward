@@ -61,7 +61,42 @@ type group struct {
 	note    model.Text // extra detail appended to the finding
 	actNote model.Text // extra action appended to the finding's action
 	part    *model.Part
-	comp    string // overrides spec.Comp when set
+	comp    string     // overrides spec.Comp when set
+	action  model.Text // replaces spec.Action when set
+	times   []time.Time
+	ataDev  string // the disk ("/dev/sda") behind a libata port target, when known
+}
+
+// absorb folds the events of o (the same problem seen by another driver)
+// into g. An event of o within win of one of g's is the same event: its
+// lines become evidence only. Other events are counted.
+func (g *group) absorb(o *group, win time.Duration, now time.Time) {
+	own := append([]time.Time(nil), g.times...)
+	for _, t := range o.times {
+		if near(t, own, win) {
+			continue
+		}
+		g.count++
+		if !now.IsZero() && now.Sub(t) <= recentWindow {
+			g.recent++
+		}
+		if g.first.IsZero() || t.Before(g.first) {
+			g.first = t
+		}
+		if t.After(g.last) {
+			g.last = t
+		}
+		g.times = append(g.times, t)
+	}
+	if len(o.times) == 0 && g.count == 0 {
+		g.count = o.count // undated events: nothing to compare
+	}
+	if !o.first.IsZero() && !g.first.IsZero() && o.first.Before(g.first) {
+		g.samples = append(append([]string(nil), o.samples...), g.samples...)
+	} else {
+		g.samples = append(g.samples, o.samples...)
+	}
+	g.note = joinText(g.note, o.note)
 }
 
 // limit caps the group's severity at sev (keeping a lower existing cap) and
@@ -88,7 +123,7 @@ func newGrouper(now time.Time) *grouper {
 
 // add records one event. counted=false adds the line as evidence only.
 func (gr *grouper) add(sp *spec, target string, t time.Time, raw string, counted bool) *group {
-	key := sp.ID + "\x00" + target
+	key := groupKey(sp, target)
 	g := gr.groups[key]
 	if g == nil {
 		g = &group{spec: sp, target: target}
@@ -107,12 +142,51 @@ func (gr *grouper) add(sp *spec, target string, t time.Time, raw string, counted
 			if t.After(g.last) {
 				g.last = t
 			}
+			g.times = append(g.times, t)
 		}
 	}
 	if raw != "" {
 		g.samples = append(g.samples, raw)
 	}
 	return g
+}
+
+func groupKey(sp *spec, target string) string { return sp.ID + "\x00" + target }
+
+// get returns the group of a rule and target, or nil.
+func (gr *grouper) get(sp *spec, target string) *group { return gr.groups[groupKey(sp, target)] }
+
+// remove drops a group.
+func (gr *grouper) remove(g *group) {
+	key := groupKey(g.spec, g.target)
+	if gr.groups[key] != g {
+		return
+	}
+	delete(gr.groups, key)
+	for i, k := range gr.order {
+		if k == key {
+			gr.order = append(gr.order[:i:i], gr.order[i+1:]...)
+			break
+		}
+	}
+}
+
+// retarget renames a group's target, keeping its place in the order. The
+// caller checks that no group has the new name yet.
+func (gr *grouper) retarget(g *group, target string) {
+	old := groupKey(g.spec, g.target)
+	if gr.groups[old] != g {
+		return
+	}
+	key := groupKey(g.spec, target)
+	delete(gr.groups, old)
+	g.target = target
+	gr.groups[key] = g
+	for i, k := range gr.order {
+		if k == old {
+			gr.order[i] = key
+		}
+	}
 }
 
 func (gr *grouper) list() []*group {
@@ -345,8 +419,12 @@ func buildFindings(groups []*group, now time.Time, vmNote model.Text) ([]model.F
 			Evidence:  units.Evidence(sampleLines(g.samples), 10),
 			Part:      g.part,
 		}
-		if s.sev >= model.Warn || !g.spec.Action.IsZero() || !g.actNote.IsZero() {
-			f.Action = joinText(g.actNote, fill(g.spec.Action, g), vmNote)
+		act := g.spec.Action
+		if !g.action.IsZero() {
+			act = g.action
+		}
+		if s.sev >= model.Warn || !act.IsZero() || !g.actNote.IsZero() {
+			f.Action = joinText(g.actNote, fill(act, g), vmNote)
 		}
 		findings = append(findings, f)
 	}

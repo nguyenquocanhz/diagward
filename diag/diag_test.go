@@ -125,3 +125,29 @@ func TestAnalyzeGarbage(t *testing.T) {
 		}
 	}
 }
+
+func TestFoldDiskLogFindings(t *testing.T) {
+	res := []model.Result{
+		{Domain: "disk", Findings: []model.Finding{
+			{ID: "disk.reallocated_sectors", Component: model.CompDisk, Severity: model.Warn, Target: "/dev/sda",
+				Title: model.T("t", "t"), Detail: model.T("SMART.", "SMART."), Part: &model.Part{Kind: "disk", Location: "/dev/sda"}},
+			{ID: "disk.smart_healthy", Component: model.CompDisk, Severity: model.OK, Target: "/dev/sdb"},
+		}},
+		{Domain: "logs", Findings: []model.Finding{
+			{ID: "logs.disk_medium_error", Component: model.CompDisk, Severity: model.Crit, Target: "/dev/sda",
+				Title:    model.T("Disk /dev/sda has unreadable sectors", "Ổ /dev/sda có sector không đọc được"),
+				Evidence: []string{"sd 0:0:0:0: [sda] Sense Key : Medium Error"}, Part: &model.Part{Kind: "disk", Location: "/dev/sda"}},
+			{ID: "logs.disk_io_error", Component: model.CompDisk, Severity: model.Crit, Target: "/dev/sdb",
+				Title: model.T("x", "x"), Part: &model.Part{Kind: "disk", Location: "/dev/sdb"}},
+			{ID: "logs.oom", Component: model.CompMemory, Severity: model.Warn},
+		}},
+	}
+	foldDiskLogFindings(res)
+	if len(res[1].Findings) != 2 || res[1].Findings[0].ID != "logs.disk_io_error" {
+		t.Fatalf("log findings after fold: %+v", res[1].Findings)
+	}
+	d := res[0].Findings[0]
+	if d.Severity != model.Crit || len(d.Evidence) != 1 || !strings.Contains(d.Detail.VI, "Log hệ thống cũng xác nhận") {
+		t.Fatalf("merged disk finding: %+v", d)
+	}
+}

@@ -141,6 +141,9 @@ func matchLines(lines []logLine, ctx *matchCtx, now time.Time) *grouper {
 			if g.part == nil {
 				g.part = partFor(ru.sp, target, ctx)
 			}
+			if g.ataDev == "" && ru.sp.Comp == model.CompDisk && reATAPort.MatchString(target) {
+				g.ataDev = ctx.ataDisk(l.Msg)
+			}
 			if (ru.sp == spPCIeCorr || ru.sp == spPCIeNonFatal || ru.sp == spPCIeFatal) && len(m) > 1 && m[1] == "vfio-pci" {
 				vfio[g] = true
 			}
@@ -344,7 +347,9 @@ func linuxKernel(b *collect.Bundle, env model.Env, res *model.Result, facts *Fac
 	}
 
 	ctx := buildCtx(all)
+	addBlockDevs(ctx, b.Get("logs.blockdevs"))
 	gr := matchLines(lines, ctx, env.Now)
+	mergeATA(gr)
 	judgeLinuxDevices(gr.list(), readLinuxInv(b), ctx, env.Now)
 	noteEarlierBoot(gr.list(), currentBootStart(b, env.Now))
 	var vmNote model.Text

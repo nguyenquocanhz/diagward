@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // Text output of smartctl (versions before 7.0 have no JSON, and smartctl
@@ -224,9 +225,10 @@ func parseSmartText(out string) (*smartData, bool) {
 				d.ErrLogCount = &c
 			}
 		}
-		if strings.HasPrefix(t, "Accumulated power on time, hours:minutes") {
-			f := strings.Fields(t)
-			if h, _, ok := strings.Cut(f[len(f)-1], ":"); ok {
+		if rest, ok := strings.CutPrefix(t, "Accumulated power on time, hours:minutes"); ok {
+			// Not the last field: strings.Fields also splits on a U+00A0
+			// thousands separator ("43 549:33").
+			if h, _, ok := strings.Cut(rest, ":"); ok {
 				if n, ok := digitsUint(h); ok {
 					d.POH = &n
 				}
@@ -429,8 +431,9 @@ func classifyTestStatus(s string) int {
 	return -1
 }
 
-// capacityBytes reads "500,107,862,016 bytes [500 GB]" (any digit grouping:
-// ",", ".", " " or none).
+// capacityBytes reads "500,107,862,016 bytes [500 GB]" or, for NVMe,
+// "256.060.514.304 [256 GB]", with any digit grouping (see digitsUint:
+// ",", ".", "'", U+00A0, U+202F, U+2009... or none).
 func capacityBytes(v string) (uint64, bool) {
 	i := strings.Index(v, "bytes")
 	if i < 0 {
@@ -442,36 +445,104 @@ func capacityBytes(v string) (uint64, bool) {
 	return digitsUint(v[:i])
 }
 
-// digitsUint parses a number written with any thousands separator
-// ("5,809", "5.809", "12 000 138", "0") — smartctl uses the C locale here,
-// but saved outputs from other locales exist. Stops at the first other
-// character after digits have been seen.
+// digitsUint parses the unsigned integer at the start of s, written with or
+// without a thousands separator. smartctl prints capacities and the NVMe
+// counters with the locale's separator (format_with_thousands_sep() in
+// smartmontools' utility.cpp, "%'" printf grouping), and outputs saved
+// without LC_ALL=C carry whatever glibc uses for that locale: "," (C, en_US),
+// "." (de_DE, vi_VN), U+00A0 no-break space (fr_FR before glibc 2.28, ru_RU,
+// cs_CZ), U+202F narrow no-break space (fr_FR since 2.28), U+2009 thin space,
+// "'" or U+2019 (de_CH), U+066C (Arabic), and en_IN groups 3;2
+// ("20,00,39,89,34,016"). Any Unicode space separator (category Zs) is
+// accepted as well, since copy/paste turns these into one another.
+//
+// A separator only counts as grouping when it is used consistently: the
+// same separator throughout, at most 3 digits before the first one, 2 or 3
+// digits between two of them and exactly 3 after the last. Otherwise the
+// number ends before the separator, so a decimal part is dropped ("1234.567",
+// "6311,396", "1,234.5" give 1234, 6311, 1234) and two numbers are not glued
+// together ("12 34" gives 12). Text after the number is ignored ("5,809 [3
+// TB]"). ok is false when s does not start with a digit (after spaces and an
+// optional "+") or the value overflows uint64.
 func digitsUint(s string) (uint64, bool) {
-	s = strings.TrimSpace(s)
-	var n uint64
-	seen := false
-	for i := 0; i < len(s); i++ {
-		c := s[i]
-		switch {
-		case c >= '0' && c <= '9':
-			if n > (1<<63)/10 {
-				return 0, false
-			}
-			n = n*10 + uint64(c-'0')
-			seen = true
-		case (c == ',' || c == '.' || c == ' ' || c == '\'') && seen:
-			// thousands separator; a trailing "." (decimal part) is unusual
-			// for these counters and ignored.
-		default:
-			if seen {
-				return n, true
-			}
-			if c != '+' {
-				return 0, false
-			}
+	s = strings.TrimLeftFunc(s, unicode.IsSpace)
+	s = strings.TrimPrefix(s, "+")
+	rs := []rune(s)
+	digitsAt := func(i int) int { // length of the run of ASCII digits at rs[i:]
+		j := i
+		for j < len(rs) && rs[j] >= '0' && rs[j] <= '9' {
+			j++
 		}
+		return j - i
 	}
-	return n, seen
+	first := digitsAt(0)
+	if first == 0 {
+		return 0, false
+	}
+	// Collect "<sep><digits>" groups while they look like grouping.
+	groups := []string{string(rs[:first])}
+	i := first
+	var sepClass rune
+	for i < len(rs) && isGroupSep(rs[i]) {
+		c := groupSepClass(rs[i])
+		if sepClass != 0 && c != sepClass {
+			break
+		}
+		n := digitsAt(i + 1)
+		if n != 2 && n != 3 {
+			break
+		}
+		sepClass = c
+		groups = append(groups, string(rs[i+1:i+1+n]))
+		i += 1 + n
+	}
+	// The last group must have 3 digits (en_IN has 2-digit groups only in
+	// the middle) and the first at most 3; drop trailing groups until the
+	// grouping is consistent.
+	for len(groups) > 1 && len(groups[len(groups)-1]) != 3 {
+		groups = groups[:len(groups)-1]
+	}
+	if len(groups) > 1 && len(groups[0]) > 3 {
+		groups = groups[:1]
+	}
+	n, err := strconv.ParseUint(strings.Join(groups, ""), 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
+}
+
+// Thousands separators other than ASCII ones and Unicode spaces (the
+// spaces, U+00A0, U+202F, U+2009... are category Zs). Written as numbers so
+// the source stays ASCII.
+const (
+	sepRightQuote = rune(0x2019) // de_CH in recent glibc
+	sepModLetter  = rune(0x02BC) // modifier letter apostrophe, look-alike of U+2019
+	sepArabic     = rune(0x066C) // Arabic thousands separator
+)
+
+// isGroupSep reports whether r is used as a thousands separator by some
+// locale (see digitsUint).
+func isGroupSep(r rune) bool {
+	switch r {
+	case ',', '.', '\'', sepRightQuote, sepModLetter, sepArabic:
+		return true
+	}
+	return unicode.Is(unicode.Zs, r)
+}
+
+// groupSepClass maps every space separator to ' ' and the apostrophe
+// look-alikes to an apostrophe, so that a number whose U+00A0 separators
+// were partly turned into plain spaces by copy/paste still counts as
+// consistently grouped.
+func groupSepClass(r rune) rune {
+	if unicode.Is(unicode.Zs, r) {
+		return ' '
+	}
+	if r == sepRightQuote || r == sepModLetter {
+		return '\''
+	}
+	return r
 }
 
 func intFrom(s string) *int {

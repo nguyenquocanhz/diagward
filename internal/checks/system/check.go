@@ -67,6 +67,15 @@ func linuxHost(b *collect.Bundle, env model.Env) model.HostInfo {
 		Arch:     id["arch"],
 		Virtual:  env.Virtual,
 	}
+	// RHEL, Fedora and SUSE kernel releases already end with the machine
+	// architecture ("5.14.0-427.13.1.el9_4.x86_64"); the report header shows
+	// "Kernel Arch", so keep the architecture only when it adds something.
+	if a := strings.ToLower(h.Arch); a != "" {
+		k := strings.ToLower(h.Kernel)
+		if strings.HasSuffix(k, "."+a) || strings.HasSuffix(k, "-"+a) || strings.HasSuffix(k, "_"+a) {
+			h.Arch = ""
+		}
+	}
 	osr := collect.ParseOSRelease(b.Get("meta.osrelease").Text())
 	h.OS = osr["PRETTY_NAME"]
 	if h.OS == "" {
@@ -179,6 +188,8 @@ func checkLinux(b *collect.Bundle, env model.Env, res *model.Result) {
 	rebootLinux(b, facts, res)
 }
 
+var dmidecodeWhat = model.T("The SMBIOS data (dmidecode: serial number, chassis details)", "Dữ liệu SMBIOS (dmidecode: số serial, thông tin chassis)")
+
 func identityCoverage(b *collect.Bundle, env model.Env, id Identity, res *model.Result) {
 	c := model.Coverage{ID: "system.identity", Component: model.CompSystem,
 		Name: model.T("Server identity (vendor, model, service tag, BIOS)", "Thông tin máy chủ (hãng, model, serial/service tag, BIOS)")}
@@ -198,6 +209,8 @@ func identityCoverage(b *collect.Bundle, env model.Env, id Identity, res *model.
 			c.Reason = model.T("dmidecode is not installed: the serial number (service tag) and chassis details come from SMBIOS.",
 				"Chưa cài dmidecode: số serial (service tag) và thông tin chassis lấy từ SMBIOS.")
 			c.Fix, c.Cmd = hint.InstallFix(env, "dmidecode")
+		case !dmi.Ran():
+			c.Reason, c.Fix = notRun(env, dmi, dmidecodeWhat)
 		default:
 			c.Reason = model.T("dmidecode returned no SMBIOS data; identity comes from sysfs only.", "dmidecode không trả về dữ liệu SMBIOS; thông tin chỉ lấy từ sysfs.")
 		}
@@ -208,6 +221,11 @@ func identityCoverage(b *collect.Bundle, env model.Env, id Identity, res *model.
 		c.State, c.Reason, c.Fix = model.CovSkipped, hint.NeedRoot(env), hint.RunAsRoot(env)
 	case !env.Bare():
 		c.State, c.Reason = model.CovSkipped, hint.Virtual(env)
+	case !dmi.Ran():
+		// dmidecode absent from the bundle (older or partial collector run)
+		// or skipped: nothing looked for SMBIOS data, so nothing failed.
+		c.State = model.CovSkipped
+		c.Reason, c.Fix = notRun(env, dmi, dmidecodeWhat)
 	default:
 		c.State = model.CovFailed
 		c.Reason = model.T("No SMBIOS/DMI data found on this machine.", "Không tìm thấy dữ liệu SMBIOS/DMI trên máy này.")
@@ -303,17 +321,27 @@ func linuxLoad(b *collect.Bundle, id Identity) (*Load, bool) {
 func loadCoverage(b *collect.Bundle, env model.Env, ok bool, res *model.Result) {
 	c := model.Coverage{ID: "system.load", Component: model.CompSystem,
 		Name: model.T("System load and resource pressure", "Tải hệ thống và áp lực tài nguyên")}
+	s := b.Get("system.loadavg")
+	what := model.T("The load average (/proc/loadavg)", "Load trung bình (/proc/loadavg)")
+	if b.OS == collect.OSWindows {
+		s = b.Get("system.win_perf")
+		what = model.T("The performance counters (CPU, processor queue, disk)", "Bộ đếm hiệu năng (CPU, hàng đợi CPU, ổ đĩa)")
+	}
 	switch {
+	case !ok && !s.Ran():
+		// Absent from the bundle, or deliberately not run: nothing failed.
+		c.State = model.CovSkipped
+		c.Reason, c.Fix = notRun(env, s, what)
 	case !ok:
-		s := b.Get("system.loadavg")
-		if b.OS == collect.OSWindows {
-			s = b.Get("system.win_perf")
-		}
 		c.State = model.CovFailed
 		c.Reason = model.T("Load data could not be read.", "Không đọc được dữ liệu tải.")
-		if s != nil && strings.TrimSpace(s.Err) != "" {
+		if strings.TrimSpace(s.Err) != "" {
 			c.Reason = model.Tf("Load data could not be read: %s", "Không đọc được dữ liệu tải: %s", firstLine(s.Err))
 		}
+	case b.OS == collect.OSLinux && b.Get("system.stat") == nil:
+		c.State = model.CovPartial
+		c.Reason = model.T("The CPU time sample (/proc/stat) was not collected (older or interrupted collector run), so iowait and steal were not measured.",
+			"Mẫu thời gian CPU (/proc/stat) không có trong bản thu thập này (collector cũ hoặc bị dừng giữa chừng) nên chưa đo được iowait và steal.")
 	case b.OS == collect.OSLinux && !b.Get("system.stat").OK():
 		c.State = model.CovPartial
 		c.Reason = model.T("The CPU time sample (/proc/stat) was not available, so iowait and steal were not measured.", "Không lấy được mẫu thời gian CPU (/proc/stat) nên chưa đo được iowait và steal.")
@@ -379,7 +407,11 @@ func loadFindings(ld *Load, env model.Env, res *model.Result) bool {
 	added := false
 	cpus := ld.CPUs
 	var ev []string
-	ev = append(ev, fmt.Sprintf("load average: %.2f %.2f %.2f (%d CPUs)", ld.Load1, ld.Load5, ld.Load15, cpus))
+	cpuNote := " (CPU count unknown)"
+	if cpus > 0 {
+		cpuNote = fmt.Sprintf(" (%d CPUs)", cpus)
+	}
+	ev = append(ev, fmt.Sprintf("load average: %.2f %.2f %.2f%s", ld.Load1, ld.Load5, ld.Load15, cpuNote))
 	for _, k := range []string{"cpu some", "memory some", "memory full", "io some", "io full"} {
 		if p, ok := psiGet(ld, k); ok {
 			ev = append(ev, fmt.Sprintf("psi %s avg10=%.2f avg60=%.2f avg300=%.2f", k, p.Avg10, p.Avg60, p.Avg300))
@@ -395,12 +427,20 @@ func loadFindings(ld *Load, env model.Env, res *model.Result) bool {
 	overPSI := hasCPUPSI && cpuPSI.Avg300 >= psiCPUSomeWarn
 	if overLoad || overPSI {
 		added = true
+		title := model.Tf("Server is overloaded: load %.1f on %d CPUs", "Máy chủ đang quá tải: load %.1f trên %d CPU", ld.Load15, cpus)
+		measured := model.Tf("The 15-minute load average is %.1f for %d CPUs (%.1f per CPU)%s.", "Load trung bình 15 phút là %.1f cho %d CPU (%.1f mỗi CPU)%s.",
+			ld.Load15, cpus, ld.Load15/float64(max(cpus, 1)), psiNote(cpuPSI, hasCPUPSI, "CPU"))
+		if cpus <= 0 { // only PSI can tell: do not print "0 CPUs"
+			title = model.Tf("Server is overloaded: tasks waited for CPU %.0f%% of the last 5 minutes", "Máy chủ đang quá tải: tiến trình phải chờ CPU %.0f%% thời gian trong 5 phút qua", cpuPSI.Avg300)
+			measured = model.Tf("The 15-minute load average is %.1f%s.", "Load trung bình 15 phút là %.1f%s.", ld.Load15, psiNote(cpuPSI, hasCPUPSI, "CPU"))
+		}
 		res.Findings = append(res.Findings, model.Finding{
 			ID: "system.overloaded", Component: model.CompSystem, Severity: model.Warn,
-			Title: model.Tf("Server is overloaded: load %.1f on %d CPUs", "Máy chủ đang quá tải: load %.1f trên %d CPU", ld.Load15, cpus),
-			Detail: model.Tf("The 15-minute load average is %.1f for %d CPUs (%.1f per CPU)%s. Tasks are waiting for CPU time, so the server responds slowly. Load also counts tasks stuck waiting for disk or NFS, so check the I/O findings too.",
-				"Load trung bình 15 phút là %.1f cho %d CPU (%.1f mỗi CPU)%s. Các tiến trình phải chờ CPU nên máy phản hồi chậm. Load cũng tính cả tiến trình đang chờ ổ cứng hoặc NFS, nên xem thêm mục I/O.",
-				ld.Load15, cpus, ld.Load15/float64(max(cpus, 1)), psiNote(cpuPSI, hasCPUPSI, "CPU")),
+			Title: title,
+			Detail: model.Text{
+				EN: measured.EN + " Tasks are waiting for CPU time, so the server responds slowly. Load also counts tasks stuck waiting for disk or NFS, so check the I/O findings too.",
+				VI: measured.VI + " Các tiến trình phải chờ CPU nên máy phản hồi chậm. Load cũng tính cả tiến trình đang chờ ổ cứng hoặc NFS, nên xem thêm mục I/O.",
+			},
 			Action: model.T("Find what uses the CPU (top, ps aux --sort=-%cpu | head). Stop runaway jobs, move batch work off peak hours, or add CPU/RAM. If the load is mostly tasks in D state (ps -eo state,cmd | grep '^D'), look at the disks instead.",
 				"Tìm tiến trình chiếm CPU (top, ps aux --sort=-%cpu | head). Dừng tiến trình bất thường, dời tác vụ nặng ra ngoài giờ cao điểm, hoặc nâng cấp CPU/RAM. Nếu phần lớn là tiến trình trạng thái D (ps -eo state,cmd | grep '^D') thì hãy kiểm tra ổ cứng."),
 			Evidence: units.Evidence(ev, 10),
@@ -476,11 +516,21 @@ func deref(p *float64) float64 {
 func okLoad(ld *Load, res *model.Result) {
 	var en, vi string
 	if ld.CPUPct != nil { // Windows
-		en = fmt.Sprintf("System load is normal (CPU %.0f%%, queue %.1f per CPU)", *ld.CPUPct, deref(ld.QueuePerCPU))
-		vi = fmt.Sprintf("Tải hệ thống bình thường (CPU %.0f%%, hàng đợi %.1f mỗi CPU)", *ld.CPUPct, deref(ld.QueuePerCPU))
+		en = fmt.Sprintf("System load is normal (CPU %.0f%%", *ld.CPUPct)
+		vi = fmt.Sprintf("Tải hệ thống bình thường (CPU %.0f%%", *ld.CPUPct)
+		if ld.QueuePerCPU != nil {
+			en += fmt.Sprintf(", queue %.1f per CPU", *ld.QueuePerCPU)
+			vi += fmt.Sprintf(", hàng đợi %.1f mỗi CPU", *ld.QueuePerCPU)
+		}
+		en += ")"
+		vi += ")"
 	} else {
-		en = fmt.Sprintf("System load is normal (load %.2f on %d CPUs", ld.Load15, ld.CPUs)
-		vi = fmt.Sprintf("Tải hệ thống bình thường (load %.2f trên %d CPU", ld.Load15, ld.CPUs)
+		en = fmt.Sprintf("System load is normal (load %.2f", ld.Load15)
+		vi = fmt.Sprintf("Tải hệ thống bình thường (load %.2f", ld.Load15)
+		if ld.CPUs > 0 {
+			en += fmt.Sprintf(" on %d CPUs", ld.CPUs)
+			vi += fmt.Sprintf(" trên %d CPU", ld.CPUs)
+		}
 		if ld.IOWaitPct != nil {
 			en += fmt.Sprintf(", iowait %.1f%%", *ld.IOWaitPct)
 			vi += fmt.Sprintf(", iowait %.1f%%", *ld.IOWaitPct)
@@ -507,6 +557,10 @@ func loadTable(ld *Load, res *model.Result) {
 		}
 		return ""
 	}
+	cpus := "" // unknown, not "0"
+	if ld.CPUs > 0 {
+		cpus = fmt.Sprint(ld.CPUs)
+	}
 	res.Tables = append(res.Tables, model.Table{
 		ID:    "system.load",
 		Title: model.T("Load and pressure", "Tải và áp lực tài nguyên"),
@@ -516,7 +570,7 @@ func loadTable(ld *Load, res *model.Result) {
 			model.T("PSI cpu (5 min)", "PSI cpu (5 phút)"), model.T("PSI memory (5 min)", "PSI bộ nhớ (5 phút)"), model.T("PSI io (5 min)", "PSI io (5 phút)"),
 		},
 		Rows: []model.Row{{Cells: []string{
-			fmt.Sprintf("%.2f / %.2f / %.2f", ld.Load1, ld.Load5, ld.Load15), fmt.Sprint(ld.CPUs),
+			fmt.Sprintf("%.2f / %.2f / %.2f", ld.Load1, ld.Load5, ld.Load15), cpus,
 			f(ld.IOWaitPct), f(ld.StealPct), psi("cpu some"), psi("memory some"), psi("io some"),
 		}}},
 	})
@@ -648,6 +702,36 @@ func addReboot(ev []string, res *model.Result) {
 		Action:   model.T("Plan a reboot in the next maintenance window.", "Lên lịch khởi động lại trong lần bảo trì tới."),
 		Evidence: units.Evidence(ev, 10),
 	})
+}
+
+// notRun is the coverage reason and fix for a section that did not run: it
+// is absent from the bundle (an older or partial collector run, or a bundle
+// cut short), the file or tool was missing, or the collector skipped it.
+// None of these is a failure of the check.
+func notRun(env model.Env, s *collect.Section, what model.Text) (reason, fix model.Text) {
+	switch {
+	case s == nil:
+		return notCollected(what)
+	case s.Missing != "":
+		return model.Text{
+			EN: fmt.Sprintf("%s is not available on this machine (%s not found).", what.EN, s.Missing),
+			VI: fmt.Sprintf("%s: không có trên máy này (không tìm thấy %s).", what.VI, s.Missing),
+		}, model.Text{}
+	case s.Skipped == "not-root" || s.Skipped == "not-admin":
+		return hint.NeedRoot(env), hint.RunAsRoot(env)
+	case s.Skipped == "container" || s.Skipped == "virtual":
+		return hint.Virtual(env), model.Text{}
+	}
+	return model.Tf("The collector skipped this step (%s).", "Collector đã bỏ qua bước này (%s).", s.Skipped), model.Text{}
+}
+
+// notCollected explains a section that is absent from the bundle.
+func notCollected(what model.Text) (reason, fix model.Text) {
+	return model.Text{
+			EN: what.EN + " was not collected: this bundle comes from an older or interrupted collector run. Nothing failed on the machine.",
+			VI: what.VI + " không có trong bản thu thập này (collector cũ hoặc bị dừng giữa chừng). Đây không phải lỗi trên máy.",
+		}, model.T("Run the current version of diagward on the machine again to check this.",
+			"Chạy lại bản diagward mới nhất trên máy để kiểm tra mục này.")
 }
 
 func firstLine(s string) string {

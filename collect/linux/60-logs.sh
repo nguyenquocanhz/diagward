@@ -261,8 +261,25 @@ _lg_kdump() {
 	return 0
 }
 
+# logs.blockdevs: the sysfs path of every SCSI/SATA and NVMe disk, one
+# "name=path" line each, e.g.
+#   sda=/sys/devices/pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0/block/sda
+# A libata disk has "/ataN/" in its path, so kernel lines that only name the
+# port ("ata1.00: error: { UNC }") can be tied to sdX; the H:C:T:L before
+# "/block/" is the SCSI address of "sd 0:0:0:0:" lines. Read-only: readlink
+# on the /sys/block links (cd -P + pwd -P where readlink -f is missing).
+_lg_blockdevs() {
+	for _lg_p in /sys/block/sd* /sys/block/nvme*; do
+		[ -e "$_lg_p" ] || continue
+		_lg_t=$(readlink -f "$_lg_p" 2>/dev/null) || _lg_t=""
+		[ -n "$_lg_t" ] || _lg_t=$(cd -P "$_lg_p" 2>/dev/null && pwd -P)
+		if [ -n "$_lg_t" ]; then echo "${_lg_p##*/}=$_lg_t"; fi
+	done
+	return 0
+}
+
 if [ -n "$DW_CONTAINER" ]; then
-	for _lg_s in kernel kernel_match units boots last kdump; do dw_skip "logs.$_lg_s" container; done
+	for _lg_s in kernel kernel_match units boots last kdump blockdevs; do dw_skip "logs.$_lg_s" container; done
 else
 	dw_fn logs.kernel _lg_kernel
 	dw_fn logs.kernel_match _lg_match
@@ -282,4 +299,5 @@ else
 		dw_missing logs.last last
 	fi
 	dw_fn logs.kdump _lg_kdump
+	dw_fn logs.blockdevs _lg_blockdevs
 fi

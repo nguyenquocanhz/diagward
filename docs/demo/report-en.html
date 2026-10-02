@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en" data-title-vi="Diagward · srv-db01 · Báo cáo phần cứng máy chủ" data-title-en="Diagward · srv-db01 · Server hardware report">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="generator" content="Diagward 0.1.0">
+<title>Diagward · srv-db01 · Server hardware report</title>
+<script>try{var dwt=localStorage.getItem("dw-theme");if(dwt==="dark"||dwt==="light"){document.documentElement.setAttribute("data-theme",dwt);}}catch(e){}</script>
+<style>
+:root{
+--bg:#FAF9F5;--surface:#F5F4EE;--text:#1F1E1D;--muted:#6B6A65;--border:#E8E6DC;--accent:#C96442;--accent-ink:#FFFFFF;--code-bg:#EEECE3;
+--crit:#B3261E;--crit-bg:#FBECE8;--crit-bd:#EDC2B9;
+--warn:#8F5B00;--warn-bg:#FBF1DC;--warn-bd:#EBD39F;
+--ok:#2F6B3F;--ok-bg:#E9F2E7;--ok-bd:#C3DABF;
+--info:#3D5D7C;--info-bg:#E9EFF5;--info-bd:#C5D3E1;
+--none:#7A7871;--none-bg:#EFEEE8;--none-bd:#DDDBD2;
+--badge-ink:#FFFFFF;
+--serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+--sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+--mono:ui-monospace,"Cascadia Mono","SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+--bg:#1F1E1D;--surface:#2A2927;--text:#ECEAE4;--muted:#A8A59C;--border:#3A3935;--accent:#D97757;--accent-ink:#1F1E1D;--code-bg:#242321;
+--crit:#F2A08F;--crit-bg:#3B221D;--crit-bd:#6B3A30;
+--warn:#E9C06B;--warn-bg:#372C17;--warn-bd:#66522A;
+--ok:#97CE9F;--ok-bg:#1F3124;--ok-bd:#3A5A40;
+--info:#A7C2DC;--info-bg:#1F2B37;--info-bd:#3B5268;
+--none:#9C998F;--none-bg:#2C2B28;--none-bd:#45433E;
+--badge-ink:#1F1E1D;color-scheme:dark;
+}}
+:root[data-theme=dark]{
+--bg:#1F1E1D;--surface:#2A2927;--text:#ECEAE4;--muted:#A8A59C;--border:#3A3935;--accent:#D97757;--accent-ink:#1F1E1D;--code-bg:#242321;
+--crit:#F2A08F;--crit-bg:#3B221D;--crit-bd:#6B3A30;
+--warn:#E9C06B;--warn-bg:#372C17;--warn-bd:#66522A;
+--ok:#97CE9F;--ok-bg:#1F3124;--ok-bd:#3A5A40;
+--info:#A7C2DC;--info-bg:#1F2B37;--info-bd:#3B5268;
+--none:#9C998F;--none-bg:#2C2B28;--none-bd:#45433E;
+--badge-ink:#1F1E1D;color-scheme:dark;
+}
+html[data-lang=vi] [lang=en],html[data-lang=en] [lang=vi]{display:none!important}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--sans);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.c-crit{--c:var(--crit);--cb:var(--crit-bg);--cd:var(--crit-bd)}
+.c-warn{--c:var(--warn);--cb:var(--warn-bg);--cd:var(--warn-bd)}
+.c-ok{--c:var(--ok);--cb:var(--ok-bg);--cd:var(--ok-bd)}
+.c-info{--c:var(--info);--cb:var(--info-bg);--cd:var(--info-bd)}
+.c-none{--c:var(--none);--cb:var(--none-bg);--cd:var(--none-bd)}
+.c-part{--c:var(--ok);--cb:var(--surface);--cd:var(--ok-bd)}
+.wrap{max-width:1000px;margin:0 auto;padding:20px 20px 40px}
+h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.25;margin:0}
+a{color:var(--accent);text-underline-offset:2px}
+code,pre{font-family:var(--mono);font-size:.86em}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;padding:2px 0 14px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.brand{display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap;min-width:0}
+.brand .logo{color:var(--accent);font-size:15px}
+.brand .name{font-family:var(--serif);font-size:22px;font-weight:600}
+.brand .sub{color:var(--muted);font-size:14px}
+.ctl{display:flex;gap:8px;align-items:center;flex:none}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg button,.iconbtn,.btn{font:inherit;font-size:13px;line-height:1.4;color:var(--text);background:var(--surface);border:0;padding:5px 11px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--border)}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.iconbtn,.btn{border:1px solid var(--border);border-radius:8px}
+.btn{white-space:nowrap}
+.iconbtn:hover,.btn:hover{border-color:var(--accent)}
+.btn .done{display:none}.btn.is-done .lbl{display:none}.btn.is-done .done{display:inline;color:var(--ok)}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 20px}
+.ident h1{font-size:28px;overflow-wrap:anywhere}
+.hostsub{color:var(--muted);margin-top:2px}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px 22px;margin:14px 0 0}
+.kv div{min-width:0}
+.kv dt{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.kv dd{margin:1px 0 0;overflow-wrap:anywhere}
+.verdict{display:flex;gap:16px;align-items:center;margin:18px 0 0;padding:18px 20px;border-radius:14px;background:var(--cb);border:1px solid var(--cd);border-left:6px solid var(--c)}
+.verdict h2{font-size:26px;color:var(--c);letter-spacing:.01em}
+.verdict>div{min-width:0}
+.vsub{margin:4px 0 0;overflow-wrap:anywhere}
+.badge{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);color:var(--badge-ink);font:700 13px/1 var(--sans)}
+.badge.lg{width:44px;height:44px;font-size:24px}
+.badge.sm{width:18px;height:18px;font-size:11px}
+section{margin:30px 0}
+h2.sec{font-size:20px;margin-bottom:12px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+h2.sec small{font:400 13px var(--sans);color:var(--muted)}
+.count{font:600 12px/1.5 var(--sans);color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:0 8px}
+.tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tile{min-width:0}
+.tile>a,.tile>div{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:center;height:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:inherit;text-decoration:none}
+.tile>a:hover{border-color:var(--c)}
+.tile.c-crit>*,.tile.c-warn>*{background:var(--cb);border-color:var(--cd)}
+.tile .badge{grid-row:1/4}
+.tile.c-part>*{border:1px dashed var(--cd)}
+.tname{font-weight:600;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+.tstat,.tpart{font-size:12.5px;line-height:1.35;color:var(--muted);overflow-wrap:anywhere}
+.tpart{font-style:italic}
+.tile.c-crit .tstat,.tile.c-warn .tstat{color:var(--c)}
+.tile.c-none .tname{color:var(--muted);font-weight:500}
+.todo{list-style:none;margin:0;padding:0}
+.todo li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-left:4px solid var(--c);border-radius:10px;background:var(--surface);margin-bottom:8px}
+.todo li>div{min-width:0}
+.todo-t{font-weight:600;color:var(--text);text-decoration:none;overflow-wrap:anywhere}
+.todo-t:hover{text-decoration:underline}
+.todo p{margin:4px 0 0;white-space:pre-line;overflow-wrap:anywhere}
+.finding{border:1px solid var(--border);border-left:4px solid var(--c);border-radius:12px;background:var(--surface);padding:14px 16px;margin-bottom:12px;scroll-margin-top:12px}
+.finding:target{box-shadow:0 0 0 3px var(--cd)}
+.fh{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:13px;color:var(--muted)}
+.fh>*{min-width:0}
+.chip{font-weight:600;color:var(--c);background:var(--cb);border:1px solid var(--cd);border-radius:999px;padding:0 9px}
+.tgt{background:var(--code-bg);border-radius:6px;padding:1px 6px;color:var(--text);overflow-wrap:anywhere}
+.finding h3{font-size:18px;margin:8px 0 4px;overflow-wrap:anywhere}
+.detail p{margin:4px 0;white-space:pre-line;overflow-wrap:anywhere}
+.action{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bg);border:1px solid var(--border)}
+.alabel{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent)}
+.action p{margin:2px 0 0;white-space:pre-line;overflow-wrap:anywhere}
+.fpart{margin-top:8px;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.ev{margin-top:10px}
+summary{cursor:pointer;color:var(--muted);font-size:13px}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0 0;line-height:1.45}
+.fid{margin-top:6px;font:11px var(--mono);color:var(--muted);text-align:right;overflow-wrap:anywhere}
+.ok-msg{color:var(--ok)}
+h3.sub{font-size:16px;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
+.oklist{list-style:none;padding:0;margin:0;columns:2 320px;column-gap:28px}
+.oklist li{display:flex;gap:8px;align-items:flex-start;break-inside:avoid;padding:3px 0;overflow-wrap:anywhere}
+.oklist li>span:last-child{min-width:0}
+.oklist .badge{margin-top:3px}
+.sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;vertical-align:top;padding:7px 10px;border-bottom:1px solid var(--border)}
+th{font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;background:var(--bg)}
+tbody tr:last-child td{border-bottom:0}
+td{overflow-wrap:break-word}
+table.data td{max-width:340px}
+tr.c-crit td,tr.c-warn td{background:var(--cb)}
+td.st,th.st{width:1%;padding-right:0}
+td.st::before{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--c);color:var(--badge-ink);font:700 11px/1 var(--sans)}
+tr.c-crit td.st::before{content:"\2715"}tr.c-warn td.st::before{content:"!"}tr.c-ok td.st::before{content:"\2713"}tr.c-info td.st::before{content:"i"}tr.c-none td.st::before{content:"\2013"}
+.tbl{margin-bottom:16px}
+.tbl>summary{font:600 15px var(--serif);color:var(--text);margin-bottom:8px}
+.tnote p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.cov{list-style:none;margin:0 0 6px;padding:0}
+.cov li{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:8px}
+.cname{font-weight:600;overflow-wrap:anywhere}
+.creason{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.cfix{margin-top:6px;font-size:14px;overflow-wrap:anywhere}
+.cmd{display:flex;gap:8px;align-items:flex-start;margin-top:6px}
+.cmd code{flex:1;min-width:0;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cmd .btn{padding:6px 11px}
+.ran>summary{font-size:14px}
+.ranlist{columns:2 260px;font-size:14px;color:var(--muted);margin:8px 0 0;overflow-wrap:anywhere}
+.notes{margin:0;padding-left:20px}
+.notes li{margin:4px 0;overflow-wrap:anywhere}
+.muted{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.foot{margin-top:36px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;overflow-wrap:anywhere}
+.foot>div{min-width:0}
+@media (max-width:640px){
+.wrap{padding:14px 16px 32px}
+.top{align-items:flex-start}
+.brand .sub{flex-basis:100%;font-size:13px}
+.seg button,.iconbtn{padding:6px 10px}
+h2.sec{font-size:19px}
+.finding{padding:12px 13px}
+.finding h3{font-size:17px}
+.action{padding:9px 10px}
+.todo li{padding:11px 12px;gap:10px}
+
+.ident h1{font-size:23px}
+.card{padding:14px}
+.verdict{padding:14px;gap:12px}
+.verdict h2{font-size:19px}
+table.data{width:max-content;min-width:100%}
+table.data th,table.data td{max-width:210px}
+th,td{padding:7px 8px}
+.badge.lg{width:36px;height:36px;font-size:19px}
+.tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tile>a,.tile>div{padding:10px;column-gap:8px}
+.kv{grid-template-columns:1fr 1fr;gap:10px 16px}
+table.parts thead{display:none}
+table.parts,table.parts tbody,table.parts tr,table.parts td{display:block;width:100%}
+table.parts tr{padding:8px 0;border-bottom:1px solid var(--border)}
+table.parts tbody tr:last-child{border-bottom:0}
+table.parts td{border:0;padding:2px 12px;overflow-wrap:anywhere}
+table.parts td.pk{font-weight:600;padding-bottom:4px}
+table.parts td:empty{display:none}
+html[data-lang=vi] table.parts td[data-vi]::before{content:attr(data-vi) ": "}
+html[data-lang=en] table.parts td[data-en]::before{content:attr(data-en) ": "}
+table.parts td::before{color:var(--muted);font-size:12.5px}
+}
+@page{size:A4;margin:14mm 12mm}
+@media print{
+html:root[data-lang]{
+--bg:#FFFFFF;--surface:#FAF9F5;--text:#1F1E1D;--muted:#5E5D58;--border:#DDDBD0;--accent:#A84F32;--code-bg:#F3F2EC;
+--crit:#B3261E;--crit-bg:#FBECE8;--crit-bd:#EDC2B9;
+--warn:#8F5B00;--warn-bg:#FBF1DC;--warn-bd:#EBD39F;
+--ok:#2F6B3F;--ok-bg:#E9F2E7;--ok-bd:#C3DABF;
+--info:#3D5D7C;--info-bg:#E9EFF5;--info-bd:#C5D3E1;
+--none:#7A7871;--none-bg:#EFEEE8;--none-bd:#DDDBD2;
+--badge-ink:#FFFFFF;color-scheme:light;
+}
+body{font-size:10pt;background:#fff}
+.noprint{display:none!important}
+.wrap{max-width:none;padding:0}
+section{margin:14px 0}
+h2.sec{break-after:avoid}
+.finding,.todo li,.tile,.cov li,tr,.verdict,.ident{break-inside:avoid}
+.tablewrap{overflow:visible}
+table.data td{max-width:none}
+a{color:inherit;text-decoration:none}
+pre,.cmd code{white-space:pre-wrap;overflow:visible}
+.finding:target{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+<div class="brand"><span class="logo" aria-hidden="true">&#9670;</span><span class="name">Diagward</span><span class="sub"><span lang="vi">Báo cáo phần cứng máy chủ</span><span lang="en">Server hardware report</span></span></div>
+<div class="ctl noprint">
+<div class="seg" role="group" aria-label="Ngôn ngữ / Language">
+<button type="button" data-setlang="vi" aria-pressed="false">VI</button><button type="button" data-setlang="en" aria-pressed="true">EN</button>
+</div>
+<button type="button" class="iconbtn" data-theme-toggle aria-label="Sáng / tối · Light / dark" title="Sáng / tối · Light / dark">&#9680;</button>
+</div>
+</header>
+
+<main>
+<section class="card ident" style="margin-top:0">
+<h1>srv-db01</h1><div class="hostsub">Dell Inc. PowerEdge R740</div>
+<dl class="kv">
+<div><dt><span lang="vi">Hệ điều hành</span><span lang="en">Operating system</span></dt><dd>AlmaLinux 9.4 (Seafoam Ocelot)</dd></div>
+<div><dt>Kernel / build</dt><dd>5.14.0-427.13.1.el9_4.x86_64</dd></div>
+<div><dt>CPU</dt><dd>CPU (72 threads)</dd></div>
+<div><dt><span lang="vi">RAM</span><span lang="en">Memory</span></dt><dd>251 GiB</dd></div>
+<div><dt>Mainboard</dt><dd>Dell Inc. 01YM03</dd></div>
+<div><dt>BIOS</dt><dd>2.22.1 (2024-08-09)</dd></div>
+<div><dt>BMC</dt><dd>12.34.123.111</dd></div>
+<div><dt>Uptime</dt><dd><span lang="vi">10 ngày</span><span lang="en">10 days</span></dd></div>
+<div><dt><span lang="vi">Máy ảo</span><span lang="en">Virtual machine</span></dt><dd><span lang="vi">không (máy vật lý)</span><span lang="en">no (physical machine)</span></dd></div>
+<div><dt><span lang="vi">Quyền chạy</span><span lang="en">Ran as</span></dt><dd><span lang="vi">root / Administrator (đầy đủ)</span><span lang="en">root / Administrator (complete)</span></dd></div>
+<div><dt><span lang="vi">Thời điểm thu thập</span><span lang="en">Collected at</span></dt><dd>2026-10-01 09:00:27 &#43;00:00</dd></div>
+<div><dt><span lang="vi">Thời gian thu thập</span><span lang="en">Collection took</span></dt><dd><span lang="vi">27 giây</span><span lang="en">27 s</span></dd></div>
+</dl>
+</section>
+
+<section class="verdict c-crit" role="status">
+<span class="badge lg" aria-hidden="true">✕</span>
+<div><h2><span lang="vi">CẦN XỬ LÝ NGAY</span><span lang="en">ACTION NEEDED NOW</span></h2><p class="vsub"><span lang="vi">5 lỗi nghiêm trọng · 6 cảnh báo · 1 lưu ý · đã kiểm tra 12/12 nhóm linh kiện (2 nhóm chỉ một phần)</span><span lang="en">5 critical problems · 6 warnings · 1 note · 12 of 12 components checked (2 only partly)</span></p></div>
+</section>
+
+<section aria-labelledby="h-comp">
+<h2 class="sec" id="h-comp"><span lang="vi">Các nhóm linh kiện</span><span lang="en">Components</span></h2>
+<ul class="tiles">
+<li class="tile c-part"><a href="#coverage"><span class="badge" aria-hidden="true">◐</span><span class="tname"><span lang="vi">Hệ thống</span><span lang="en">System</span></span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span><span class="tpart"><span lang="vi">kiểm tra một phần</span><span lang="en">partly checked</span></span></a></li>
+<li class="tile c-ok"><div><span class="badge" aria-hidden="true">✓</span><span class="tname">CPU</span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span></div></li>
+<li class="tile c-warn"><a href="#f-6"><span class="badge" aria-hidden="true">!</span><span class="tname"><span lang="vi">Bộ nhớ (RAM)</span><span lang="en">Memory (RAM)</span></span><span class="tstat"><span lang="vi">1 cảnh báo</span><span lang="en">1 warning</span></span></a></li>
+<li class="tile c-crit"><a href="#f-1"><span class="badge" aria-hidden="true">✕</span><span class="tname"><span lang="vi">Ổ cứng</span><span lang="en">Disks</span></span><span class="tstat"><span lang="vi">1 nghiêm trọng, 2 cảnh báo</span><span lang="en">1 critical, 2 warnings</span></span></a></li>
+<li class="tile c-crit"><a href="#f-2"><span class="badge" aria-hidden="true">✕</span><span class="tname"><span lang="vi">RAID &amp; nhóm lưu trữ</span><span lang="en">RAID &amp; storage pools</span></span><span class="tstat"><span lang="vi">3 nghiêm trọng, 1 cảnh báo</span><span lang="en">3 critical, 1 warning</span></span></a></li>
+<li class="tile c-part"><a href="#coverage"><span class="badge" aria-hidden="true">◐</span><span class="tname"><span lang="vi">Phân vùng &amp; hệ thống tệp</span><span lang="en">Filesystems</span></span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span><span class="tpart"><span lang="vi">kiểm tra một phần</span><span lang="en">partly checked</span></span></a></li>
+<li class="tile c-ok"><div><span class="badge" aria-hidden="true">✓</span><span class="tname"><span lang="vi">Nhiệt độ</span><span lang="en">Temperature</span></span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span></div></li>
+<li class="tile c-ok"><div><span class="badge" aria-hidden="true">✓</span><span class="tname"><span lang="vi">Quạt</span><span lang="en">Fans</span></span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span></div></li>
+<li class="tile c-crit"><a href="#f-5"><span class="badge" aria-hidden="true">✕</span><span class="tname"><span lang="vi">Nguồn điện</span><span lang="en">Power supply</span></span><span class="tstat"><span lang="vi">1 nghiêm trọng, 1 cảnh báo</span><span lang="en">1 critical, 1 warning</span></span></a></li>
+<li class="tile c-warn"><a href="#f-11"><span class="badge" aria-hidden="true">!</span><span class="tname"><span lang="vi">Mạng</span><span lang="en">Network</span></span><span class="tstat"><span lang="vi">1 cảnh báo</span><span lang="en">1 warning</span></span></a></li>
+<li class="tile c-ok"><div><span class="badge" aria-hidden="true">✓</span><span class="tname"><span lang="vi">Bộ điều khiển quản trị (BMC)</span><span lang="en">Management controller (BMC)</span></span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span></div></li>
+<li class="tile c-ok"><div><span class="badge" aria-hidden="true">✓</span><span class="tname"><span lang="vi">Nhật ký hệ thống</span><span lang="en">System logs</span></span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span></div></li>
+</ul>
+</section>
+
+<section aria-labelledby="h-now">
+<h2 class="sec" id="h-now"><span lang="vi">Cần làm ngay</span><span lang="en">Do this now</span> <span class="count">11</span></h2>
+<ol class="todo">
+<li class="c-crit"><span class="badge" aria-hidden="true">✕</span><div><a class="todo-t" href="#f-1"><span lang="vi">Ổ /dev/sda sắp hỏng: 81 sector không đọc được</span><span lang="en">Disk /dev/sda is failing: 81 sectors could not be read</span></a><p lang="vi">Sao lưu dữ liệu trên /dev/sda ngay. Thay ổ (SAMSUNG HD502HI, serial S1VZJ9CS712490). Nếu ổ nằm trong RAID, kiểm tra các ổ còn lại không lỗi trước khi rút, rút đúng khay có serial này và chờ rebuild xong. Sau khi rebuild, chạy kiểm tra tính nhất quán (consistency check) của RAID vì mảng có thể đã mất dự phòng ở các block đó.</p><p lang="en">Back up the data on /dev/sda now. Replace the disk (SAMSUNG HD502HI, serial S1VZJ9CS712490). If it is a RAID member, check that the array is otherwise healthy before pulling it, pull the bay that matches this serial, and wait for the rebuild to finish. After the rebuild, run a RAID consistency check: the array may already have lost redundancy for those blocks.</p></div></li>
+<li class="c-crit"><span class="badge" aria-hidden="true">✕</span><div><a class="todo-t" href="#f-2"><span lang="vi">Ổ Enclosure 32 Slot 2 trên Controller 0 đã hỏng (Failed)</span><span lang="en">Disk Enclosure 32 Slot 2 on Controller 0 has failed (Failed)</span></a><p lang="vi">Thay ổ (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2). Bật đèn định vị khay ổ (storcli /cX/eY/sZ start locate, hoặc ssacli ... physicaldrive X modify led=on) trước khi rút, và tuyệt đối không rút nhầm ổ còn tốt của volume đang degraded.</p><p lang="en">Replace disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2). Locate it with the bay LED (storcli /cX/eY/sZ start locate, or ssacli ... physicaldrive X modify led=on) before pulling, and never pull a healthy disk of a degraded volume.</p></div></li>
+<li class="c-crit"><span class="badge" aria-hidden="true">✕</span><div><a class="todo-t" href="#f-3"><span lang="vi">Ổ Enclosure 32 Slot 3 trên Controller 0 báo sắp hỏng (cảnh báo S.M.A.R.T.)</span><span lang="en">Disk Enclosure 32 Slot 3 on Controller 0 predicts its own failure (S.M.A.R.T. alert)</span></a><p lang="vi">Sao lưu rồi sớm thay ổ (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG804001, Controller 0, Enclosure 32 Slot 3) (mở case bảo hành: predictive failure được hãng chấp nhận). Nếu có ổ hot spare, controller có thể chép sang trước.</p><p lang="en">Back up, then replace disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG804001, Controller 0, Enclosure 32 Slot 3) soon (open a warranty case: predictive failure qualifies). With a hot spare, the controller can copy to it first (storcli: /cX/eY/sZ set offline only after the spare is ready).</p></div></li>
+<li class="c-crit"><span class="badge" aria-hidden="true">✕</span><div><a class="todo-t" href="#f-4"><span lang="vi">Volume RAID Controller 0 v0 (RAID1) bị degraded</span><span lang="en">RAID volume Controller 0 v0 (RAID1) is degraded</span></a><p lang="vi">Sao lưu ngay. Thay ổ hỏng (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2) bằng ổ cùng loại, dung lượng bằng hoặc lớn hơn; controller sẽ tự rebuild (hoặc dùng ổ hot spare). Sau đó kiểm tra trạng thái ổ mới. Nếu ổ chỉ mất kết nối, cắm lại cho chắc.</p><p lang="en">Back up now. Replace the failed disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2) with one of the same type and equal or larger size; the controller rebuilds automatically (or onto a hot spare). Check the new disk&#39;s state afterwards. If the disk only lost contact, reseat it.</p></div></li>
+<li class="c-crit"><span class="badge" aria-hidden="true">✕</span><div><a class="todo-t" href="#f-5"><span lang="vi">PSU 2: bộ nguồn bị hỏng</span><span lang="en">PSU 2: power supply has failed</span></a><p lang="vi">Xem đèn trên bộ nguồn và thử rút ra cắm lại một lần. Nếu vẫn báo lỗi, thay bộ nguồn: mở yêu cầu bảo hành kèm số serial bên dưới.</p><p lang="en">Check the PSU LED and reseat the supply once. If it still reports a failure, replace it: open a warranty case with the PSU serial number below.</p></div></li>
+<li class="c-warn"><span class="badge" aria-hidden="true">!</span><div><a class="todo-t" href="#f-6"><span lang="vi">Thanh RAM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 liên tục bị lỗi (đã được ECC sửa): 250 lỗi (25 lỗi/ngày)</span><span lang="en">DIMM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 keeps producing corrected memory errors: 250 (25 per day)</span></a><p lang="vi">Lên kế hoạch thay thanh RAM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 ở lần bảo trì tới. Kiểm tra log sự kiện BMC cho khe này. Nếu đổi chỗ hai thanh mà lỗi đi theo thanh RAM thì thanh RAM hỏng; lỗi ở lại khe thì nghi khe hoặc CPU.</p><p lang="en">Plan to replace DIMM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 at the next maintenance window. Check the BMC event log for the same slot. If the errors move with the DIMM when you swap two DIMMs, the DIMM is bad; if they stay with the slot, suspect the slot/CPU.</p></div></li>
+<li class="c-warn"><span class="badge" aria-hidden="true">!</span><div><a class="todo-t" href="#f-7"><span lang="vi">Ổ /dev/sda báo 2,375 lỗi không sửa được</span><span lang="en">Disk /dev/sda reported 2,375 uncorrectable errors</span></a><p lang="vi">Sao lưu /dev/sda và lên kế hoạch thay ổ (SAMSUNG HD502HI, serial S1VZJ9CS712490). Theo dõi xem số này có tăng không.</p><p lang="en">Back up /dev/sda and plan a replacement (SAMSUNG HD502HI, serial S1VZJ9CS712490). Check whether the count rises.</p></div></li>
+<li class="c-warn"><span class="badge" aria-hidden="true">!</span><div><a class="todo-t" href="#f-8"><span lang="vi">Ổ /dev/sda: 1 lỗi truyền dữ liệu (CRC) — kiểm tra cáp/backplane</span><span lang="en">Disk /dev/sda: 1 data transfer (CRC) errors — check cable/backplane</span></a><p lang="vi">Cắm lại hoặc thay cáp dữ liệu, hoặc chuyển ổ sang khe backplane khác. Chạy lại Diagward sau: nếu số vẫn tăng thì thay cáp/backplane; không cần thay ổ.</p><p lang="en">Reseat or replace the data cable, or move the disk to another backplane slot. Run Diagward again later: if the count still rises, replace the cable/backplane; the disk can stay.</p></div></li>
+<li class="c-warn"><span class="badge" aria-hidden="true">!</span><div><a class="todo-t" href="#f-9"><span lang="vi">Ổ Enclosure 32 Slot 1 trên Controller 0 có 5 lỗi media</span><span lang="en">Disk Enclosure 32 Slot 1 on Controller 0 has 5 media errors</span></a><p lang="vi">Theo dõi bộ đếm; nếu tăng, thay ổ (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG803993, Controller 0, Enclosure 32 Slot 1). Giữ bật patrol read / consistency check.</p><p lang="en">Watch the counter; if it grows, replace disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG803993, Controller 0, Enclosure 32 Slot 1). Keep patrol read / consistency checks enabled.</p></div></li>
+<li class="c-warn"><span class="badge" aria-hidden="true">!</span><div><a class="todo-t" href="#f-10"><span lang="vi">PSU Redundancy: mất dự phòng — nhật ký BMC: Redundancy Lost, 1 lần trong 30 ngày qua, gần nhất 2026-09-24 11:42</span><span lang="en">PSU Redundancy: redundancy lost — BMC log: Redundancy Lost, 1× in the last 30 days, last 2026-09-24 11:42</span></a><p lang="vi">Tìm bộ nguồn/quạt bị hỏng, thiếu hoặc rút điện (xem bảng PSU/quạt và nhật ký BMC) rồi khắc phục.</p><p lang="en">Find the failed, missing or unplugged unit (PSU/fan tables and BMC log) and restore it.</p></div></li>
+<li class="c-warn"><span class="badge" aria-hidden="true">!</span><div><a class="todo-t" href="#f-11"><span lang="vi">Bond bond0 mất dự phòng: cổng enp0s8 bị rớt link</span><span lang="en">Bond bond0 lost redundancy: port enp0s8 is down</span></a><p lang="vi">Kiểm tra dây và cổng switch của enp0s8 (đèn link), cắm lại hoặc thay SFP/dây, và kiểm tra cổng trên switch (bị shutdown, err-disabled, sai VLAN/port-channel).</p><p lang="en">Check the cable and switch port of enp0s8 (link LED), reseat or replace the SFP/cable, and check the port on the switch (shutdown, err-disabled, wrong VLAN/port-channel).</p></div></li>
+</ol>
+</section>
+
+<section aria-labelledby="h-find">
+<h2 class="sec" id="h-find"><span lang="vi">Vấn đề phát hiện</span><span lang="en">Problems found</span> <span class="count">12</span></h2>
+
+<article class="finding c-crit" id="f-1">
+<div class="fh"><span class="badge" aria-hidden="true">✕</span><span class="chip"><span lang="vi">Nghiêm trọng</span><span lang="en">Critical</span></span><span><span lang="vi">Ổ cứng</span><span lang="en">Disks</span></span><code class="tgt">/dev/sda</code></div>
+<h3><span lang="vi">Ổ /dev/sda sắp hỏng: 81 sector không đọc được</span><span lang="en">Disk /dev/sda is failing: 81 sectors could not be read</span></h3>
+<div class="detail"><p lang="vi">Current_Pending_Sector = 81 (sector đọc lỗi, đang chờ thay thế), Offline_Uncorrectable = 0 (sector lần quét offline không đọc được). Dữ liệu nằm trên các sector này hiện không đọc được, và ổ có sector chờ thay thế hỏng nhiều hơn hẳn (thống kê Backblaze). Log hệ thống cũng xác nhận: Ổ /dev/sda có sector không đọc được (medium error).</p><p lang="en">Current_Pending_Sector = 81 (sectors waiting to be remapped because a read failed), Offline_Uncorrectable = 0 (sectors the offline scan could not read). Data stored in those sectors is unreadable right now, and disks with pending sectors fail far more often (Backblaze drive stats). The kernel/event log confirms it: Disk /dev/sda has unreadable sectors (medium error).</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Sao lưu dữ liệu trên /dev/sda ngay. Thay ổ (SAMSUNG HD502HI, serial S1VZJ9CS712490). Nếu ổ nằm trong RAID, kiểm tra các ổ còn lại không lỗi trước khi rút, rút đúng khay có serial này và chờ rebuild xong. Sau khi rebuild, chạy kiểm tra tính nhất quán (consistency check) của RAID vì mảng có thể đã mất dự phòng ở các block đó.</p><p lang="en">Back up the data on /dev/sda now. Replace the disk (SAMSUNG HD502HI, serial S1VZJ9CS712490). If it is a RAID member, check that the array is otherwise healthy before pulling it, pull the bay that matches this serial, and wait for the rebuild to finish. After the rebuild, run a RAID consistency check: the array may already have lost redundancy for those blocks.</p></div>
+<div class="fpart">Samsung · SAMSUNG HD502HI · 500 GB · S/N S1VZJ9CS712490 · @ /dev/sda</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (3)</summary><pre>197 Current_Pending_Sector   value=098 worst=098 thresh=000 Old_age when_failed=- raw=81
+2026-09-30T10:00:02&#43;07:00 srv-db01 kernel: sd 0:0:0:0: [sda] tag#3 Sense Key : Medium Error [current]
+2026-09-30T10:00:02&#43;07:00 srv-db01 kernel: sd 0:0:0:0: [sda] tag#3 Add. Sense: Unrecovered read error
+</pre></details>
+<div class="fid">disk.unreadable_sectors</div>
+</article>
+
+<article class="finding c-crit" id="f-2">
+<div class="fh"><span class="badge" aria-hidden="true">✕</span><span class="chip"><span lang="vi">Nghiêm trọng</span><span lang="en">Critical</span></span><span><span lang="vi">RAID &amp; nhóm lưu trữ</span><span lang="en">RAID &amp; storage pools</span></span><code class="tgt">Controller 0 Enclosure 32 Slot 2</code></div>
+<h3><span lang="vi">Ổ Enclosure 32 Slot 2 trên Controller 0 đã hỏng (Failed)</span><span lang="en">Disk Enclosure 32 Slot 2 on Controller 0 has failed (Failed)</span></h3>
+<div class="detail"><p lang="vi">Controller báo ổ ở trạng thái &#34;Failed&#34;. Nếu ổ thuộc một volume RAID thì volume đó đang degraded hoặc đang rebuild sang ổ dự phòng.</p><p lang="en">The controller reports the disk as &#34;Failed&#34;. If it belonged to a RAID volume, that volume is degraded or rebuilding onto a spare.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Thay ổ (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2). Bật đèn định vị khay ổ (storcli /cX/eY/sZ start locate, hoặc ssacli ... physicaldrive X modify led=on) trước khi rút, và tuyệt đối không rút nhầm ổ còn tốt của volume đang degraded.</p><p lang="en">Replace disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2). Locate it with the bay LED (storcli /cX/eY/sZ start locate, or ssacli ... physicaldrive X modify led=on) before pulling, and never pull a healthy disk of a degraded volume.</p></div>
+<div class="fpart">SAMSUNG MZ7LM960HCHP-00003 · 894.252 GB · S/N S1YHNYAG600061 · @ Controller 0, Enclosure 32 Slot 2</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (11)</summary><pre>VD v0 State: Degraded
+PD 32:0 Firmware state: Online, Spun Up
+PD 32:2 Firmware state: Failed
+PD 32:1 Firmware state: Online, Spun Up
+PD 32:3 Firmware state: Online, Spun Up
+PD 32:5 Firmware state: Online, Spun Up
+PD 32:4 Firmware state: Online, Spun Up
+PD 32:6 Firmware state: Online, Spun Up
+PD 32:7 Firmware state: Online, Spun Up
+VD v0 State: Degraded
+... 9 more
+</pre></details>
+<div class="fid">raid.hw_pd_failed</div>
+</article>
+
+<article class="finding c-crit" id="f-3">
+<div class="fh"><span class="badge" aria-hidden="true">✕</span><span class="chip"><span lang="vi">Nghiêm trọng</span><span lang="en">Critical</span></span><span><span lang="vi">RAID &amp; nhóm lưu trữ</span><span lang="en">RAID &amp; storage pools</span></span><code class="tgt">Controller 0 Enclosure 32 Slot 3</code></div>
+<h3><span lang="vi">Ổ Enclosure 32 Slot 3 trên Controller 0 báo sắp hỏng (cảnh báo S.M.A.R.T.)</span><span lang="en">Disk Enclosure 32 Slot 3 on Controller 0 predicts its own failure (S.M.A.R.T. alert)</span></h3>
+<div class="detail"><p lang="vi">Trạng thái &#34;Online, Spun Up&#34;, số lần predictive failure 2, cảnh báo S.M.A.R.T.: có. Firmware của ổ đã vượt ngưỡng hỏng; ổ như vậy thường hỏng hẳn trong vài ngày tới vài tuần.</p><p lang="en">State &#34;Online, Spun Up&#34;, predictive failure count 2, S.M.A.R.T. alert: yes. The drive firmware has crossed a failure threshold; such drives often fail within days or weeks.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Sao lưu rồi sớm thay ổ (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG804001, Controller 0, Enclosure 32 Slot 3) (mở case bảo hành: predictive failure được hãng chấp nhận). Nếu có ổ hot spare, controller có thể chép sang trước.</p><p lang="en">Back up, then replace disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG804001, Controller 0, Enclosure 32 Slot 3) soon (open a warranty case: predictive failure qualifies). With a hot spare, the controller can copy to it first (storcli: /cX/eY/sZ set offline only after the spare is ready).</p></div>
+<div class="fpart">SAMSUNG MZ7LM960HCHP-00003 · 894.252 GB · S/N S1YHNXAG804001 · @ Controller 0, Enclosure 32 Slot 3</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (11)</summary><pre>VD v0 State: Degraded
+PD 32:0 Firmware state: Online, Spun Up
+PD 32:2 Firmware state: Failed
+PD 32:1 Firmware state: Online, Spun Up
+PD 32:3 Firmware state: Online, Spun Up
+PD 32:5 Firmware state: Online, Spun Up
+PD 32:4 Firmware state: Online, Spun Up
+PD 32:6 Firmware state: Online, Spun Up
+PD 32:7 Firmware state: Online, Spun Up
+VD v0 State: Degraded
+... 9 more
+</pre></details>
+<div class="fid">raid.hw_pd_predictive</div>
+</article>
+
+<article class="finding c-crit" id="f-4">
+<div class="fh"><span class="badge" aria-hidden="true">✕</span><span class="chip"><span lang="vi">Nghiêm trọng</span><span lang="en">Critical</span></span><span><span lang="vi">RAID &amp; nhóm lưu trữ</span><span lang="en">RAID &amp; storage pools</span></span><code class="tgt">Controller 0 v0</code></div>
+<h3><span lang="vi">Volume RAID Controller 0 v0 (RAID1) bị degraded</span><span lang="en">RAID volume Controller 0 v0 (RAID1) is degraded</span></h3>
+<div class="detail"><p lang="vi">Virtual drive v0 báo &#34;Degraded&#34;: vẫn chạy nhưng đã mất dự phòng (RAID6 có thể còn một lớp parity). Hỏng thêm ổ là có thể mất dữ liệu.</p><p lang="en">Virtual drive v0 reports &#34;Degraded&#34;: it still works but has lost redundancy (a RAID6 volume may have one parity left). Another disk failure can lose data.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Sao lưu ngay. Thay ổ hỏng (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2) bằng ổ cùng loại, dung lượng bằng hoặc lớn hơn; controller sẽ tự rebuild (hoặc dùng ổ hot spare). Sau đó kiểm tra trạng thái ổ mới. Nếu ổ chỉ mất kết nối, cắm lại cho chắc.</p><p lang="en">Back up now. Replace the failed disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNYAG600061, Controller 0, Enclosure 32 Slot 2) with one of the same type and equal or larger size; the controller rebuilds automatically (or onto a hot spare). Check the new disk&#39;s state afterwards. If the disk only lost contact, reseat it.</p></div>
+<div class="fpart">SAMSUNG MZ7LM960HCHP-00003 · 894.252 GB · S/N S1YHNYAG600061 · @ Controller 0, Enclosure 32 Slot 2</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (11)</summary><pre>VD v0 State: Degraded
+PD 32:0 Firmware state: Online, Spun Up
+PD 32:2 Firmware state: Failed
+PD 32:1 Firmware state: Online, Spun Up
+PD 32:3 Firmware state: Online, Spun Up
+PD 32:5 Firmware state: Online, Spun Up
+PD 32:4 Firmware state: Online, Spun Up
+PD 32:6 Firmware state: Online, Spun Up
+PD 32:7 Firmware state: Online, Spun Up
+VD v0 State: Degraded
+... 9 more
+</pre></details>
+<div class="fid">raid.hw_vd_degraded</div>
+</article>
+
+<article class="finding c-crit" id="f-5">
+<div class="fh"><span class="badge" aria-hidden="true">✕</span><span class="chip"><span lang="vi">Nghiêm trọng</span><span lang="en">Critical</span></span><span><span lang="vi">Nguồn điện</span><span lang="en">Power supply</span></span><code class="tgt">PSU 2</code></div>
+<h3><span lang="vi">PSU 2: bộ nguồn bị hỏng</span><span lang="en">PSU 2: power supply has failed</span></h3>
+<div class="detail"><p lang="vi">BMC báo bộ nguồn này bị hỏng. Máy chủ đang chạy nhờ các bộ nguồn còn lại; nếu không có nguồn dự phòng thì máy có thể sập bất cứ lúc nào. BMC đọc được: Presence detected, Failure detected.</p><p lang="en">The BMC reports a failure of this power supply. The server now depends on the remaining supplies; if it had no redundancy it is at risk of going down. BMC reading: Presence detected, Failure detected.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Xem đèn trên bộ nguồn và thử rút ra cắm lại một lần. Nếu vẫn báo lỗi, thay bộ nguồn: mở yêu cầu bảo hành kèm số serial bên dưới.</p><p lang="en">Check the PSU LED and reseat the supply once. If it still reports a failure, replace it: open a warranty case with the PSU serial number below.</p></div>
+<div class="fpart">DELL · PWR SPLY,750W,RDNT,DELTA 05RHVVA03 · S/N CNDED0003G0O0P · @ PSU 2</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (1)</summary><pre>PS2 Status       | E1h | ok  | 10.2 | Presence detected, Failure detected
+</pre></details>
+<div class="fid">ipmi.psu_failed</div>
+</article>
+
+<article class="finding c-warn" id="f-6">
+<div class="fh"><span class="badge" aria-hidden="true">!</span><span class="chip"><span lang="vi">Cảnh báo</span><span lang="en">Warning</span></span><span><span lang="vi">Bộ nhớ (RAM)</span><span lang="en">Memory (RAM)</span></span><code class="tgt">CPU_SrcID#1_MC#0_Chan#1_DIMM#0</code></div>
+<h3><span lang="vi">Thanh RAM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 liên tục bị lỗi (đã được ECC sửa): 250 lỗi (25 lỗi/ngày)</span><span lang="en">DIMM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 keeps producing corrected memory errors: 250 (25 per day)</span></h3>
+<div class="detail"><p lang="vi">EDAC đếm được 250 lỗi đã sửa trong khoảng 10 ngày. ECC đã sửa nên chưa mất dữ liệu, nhưng thanh RAM liên tục phát sinh lỗi là đang xuống cấp và dễ phát sinh lỗi không sửa được (làm treo máy) hơn nhiều. Nhãn này nghĩa là: socket CPU 1 (thường in trên bo mạch là CPU2), bộ điều khiển bộ nhớ 0, kênh 1, thanh thứ 0 của kênh; đối chiếu với sơ đồ khe RAM trên nắp máy hoặc BMC (có ghi tên khe).</p><p lang="en">EDAC counted 250 corrected errors in about 10 days. ECC fixed them, so no data was lost yet, but a DIMM that keeps producing corrected errors is wearing out and is much more likely to produce an uncorrectable error (which crashes the server). The label means: CPU socket 1 (usually printed as CPU2 on the board), memory controller 0, channel 1, DIMM 0 of that channel; match it to a slot with the memory map on the server lid or the BMC, which names the slot.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Lên kế hoạch thay thanh RAM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 ở lần bảo trì tới. Kiểm tra log sự kiện BMC cho khe này. Nếu đổi chỗ hai thanh mà lỗi đi theo thanh RAM thì thanh RAM hỏng; lỗi ở lại khe thì nghi khe hoặc CPU.</p><p lang="en">Plan to replace DIMM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 at the next maintenance window. Check the BMC event log for the same slot. If the errors move with the DIMM when you swap two DIMMs, the DIMM is bad; if they stay with the slot, suspect the slot/CPU.</p></div>
+<div class="fpart">@ CPU_SrcID#1_MC#0_Chan#1_DIMM#0</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (2)</summary><pre>/sys/devices/system/edac/mc/mc1/dimm1/dimm_ce_count=250
+/sys/devices/system/edac/mc/mc1/dimm1/dimm_ue_count=0
+</pre></details>
+<div class="fid">memory.ecc_corrected</div>
+</article>
+
+<article class="finding c-warn" id="f-7">
+<div class="fh"><span class="badge" aria-hidden="true">!</span><span class="chip"><span lang="vi">Cảnh báo</span><span lang="en">Warning</span></span><span><span lang="vi">Ổ cứng</span><span lang="en">Disks</span></span><code class="tgt">/dev/sda</code></div>
+<h3><span lang="vi">Ổ /dev/sda báo 2,375 lỗi không sửa được</span><span lang="en">Disk /dev/sda reported 2,375 uncorrectable errors</span></h3>
+<div class="detail"><p lang="vi">Chỉ số 187 đếm số lần đọc mà cơ chế sửa lỗi (ECC) của ổ không cứu được. Backblaze xếp chỉ số này vào nhóm 5 chỉ số dự báo hỏng ổ tốt nhất.</p><p lang="en">Attribute 187 counts reads the drive&#39;s error correction could not recover. Backblaze lists it among the five S.M.A.R.T. values that best predict failure.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Sao lưu /dev/sda và lên kế hoạch thay ổ (SAMSUNG HD502HI, serial S1VZJ9CS712490). Theo dõi xem số này có tăng không.</p><p lang="en">Back up /dev/sda and plan a replacement (SAMSUNG HD502HI, serial S1VZJ9CS712490). Check whether the count rises.</p></div>
+<div class="fpart">Samsung · SAMSUNG HD502HI · 500 GB · S/N S1VZJ9CS712490 · @ /dev/sda</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (1)</summary><pre>187 Reported_Uncorrect       value=100 worst=100 thresh=000 Old_age when_failed=- raw=2375
+</pre></details>
+<div class="fid">disk.reported_uncorrect</div>
+</article>
+
+<article class="finding c-warn" id="f-8">
+<div class="fh"><span class="badge" aria-hidden="true">!</span><span class="chip"><span lang="vi">Cảnh báo</span><span lang="en">Warning</span></span><span><span lang="vi">Ổ cứng</span><span lang="en">Disks</span></span><code class="tgt">/dev/sda</code></div>
+<h3><span lang="vi">Ổ /dev/sda: 1 lỗi truyền dữ liệu (CRC) — kiểm tra cáp/backplane</span><span lang="en">Disk /dev/sda: 1 data transfer (CRC) errors — check cable/backplane</span></h3>
+<div class="detail"><p lang="vi">UDMA_CRC_Error_Count đếm số lần dữ liệu bị lỗi trên đường truyền giữa ổ và controller. Nguyên nhân thường là cáp SATA, khe backplane hoặc đầu cắm lỏng/hỏng, không phải do ổ. Bộ đếm không bao giờ reset, nên nếu con số cũ không tăng nữa thì không đáng lo.</p><p lang="en">UDMA_CRC_Error_Count counts transfers corrupted on the link between the disk and the controller. The usual cause is a bad or loose SATA cable, backplane slot or connector, not the disk itself. The counter never resets, so an old count that no longer grows is harmless.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Cắm lại hoặc thay cáp dữ liệu, hoặc chuyển ổ sang khe backplane khác. Chạy lại Diagward sau: nếu số vẫn tăng thì thay cáp/backplane; không cần thay ổ.</p><p lang="en">Reseat or replace the data cable, or move the disk to another backplane slot. Run Diagward again later: if the count still rises, replace the cable/backplane; the disk can stay.</p></div>
+<div class="fpart">Samsung · SAMSUNG HD502HI · 500 GB · S/N S1VZJ9CS712490 · @ /dev/sda</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (1)</summary><pre>199 UDMA_CRC_Error_Count     value=100 worst=100 thresh=000 Old_age when_failed=- raw=1
+</pre></details>
+<div class="fid">disk.crc_errors</div>
+</article>
+
+<article class="finding c-warn" id="f-9">
+<div class="fh"><span class="badge" aria-hidden="true">!</span><span class="chip"><span lang="vi">Cảnh báo</span><span lang="en">Warning</span></span><span><span lang="vi">RAID &amp; nhóm lưu trữ</span><span lang="en">RAID &amp; storage pools</span></span><code class="tgt">Controller 0 Enclosure 32 Slot 1</code></div>
+<h3><span lang="vi">Ổ Enclosure 32 Slot 1 trên Controller 0 có 5 lỗi media</span><span lang="en">Disk Enclosure 32 Slot 1 on Controller 0 has 5 media errors</span></h3>
+<div class="detail"><p lang="vi">Lỗi media là lỗi đọc trên bề mặt đĩa mà controller phải sửa từ bản dự phòng. Vài lỗi cũ có thể chấp nhận; số lỗi tăng dần nghĩa là ổ đang xuống cấp.</p><p lang="en">Media errors are read failures on the disk surface that the controller had to repair from redundancy. A few old ones can be tolerated; a rising count means the disk is wearing out.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Theo dõi bộ đếm; nếu tăng, thay ổ (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG803993, Controller 0, Enclosure 32 Slot 1). Giữ bật patrol read / consistency check.</p><p lang="en">Watch the counter; if it grows, replace disk (model SAMSUNG MZ7LM960HCHP-00003, serial S1YHNXAG803993, Controller 0, Enclosure 32 Slot 1). Keep patrol read / consistency checks enabled.</p></div>
+<div class="fpart">SAMSUNG MZ7LM960HCHP-00003 · 894.252 GB · S/N S1YHNXAG803993 · @ Controller 0, Enclosure 32 Slot 1</div>
+
+<div class="fid">raid.hw_pd_media_errors</div>
+</article>
+
+<article class="finding c-warn" id="f-10">
+<div class="fh"><span class="badge" aria-hidden="true">!</span><span class="chip"><span lang="vi">Cảnh báo</span><span lang="en">Warning</span></span><span><span lang="vi">Nguồn điện</span><span lang="en">Power supply</span></span><code class="tgt">PSU Redundancy</code></div>
+<h3><span lang="vi">PSU Redundancy: mất dự phòng — nhật ký BMC: Redundancy Lost, 1 lần trong 30 ngày qua, gần nhất 2026-09-24 11:42</span><span lang="en">PSU Redundancy: redundancy lost — BMC log: Redundancy Lost, 1× in the last 30 days, last 2026-09-24 11:42</span></h3>
+<div class="detail"><p lang="vi">Máy chủ đang chạy không còn bộ nguồn hoặc quạt dự phòng: chỉ cần hỏng thêm một cái là máy sẽ sập hoặc quá nhiệt. Cảm biến &#34;Power Supply PSU Redundancy&#34; ghi nhận &#34;Redundancy Lost&#34;, lần đầu 2026-09-24 11:42, gần nhất 2026-09-24 11:42.</p><p lang="en">The server is running without a spare power supply or fan: one more failure takes it down or makes it overheat. Sensor &#34;Power Supply PSU Redundancy&#34; logged &#34;Redundancy Lost&#34;, first 2026-09-24 11:42, last 2026-09-24 11:42.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Tìm bộ nguồn/quạt bị hỏng, thiếu hoặc rút điện (xem bảng PSU/quạt và nhật ký BMC) rồi khắc phục.</p><p lang="en">Find the failed, missing or unplugged unit (PSU/fan tables and BMC log) and restore it.</p></div>
+
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (1)</summary><pre>  29 | 09/24/2026 | 11:42:11 | Power Supply PSU Redundancy | Redundancy Lost | Asserted
+</pre></details>
+<div class="fid">ipmi.sel_redundancy_lost</div>
+</article>
+
+<article class="finding c-warn" id="f-11">
+<div class="fh"><span class="badge" aria-hidden="true">!</span><span class="chip"><span lang="vi">Cảnh báo</span><span lang="en">Warning</span></span><span><span lang="vi">Mạng</span><span lang="en">Network</span></span><code class="tgt">bond0</code></div>
+<h3><span lang="vi">Bond bond0 mất dự phòng: cổng enp0s8 bị rớt link</span><span lang="en">Bond bond0 lost redundancy: port enp0s8 is down</span></h3>
+<div class="detail"><p lang="vi">bond0 vẫn chạy trên enp0s9, nhưng nếu cổng hoặc dây đó hỏng nốt thì máy chủ sẽ mất mạng.</p><p lang="en">bond0 still works on enp0s9, but if that port or its cable fails too, the server goes offline.</p></div>
+<div class="action"><div class="alabel"><span lang="vi">Cách xử lý</span><span lang="en">What to do</span></div><p lang="vi">Kiểm tra dây và cổng switch của enp0s8 (đèn link), cắm lại hoặc thay SFP/dây, và kiểm tra cổng trên switch (bị shutdown, err-disabled, sai VLAN/port-channel).</p><p lang="en">Check the cable and switch port of enp0s8 (link LED), reseat or replace the SFP/cable, and check the port on the switch (shutdown, err-disabled, wrong VLAN/port-channel).</p></div>
+<div class="fpart">@ enp0s8 (MAC 08:00:27:a2:8d:f5)</div>
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (4)</summary><pre>bond0: mode=IEEE 802.3ad Dynamic link aggregation status=up active=?
+active aggregator 1, partner MAC 00:00:00:00:00:00
+  enp0s9: status=up speed=1000 Mbps duplex=full link_failures=0 aggregator=1
+  enp0s8: status=down speed=Unknown duplex=unknown link_failures=0 aggregator=2
+</pre></details>
+<div class="fid">network.bond_degraded</div>
+</article>
+
+<article class="finding c-info" id="f-12">
+<div class="fh"><span class="badge" aria-hidden="true">i</span><span class="chip"><span lang="vi">Lưu ý</span><span lang="en">Note</span></span><span><span lang="vi">Bộ nhớ (RAM)</span><span lang="en">Memory (RAM)</span></span></div>
+<h3><span lang="vi">16 thanh RAM chạy dưới tốc độ danh định</span><span lang="en">16 DIMM(s) run below their rated speed</span></h3>
+<div class="detail"><p lang="vi">Điều này bình thường ở hầu hết máy chủ: bộ điều khiển bộ nhớ của CPU có thể chỉ hỗ trợ tốc độ thấp hơn thanh RAM (vd. Xeon Silver/Bronze), cắm 2 thanh mỗi kênh làm giảm tốc độ, RAM lẫn lộn chạy theo thanh chậm nhất, và profile BIOS tiết kiệm điện cũng giới hạn tốc độ. Đây không phải lỗi.</p><p lang="en">This is normal in most servers: the CPU&#39;s memory controller may support a lower speed than the DIMM (e.g. Xeon Silver/Bronze), two DIMMs per channel lower the speed, mixed DIMMs run at the slowest one, and power-saving BIOS profiles cap it. It is not a fault.</p></div>
+
+
+<details class="ev"><summary><span lang="vi">Bằng chứng</span><span lang="en">Evidence</span> (11)</summary><pre>A1: rated 2933 MT/s, running 2666 MT/s
+A2: rated 2933 MT/s, running 2666 MT/s
+A3: rated 2933 MT/s, running 2666 MT/s
+A4: rated 2933 MT/s, running 2666 MT/s
+A5: rated 2933 MT/s, running 2666 MT/s
+A6: rated 2933 MT/s, running 2666 MT/s
+A7: rated 2933 MT/s, running 2666 MT/s
+A8: rated 2933 MT/s, running 2666 MT/s
+B1: rated 2933 MT/s, running 2666 MT/s
+B2: rated 2933 MT/s, running 2666 MT/s
+... 6 more
+</pre></details>
+<div class="fid">memory.speed_below_rated</div>
+</article>
+
+<h3 class="sub"><span lang="vi">Đã kiểm tra, ổn</span><span lang="en">Checked and healthy</span> <span class="count">6</span></h3>
+<ul class="oklist c-ok">
+<li><span class="badge sm" aria-hidden="true">✓</span><span><span lang="vi">Tải hệ thống bình thường (load 0.40 trên 72 CPU)</span><span lang="en">System load is normal (load 0.40 on 72 CPUs)</span></span></li>
+<li><span class="badge sm" aria-hidden="true">✓</span><span><span lang="vi">2 socket CPU đang lắp và hoạt động (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz)</span><span lang="en">2 CPU socket(s) populated and enabled (Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz)</span></span></li>
+<li><span class="badge sm" aria-hidden="true">✓</span><span><span lang="vi">Mức dùng RAM bình thường: còn trống 228 GiB trên tổng 251 GiB</span><span lang="en">RAM usage normal: 228 GiB available of 251 GiB</span></span></li>
+<li><span class="badge sm" aria-hidden="true">✓</span><span><span lang="vi">1 ổ cứng đạt kiểm tra sức khỏe</span><span lang="en">1 disk(s) passed the health check</span></span></li>
+<li><span class="badge sm" aria-hidden="true">✓</span><span><span lang="vi">7 hệ thống tệp được mount bình thường, không ghi nhận lỗi</span><span lang="en">7 filesystem(s) mounted normally, no filesystem errors recorded</span></span></li>
+<li><span class="badge sm" aria-hidden="true">✓</span><span><span lang="vi">BMC phản hồi: DELL Inc, firmware 6.10, IP quản trị 12.34.123.111 (Static Address)</span><span lang="en">BMC answers: DELL Inc, firmware 6.10, management IP 12.34.123.111 (Static Address)</span></span></li>
+</ul>
+</section>
+
+<section id="parts" aria-labelledby="h-parts">
+<div class="sec-row"><h2 class="sec" id="h-parts"><span lang="vi">Linh kiện cần thay</span><span lang="en">Parts to replace</span> <small><span lang="vi">dùng khi mở ca bảo hành / RMA</span><span lang="en">for the warranty / RMA case</span></small></h2><button type="button" class="btn noprint" data-copy-rma><span class="lbl"><span lang="vi">Sao chép dạng văn bản</span><span lang="en">Copy as text</span></span><span class="done"><span lang="vi">Đã sao chép</span><span lang="en">Copied</span></span></button></div>
+<div class="tablewrap"><table class="parts">
+<thead><tr><th><span lang="vi">Linh kiện</span><span lang="en">Part</span></th><th><span lang="vi">Hãng / model</span><span lang="en">Vendor / model</span></th><th>Serial</th><th><span lang="vi">Vị trí</span><span lang="en">Location</span></th><th><span lang="vi">Lý do</span><span lang="en">Reason</span></th></tr></thead>
+<tbody>
+<tr class="c-crit"><td class="pk"><span class="badge sm" aria-hidden="true">✕</span> <span lang="vi">Ổ cứng</span><span lang="en">Disk</span></td><td data-vi="Hãng / model" data-en="Vendor / model">Samsung SAMSUNG HD502HI 500 GB<div class="muted">FW 1AG01118</div></td><td data-vi="Serial" data-en="Serial"><code>S1VZJ9CS712490</code></td><td data-vi="Vị trí" data-en="Location">/dev/sda</td><td data-vi="Lý do" data-en="Reason"><a href="#f-1"><span lang="vi">Ổ /dev/sda sắp hỏng: 81 sector không đọc được; Ổ /dev/sda báo 2,375 lỗi không sửa được; Ổ /dev/sda: 1 lỗi truyền dữ liệu (CRC) — kiểm tra cáp/backplane</span><span lang="en">Disk /dev/sda is failing: 81 sectors could not be read; Disk /dev/sda reported 2,375 uncorrectable errors; Disk /dev/sda: 1 data transfer (CRC) errors — check cable/backplane</span></a></td></tr>
+<tr class="c-crit"><td class="pk"><span class="badge sm" aria-hidden="true">✕</span> <span lang="vi">Ổ cứng</span><span lang="en">Disk</span></td><td data-vi="Hãng / model" data-en="Vendor / model">SAMSUNG MZ7LM960HCHP-00003 894.252 GB<div class="muted">FW GXT3003Q</div></td><td data-vi="Serial" data-en="Serial"><code>S1YHNYAG600061</code></td><td data-vi="Vị trí" data-en="Location">Controller 0, Enclosure 32 Slot 2</td><td data-vi="Lý do" data-en="Reason"><a href="#f-2"><span lang="vi">Ổ Enclosure 32 Slot 2 trên Controller 0 đã hỏng (Failed); Volume RAID Controller 0 v0 (RAID1) bị degraded</span><span lang="en">Disk Enclosure 32 Slot 2 on Controller 0 has failed (Failed); RAID volume Controller 0 v0 (RAID1) is degraded</span></a></td></tr>
+<tr class="c-crit"><td class="pk"><span class="badge sm" aria-hidden="true">✕</span> <span lang="vi">Ổ cứng</span><span lang="en">Disk</span></td><td data-vi="Hãng / model" data-en="Vendor / model">SAMSUNG MZ7LM960HCHP-00003 894.252 GB<div class="muted">FW GXT3003Q</div></td><td data-vi="Serial" data-en="Serial"><code>S1YHNXAG804001</code></td><td data-vi="Vị trí" data-en="Location">Controller 0, Enclosure 32 Slot 3</td><td data-vi="Lý do" data-en="Reason"><a href="#f-3"><span lang="vi">Ổ Enclosure 32 Slot 3 trên Controller 0 báo sắp hỏng (cảnh báo S.M.A.R.T.)</span><span lang="en">Disk Enclosure 32 Slot 3 on Controller 0 predicts its own failure (S.M.A.R.T. alert)</span></a></td></tr>
+<tr class="c-crit"><td class="pk"><span class="badge sm" aria-hidden="true">✕</span> <span lang="vi">Bộ nguồn (PSU)</span><span lang="en">Power supply (PSU)</span></td><td data-vi="Hãng / model" data-en="Vendor / model">DELL PWR SPLY,750W,RDNT,DELTA 05RHVVA03</td><td data-vi="Serial" data-en="Serial"><code>CNDED0003G0O0P</code></td><td data-vi="Vị trí" data-en="Location">PSU 2</td><td data-vi="Lý do" data-en="Reason"><a href="#f-5"><span lang="vi">PSU 2: bộ nguồn bị hỏng</span><span lang="en">PSU 2: power supply has failed</span></a></td></tr>
+<tr class="c-warn"><td class="pk"><span class="badge sm" aria-hidden="true">!</span> <span lang="vi">Thanh RAM</span><span lang="en">Memory module (DIMM)</span></td><td data-vi="Hãng / model" data-en="Vendor / model"></td><td data-vi="Serial" data-en="Serial"></td><td data-vi="Vị trí" data-en="Location">CPU_SrcID#1_MC#0_Chan#1_DIMM#0</td><td data-vi="Lý do" data-en="Reason"><a href="#f-6"><span lang="vi">Thanh RAM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 liên tục bị lỗi (đã được ECC sửa): 250 lỗi (25 lỗi/ngày)</span><span lang="en">DIMM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 keeps producing corrected memory errors: 250 (25 per day)</span></a></td></tr>
+<tr class="c-warn"><td class="pk"><span class="badge sm" aria-hidden="true">!</span> <span lang="vi">Ổ cứng</span><span lang="en">Disk</span></td><td data-vi="Hãng / model" data-en="Vendor / model">SAMSUNG MZ7LM960HCHP-00003 894.252 GB<div class="muted">FW GXT3003Q</div></td><td data-vi="Serial" data-en="Serial"><code>S1YHNXAG803993</code></td><td data-vi="Vị trí" data-en="Location">Controller 0, Enclosure 32 Slot 1</td><td data-vi="Lý do" data-en="Reason"><a href="#f-9"><span lang="vi">Ổ Enclosure 32 Slot 1 trên Controller 0 có 5 lỗi media</span><span lang="en">Disk Enclosure 32 Slot 1 on Controller 0 has 5 media errors</span></a></td></tr>
+<tr class="c-warn"><td class="pk"><span class="badge sm" aria-hidden="true">!</span> <span lang="vi">Card mạng</span><span lang="en">Network card</span></td><td data-vi="Hãng / model" data-en="Vendor / model"></td><td data-vi="Serial" data-en="Serial"></td><td data-vi="Vị trí" data-en="Location">enp0s8 (MAC 08:00:27:a2:8d:f5)</td><td data-vi="Lý do" data-en="Reason"><a href="#f-11"><span lang="vi">Bond bond0 mất dự phòng: cổng enp0s8 bị rớt link</span><span lang="en">Bond bond0 lost redundancy: port enp0s8 is down</span></a></td></tr>
+</tbody></table></div>
+<pre id="rma-vi" lang="vi" hidden>Máy chủ: srv-db01
+Hãng / model: Dell Inc. PowerEdge R740
+Thời điểm thu thập: 2026-10-01 09:00:27 &#43;00:00
+
+1. Ổ cứng: Samsung SAMSUNG HD502HI 500 GB
+   Serial: S1VZJ9CS712490
+   Vị trí: /dev/sda
+   Firmware: 1AG01118
+   Lý do: Ổ /dev/sda sắp hỏng: 81 sector không đọc được; Ổ /dev/sda báo 2,375 lỗi không sửa được; Ổ /dev/sda: 1 lỗi truyền dữ liệu (CRC) — kiểm tra cáp/backplane
+2. Ổ cứng: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNYAG600061
+   Vị trí: Controller 0, Enclosure 32 Slot 2
+   Firmware: GXT3003Q
+   Lý do: Ổ Enclosure 32 Slot 2 trên Controller 0 đã hỏng (Failed); Volume RAID Controller 0 v0 (RAID1) bị degraded
+3. Ổ cứng: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG804001
+   Vị trí: Controller 0, Enclosure 32 Slot 3
+   Firmware: GXT3003Q
+   Lý do: Ổ Enclosure 32 Slot 3 trên Controller 0 báo sắp hỏng (cảnh báo S.M.A.R.T.)
+4. Bộ nguồn (PSU): DELL PWR SPLY,750W,RDNT,DELTA 05RHVVA03
+   Serial: CNDED0003G0O0P
+   Vị trí: PSU 2
+   Lý do: PSU 2: bộ nguồn bị hỏng
+5. Thanh RAM
+   Vị trí: CPU_SrcID#1_MC#0_Chan#1_DIMM#0
+   Lý do: Thanh RAM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 liên tục bị lỗi (đã được ECC sửa): 250 lỗi (25 lỗi/ngày)
+6. Ổ cứng: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG803993
+   Vị trí: Controller 0, Enclosure 32 Slot 1
+   Firmware: GXT3003Q
+   Lý do: Ổ Enclosure 32 Slot 1 trên Controller 0 có 5 lỗi media
+7. Card mạng
+   Vị trí: enp0s8 (MAC 08:00:27:a2:8d:f5)
+   Lý do: Bond bond0 mất dự phòng: cổng enp0s8 bị rớt link
+</pre>
+<pre id="rma-en" lang="en" hidden>Server: srv-db01
+Vendor / model: Dell Inc. PowerEdge R740
+Collected at: 2026-10-01 09:00:27 &#43;00:00
+
+1. Disk: Samsung SAMSUNG HD502HI 500 GB
+   Serial: S1VZJ9CS712490
+   Location: /dev/sda
+   Firmware: 1AG01118
+   Reason: Disk /dev/sda is failing: 81 sectors could not be read; Disk /dev/sda reported 2,375 uncorrectable errors; Disk /dev/sda: 1 data transfer (CRC) errors — check cable/backplane
+2. Disk: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNYAG600061
+   Location: Controller 0, Enclosure 32 Slot 2
+   Firmware: GXT3003Q
+   Reason: Disk Enclosure 32 Slot 2 on Controller 0 has failed (Failed); RAID volume Controller 0 v0 (RAID1) is degraded
+3. Disk: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG804001
+   Location: Controller 0, Enclosure 32 Slot 3
+   Firmware: GXT3003Q
+   Reason: Disk Enclosure 32 Slot 3 on Controller 0 predicts its own failure (S.M.A.R.T. alert)
+4. Power supply (PSU): DELL PWR SPLY,750W,RDNT,DELTA 05RHVVA03
+   Serial: CNDED0003G0O0P
+   Location: PSU 2
+   Reason: PSU 2: power supply has failed
+5. Memory module (DIMM)
+   Location: CPU_SrcID#1_MC#0_Chan#1_DIMM#0
+   Reason: DIMM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 keeps producing corrected memory errors: 250 (25 per day)
+6. Disk: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG803993
+   Location: Controller 0, Enclosure 32 Slot 1
+   Firmware: GXT3003Q
+   Reason: Disk Enclosure 32 Slot 1 on Controller 0 has 5 media errors
+7. Network card
+   Location: enp0s8 (MAC 08:00:27:a2:8d:f5)
+   Reason: Bond bond0 lost redundancy: port enp0s8 is down
+</pre>
+</section>
+
+
+<section aria-labelledby="h-tables">
+<h2 class="sec" id="h-tables"><span lang="vi">Chi tiết kiểm kê và số đo</span><span lang="en">Inventory and measurements</span></h2>
+<details class="tbl" open>
+<summary><span lang="vi">Máy chủ</span><span lang="en">Server</span> <span class="count">1</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Hãng</span><span lang="en">Vendor</span></th><th>Model</th><th>Serial / service tag</th><th>BIOS</th><th><span lang="vi">Bo mạch chủ</span><span lang="en">Mainboard</span></th><th>CPU</th><th>RAM</th><th><span lang="vi">Thời gian chạy</span><span lang="en">Uptime</span></th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>Dell Inc.</td><td>PowerEdge R740</td><td></td><td>2.22.1 (2024-08-09)</td><td>Dell Inc. 01YM03</td><td>CPU (72 threads)</td><td>251 GiB</td><td>10d 0h</td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Tải và áp lực tài nguyên</span><span lang="en">Load and pressure</span> <span class="count">1</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Load 1/5/15 phút</span><span lang="en">Load 1/5/15 min</span></th><th><span lang="vi">Số CPU</span><span lang="en">CPUs</span></th><th>iowait</th><th>steal</th><th><span lang="vi">PSI cpu (5 phút)</span><span lang="en">PSI cpu (5 min)</span></th><th><span lang="vi">PSI bộ nhớ (5 phút)</span><span lang="en">PSI memory (5 min)</span></th><th><span lang="vi">PSI io (5 phút)</span><span lang="en">PSI io (5 min)</span></th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>0.52 / 0.48 / 0.40</td><td>72</td><td></td><td></td><td></td><td></td><td></td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Bộ xử lý (CPU)</span><span lang="en">Processors</span> <span class="count">2</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th>Socket</th><th>Model</th><th><span lang="vi">Trạng thái</span><span lang="en">Status</span></th><th><span lang="vi">Nhân (bật/tổng)</span><span lang="en">Cores (enabled/total)</span></th><th><span lang="vi">Luồng</span><span lang="en">Threads</span></th><th><span lang="vi">Xung MHz (hiện tại/tối đa)</span><span lang="en">Speed MHz (now/max)</span></th><th>Serial</th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>CPU1</td><td>Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz</td><td>Populated, Enabled</td><td>18/18</td><td>36</td><td>3000/4000</td><td></td></tr>
+<tr class="c-ok"><td class="st"></td><td>CPU2</td><td>Intel(R) Xeon(R) Gold 6154 CPU @ 3.00GHz</td><td>Populated, Enabled</td><td>18/18</td><td>36</td><td>3000/4000</td><td></td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Thanh RAM (DIMM)</span><span lang="en">Memory modules (DIMMs)</span> <span class="count">24</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Khe</span><span lang="en">Slot</span></th><th><span lang="vi">Dung lượng</span><span lang="en">Size</span></th><th><span lang="vi">Loại</span><span lang="en">Type</span></th><th><span lang="vi">Tốc độ MT/s (danh định/thực tế)</span><span lang="en">Speed MT/s (rated/running)</span></th><th><span lang="vi">Hãng</span><span lang="en">Manufacturer</span></th><th><span lang="vi">Mã linh kiện</span><span lang="en">Part number</span></th><th>Serial</th><th><span lang="vi">Lỗi đã sửa</span><span lang="en">Corrected errors</span></th><th><span lang="vi">Lỗi không sửa được</span><span lang="en">Uncorrected errors</span></th><th><span lang="vi">Trạng thái</span><span lang="en">Status</span></th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>A1</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A2</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A3</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A4</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A5</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A6</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A7</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A8</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A9</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A10</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A11</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+<tr class="c-ok"><td class="st"></td><td>A12</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B1</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B2</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B3</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B4</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B5</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B6</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B7</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B8</td><td>16 GiB</td><td>DDR4 RDIMM</td><td>2933/2666</td><td>SK Hynix</td><td>HMA82GR7DJR4N-WM</td><td></td><td></td><td></td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B9</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B10</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B11</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+<tr class="c-ok"><td class="st"></td><td>B12</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td>empty</td></tr>
+</tbody></table></div>
+<div class="tnote"><p lang="vi">Nhãn EDAC không khớp với tên khe; số lỗi theo từng thanh nằm ở bảng ECC.</p><p lang="en">EDAC labels do not match the slot names; the per-DIMM error counters are in the ECC table.</p></div>
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Bộ đếm lỗi ECC (EDAC)</span><span lang="en">ECC error counters (EDAC)</span> <span class="count">4</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Bộ điều khiển</span><span lang="en">Controller</span></th><th><span lang="vi">Thanh RAM (nhãn EDAC)</span><span lang="en">DIMM (EDAC label)</span></th><th><span lang="vi">Vị trí</span><span lang="en">Location</span></th><th><span lang="vi">Dung lượng</span><span lang="en">Size</span></th><th><span lang="vi">Lỗi đã sửa</span><span lang="en">Corrected errors</span></th><th><span lang="vi">Lỗi không sửa được</span><span lang="en">Uncorrected errors</span></th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>mc0 Skylake Socket#0 IMC#0</td><td>CPU_SrcID#0_MC#0_Chan#0_DIMM#0</td><td>channel 0 slot 0</td><td>16 GiB</td><td>0</td><td>0</td></tr>
+<tr class="c-ok"><td class="st"></td><td>mc0 Skylake Socket#0 IMC#0</td><td>CPU_SrcID#0_MC#0_Chan#1_DIMM#0</td><td>channel 1 slot 0</td><td>16 GiB</td><td>0</td><td>0</td></tr>
+<tr class="c-ok"><td class="st"></td><td>mc1 Skylake Socket#1 IMC#0</td><td>CPU_SrcID#1_MC#0_Chan#0_DIMM#0</td><td>channel 0 slot 0</td><td>16 GiB</td><td>0</td><td>0</td></tr>
+<tr class="c-info"><td class="st"></td><td>mc1 Skylake Socket#1 IMC#0</td><td>CPU_SrcID#1_MC#0_Chan#1_DIMM#0</td><td>channel 1 slot 0</td><td>16 GiB</td><td>250</td><td>0</td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Tổng quan bộ nhớ</span><span lang="en">Memory summary</span> <span class="count">7</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Mục</span><span lang="en">Item</span></th><th><span lang="vi">Giá trị</span><span lang="en">Value</span></th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>Installed / Đã lắp</td><td>256 GiB, 16/24 slots</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Visible to the OS / Hệ điều hành thấy</td><td>251 GiB</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Available / Còn trống</td><td>228 GiB (91%)</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Swap / page file used / Swap / page file đang dùng</td><td>0 B of 4 GiB</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Error correction / Sửa lỗi (ECC)</td><td>Multi-bit ECC</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Max capacity (array 1) / Dung lượng tối đa (mảng 1)</td><td>7680 GB, 24 slots</td></tr>
+<tr class="c-ok"><td class="st"></td><td>EDAC controllers / Bộ điều khiển EDAC</td><td>mc0 Skylake Socket#0 IMC#0; mc1 Skylake Socket#1 IMC#0</td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Ổ cứng</span><span lang="en">Disks</span> <span class="count">2</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Thiết bị</span><span lang="en">Device</span></th><th>Model</th><th>Serial</th><th><span lang="vi">Dung lượng</span><span lang="en">Size</span></th><th><span lang="vi">Loại</span><span lang="en">Type</span></th><th><span lang="vi">Giao tiếp</span><span lang="en">Interface</span></th><th><span lang="vi">Sức khỏe</span><span lang="en">Health</span></th><th><span lang="vi">Nhiệt độ</span><span lang="en">Temp</span></th><th><span lang="vi">Thời gian chạy</span><span lang="en">Power-on</span></th><th><span lang="vi">Chỉ số chính</span><span lang="en">Key counters</span></th><th><span lang="vi">Trạng thái</span><span lang="en">Status</span></th></tr></thead>
+<tbody>
+<tr class="c-crit"><td class="st"></td><td>/dev/sda</td><td>SAMSUNG HD502HI</td><td>S1VZJ9CS712490</td><td>500 GB</td><td></td><td>SATA</td><td>PASSED</td><td>16 °C</td><td>29 days 21 hours (717 h)</td><td>realloc 0, pending 81, offline-unc 0, CRC 1</td><td>crit</td></tr>
+<tr class="c-ok"><td class="st"></td><td>/dev/sdb</td><td>SEAGATE ST1200MM0088</td><td>Z4028VRY0000C810BZXB</td><td>1.2 TB</td><td>HDD</td><td></td><td>PASSED</td><td>31 °C</td><td>7 months 26 days (5,675 h)</td><td>grown defects 0, uncorrected 0</td><td>ok</td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Mảng RAID, pool và volume</span><span lang="en">RAID arrays, pools and volumes</span> <span class="count">1</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Tên</span><span lang="en">Name</span></th><th><span lang="vi">Loại</span><span lang="en">Type</span></th><th><span lang="vi">Dung lượng</span><span lang="en">Size</span></th><th><span lang="vi">Trạng thái</span><span lang="en">State</span></th><th><span lang="vi">Thành viên</span><span lang="en">Members</span></th><th><span lang="vi">Tiến độ</span><span lang="en">Progress</span></th></tr></thead>
+<tbody>
+<tr class="c-crit"><td class="st"></td><td>Controller 0 v0 &#34;Virtual Disk 0&#34;</td><td>RAID1 (megacli)</td><td>3.491 TB</td><td>Degraded</td><td>32:0 32:2 32:1 32:3 32:5 32:4 32:6 32:7</td><td></td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Card RAID phần cứng</span><span lang="en">Hardware RAID controllers</span> <span class="count">1</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th>Controller</th><th>Model</th><th>Serial</th><th>Firmware</th><th><span lang="vi">Trạng thái</span><span lang="en">Status</span></th><th><span lang="vi">Cache / pin</span><span lang="en">Cache / battery</span></th></tr></thead>
+<tbody>
+<tr class="c-crit"><td class="st"></td><td>megacli 0</td><td></td><td></td><td></td><td></td><td>iBBU08 Optimal</td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Ổ cứng sau card RAID / trong storage pool</span><span lang="en">Disks behind RAID controllers / in storage pools</span> <span class="count">8</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th>Controller</th><th><span lang="vi">Vị trí</span><span lang="en">Location</span></th><th>Model</th><th>Serial</th><th><span lang="vi">Dung lượng</span><span lang="en">Size</span></th><th><span lang="vi">Trạng thái</span><span lang="en">State</span></th><th><span lang="vi">Lỗi</span><span lang="en">Errors</span></th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 0</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNXAG804005</td><td>894.252 GB</td><td>Online, Spun Up</td><td>0</td></tr>
+<tr class="c-warn"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 1</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNXAG803993</td><td>894.252 GB</td><td>Online, Spun Up</td><td>media 5</td></tr>
+<tr class="c-crit"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 2</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNYAG600061</td><td>894.252 GB</td><td>Failed</td><td>0</td></tr>
+<tr class="c-crit"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 3</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNXAG804001</td><td>894.252 GB</td><td>Online, Spun Up</td><td>predictive 2, SMART alert</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 4</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNXAG803963</td><td>894.252 GB</td><td>Online, Spun Up</td><td>0</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 5</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNXAG804004</td><td>894.252 GB</td><td>Online, Spun Up</td><td>0</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 6</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNXAG801029</td><td>894.252 GB</td><td>Online, Spun Up</td><td>0</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Controller 0</td><td>Enclosure 32 Slot 7</td><td>SAMSUNG MZ7LM960HCHP-00003</td><td>S1YHNXAG801120</td><td>894.252 GB</td><td>Online, Spun Up</td><td>0</td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Cảm biến BMC (IPMI SDR)</span><span lang="en">BMC sensors (IPMI SDR)</span> <span class="count">12</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Cảm biến</span><span lang="en">Sensor</span></th><th><span lang="vi">Loại</span><span lang="en">Type</span></th><th><span lang="vi">Giá trị</span><span lang="en">Reading</span></th><th><span lang="vi">Trạng thái</span><span lang="en">Status</span></th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>Fan1</td><td>fan</td><td>5880 RPM</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Fan2</td><td>fan</td><td>5760 RPM</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Inlet Temp</td><td>temperature</td><td>23 degrees C</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Exhaust Temp</td><td>temperature</td><td>38 degrees C</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Temp</td><td>temperature</td><td>52 degrees C</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Current 1</td><td>current</td><td>0.60 Amps</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Voltage 1</td><td>voltage</td><td>230 Volts</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>Pwr Consumption</td><td>power</td><td>140 Watts</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>PS1 Status</td><td>psu</td><td>Presence detected</td><td>ok</td></tr>
+<tr class="c-crit"><td class="st"></td><td>PS2 Status</td><td>psu</td><td>Presence detected, Failure detected</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>PS1 PG FAIL</td><td>psu</td><td>State Deasserted</td><td>ok</td></tr>
+<tr class="c-ok"><td class="st"></td><td>PS2 PG FAIL</td><td>psu</td><td>State Deasserted</td><td>ok</td></tr>
+</tbody></table></div>
+<div class="tnote"><p lang="vi">Không liệt kê 3 cảm biến không có số đo (linh kiện không lắp, cảm biến bị tắt). Trạng thái: ok; lnc/unc = cảnh báo; lcr/ucr = tới hạn; lnr/unr = không phục hồi.</p><p lang="en">3 sensors without a reading (absent parts, disabled sensors) are not listed. Status: ok; lnc/unc = warning; lcr/ucr = critical; lnr/unr = non-recoverable.</p></div>
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Bộ nguồn (BMC)</span><span lang="en">Power supplies (BMC)</span> <span class="count">2</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Bộ nguồn</span><span lang="en">PSU</span></th><th><span lang="vi">Tình trạng</span><span lang="en">State</span></th><th><span lang="vi">Trạng thái BMC</span><span lang="en">BMC states</span></th><th><span lang="vi">Số đo</span><span lang="en">Readings</span></th><th><span lang="vi">Model / mã linh kiện</span><span lang="en">Model / part</span></th><th>Serial</th></tr></thead>
+<tbody>
+<tr class="c-ok"><td class="st"></td><td>PSU 1</td><td>present</td><td>Presence detected</td><td>230 V / 0.6 A</td><td>PWR SPLY,750W,RDNT,DELTA 05RHVVA03</td><td>CNDED0003G0NQA</td></tr>
+<tr class="c-crit"><td class="st"></td><td>PSU 2</td><td>FAILED</td><td>Presence detected, Failure detected</td><td></td><td>PWR SPLY,750W,RDNT,DELTA 05RHVVA03</td><td>CNDED0003G0O0P</td></tr>
+</tbody></table></div>
+
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Sự kiện phần cứng trong nhật ký BMC (SEL)</span><span lang="en">Hardware events in the BMC log (SEL)</span> <span class="count">1</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Cảm biến</span><span lang="en">Sensor</span></th><th><span lang="vi">Sự kiện</span><span lang="en">Event</span></th><th><span lang="vi">Số lần</span><span lang="en">Count</span></th><th><span lang="vi">Lần đầu</span><span lang="en">First</span></th><th><span lang="vi">Gần nhất</span><span lang="en">Last</span></th><th><span lang="vi">Tình trạng</span><span lang="en">State</span></th></tr></thead>
+<tbody>
+<tr class="c-warn"><td class="st"></td><td>Power Supply PSU Redundancy</td><td>Redundancy Lost</td><td>1</td><td>2026-09-24 11:42</td><td>2026-09-24 11:42</td><td>active</td></tr>
+</tbody></table></div>
+<div class="tnote"><p lang="vi">Thời gian theo đồng hồ BMC. Chỉ sự kiện trong 30 ngày qua mới gây cảnh báo; &#34;recovered&#34; = sau đó đã hết (deasserted).</p><p lang="en">Times are the BMC clock. Only events from the last 30 days raise warnings; &#34;recovered&#34; = deasserted afterwards.</p></div>
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Cổng mạng</span><span lang="en">Network ports</span> <span class="count">2</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Cổng</span><span lang="en">Port</span></th><th>Driver / firmware</th><th>Link</th><th><span lang="vi">Tốc độ / duplex</span><span lang="en">Speed / duplex</span></th><th><span lang="vi">Thuộc</span><span lang="en">Member of</span></th><th>IP</th><th><span lang="vi">Lỗi CRC/frame</span><span lang="en">CRC/frame errors</span></th><th><span lang="vi">Số lần đổi link</span><span lang="en">Link changes</span></th></tr></thead>
+<tbody>
+<tr class="c-warn"><td class="st"></td><td>enp0s8</td><td></td><td>down</td><td></td><td>bond0</td><td></td><td></td><td></td></tr>
+<tr class="c-ok"><td class="st"></td><td>enp0s9</td><td></td><td>up</td><td>1 Gb/s full</td><td>bond0</td><td></td><td></td><td></td></tr>
+</tbody></table></div>
+<div class="tnote"><p lang="vi">Cổng không có link và không cấu hình IP được coi là không sử dụng.</p><p lang="en">Ports without link and without an IP are treated as unused.</p></div>
+</details>
+<details class="tbl" open>
+<summary><span lang="vi">Sự kiện log liên quan phần cứng</span><span lang="en">Hardware-related log events</span> <span class="count">1</span></summary>
+<div class="tablewrap"><table class="data">
+<thead><tr><th class="st"><span class="sr"><span lang="vi">Trạng thái</span><span lang="en">Status</span></span></th><th><span lang="vi">Sự kiện</span><span lang="en">Event</span></th><th><span lang="vi">Thành phần</span><span lang="en">Component</span></th><th><span lang="vi">Đối tượng</span><span lang="en">Target</span></th><th><span lang="vi">Số lần</span><span lang="en">Count</span></th><th><span lang="vi">24 giờ qua</span><span lang="en">Last 24 h</span></th><th><span lang="vi">Lần đầu</span><span lang="en">First seen</span></th><th><span lang="vi">Lần cuối</span><span lang="en">Last seen</span></th></tr></thead>
+<tbody>
+<tr class="c-crit"><td class="st"></td><td>disk_medium_error</td><td>disk</td><td>/dev/sda</td><td>2</td><td>0</td><td>2026-09-30 10:00</td><td>2026-09-30 10:00</td></tr>
+</tbody></table></div>
+<div class="tnote"><p lang="vi">7 ngày gần nhất. Sự kiện trong 24 giờ qua được tính nặng hơn khi đánh giá mức độ.</p><p lang="en">Last 7 days. Events in the last 24 hours weigh more when deciding severity.</p></div>
+</details>
+
+</section>
+
+<section id="coverage" aria-labelledby="h-cov">
+<h2 class="sec" id="h-cov"><span lang="vi">Phạm vi kiểm tra</span><span lang="en">What was checked</span></h2>
+<h3 class="sub c-info"><span class="badge sm" aria-hidden="true">&#9680;</span><span lang="vi">Kiểm tra một phần</span><span lang="en">Partly checked</span> <span class="count">1</span></h3>
+<ul class="cov">
+<li><div class="cname"><span lang="vi">Tải hệ thống và áp lực tài nguyên</span><span lang="en">System load and resource pressure</span></div><div class="creason"><span lang="vi">Mẫu thời gian CPU (/proc/stat) không có trong bản thu thập này (collector cũ hoặc bị dừng giữa chừng) nên chưa đo được iowait và steal.</span><span lang="en">The CPU time sample (/proc/stat) was not collected (older or interrupted collector run), so iowait and steal were not measured.</span></div></li>
+</ul>
+<h3 class="sub c-none"><span class="badge sm" aria-hidden="true">–</span><span lang="vi">Bỏ qua</span><span lang="en">Skipped</span> <span class="count">1</span></h3>
+<ul class="cov">
+<li><div class="cname"><span lang="vi">Dung lượng trống và inode</span><span lang="en">Free space and inodes</span></div><div class="creason"><span lang="vi">df chưa được chạy.</span><span lang="en">df was not run.</span></div></li>
+</ul>
+
+<details class="ran"><summary><span lang="vi">Đã kiểm tra</span><span lang="en">Checked</span> <span class="count">16</span></summary>
+<ul class="ranlist"><li><span lang="vi">Thông tin máy chủ (hãng, model, serial/service tag, BIOS)</span><span lang="en">Server identity (vendor, model, service tag, BIOS)</span></li><li><span lang="vi">Danh sách CPU và trạng thái socket</span><span lang="en">CPU inventory and socket status</span></li><li><span lang="vi">Thanh RAM (DIMM)</span><span lang="en">Memory modules (DIMMs)</span></li><li><span lang="vi">Bộ đếm lỗi RAM ECC</span><span lang="en">ECC memory error counters</span></li><li><span lang="vi">Mức dùng RAM và áp lực bộ nhớ</span><span lang="en">Memory usage and pressure</span></li><li><span lang="vi">Tình trạng S.M.A.R.T.</span><span lang="en">S.M.A.R.T. health</span></li><li><span lang="vi">Card RAID phần cứng</span><span lang="en">Hardware RAID controllers</span></li><li><span lang="vi">Tình trạng hệ thống tệp (bị chuyển read-only, lỗi ext4, fstab)</span><span lang="en">Filesystem health (read-only remounts, ext4 errors, fstab)</span></li><li><span lang="vi">Cảm biến BMC (IPMI SDR)</span><span lang="en">BMC sensors (IPMI SDR)</span></li><li><span lang="vi">Nhật ký sự kiện BMC (IPMI SEL)</span><span lang="en">BMC event log (IPMI SEL)</span></li><li><span lang="vi">Trạng thái chassis (IPMI)</span><span lang="en">Chassis status (IPMI)</span></li><li><span lang="vi">Bộ nguồn (BMC)</span><span lang="en">Power supplies (BMC)</span></li><li><span lang="vi">Quạt (BMC)</span><span lang="en">Fans (BMC)</span></li><li><span lang="vi">Nhiệt độ (BMC)</span><span lang="en">Temperatures (BMC)</span></li><li><span lang="vi">Cổng mạng (link, tốc độ, lỗi, bonding)</span><span lang="en">Network ports (link, speed, errors, bonding)</span></li><li><span lang="vi">Log kernel và thông báo của dịch vụ giám sát phần cứng</span><span lang="en">Kernel log and hardware daemon messages</span></li></ul>
+</details>
+
+</section>
+
+</main>
+
+<footer class="foot">
+<div><span lang="vi">Tạo bởi</span><span lang="en">Generated by</span> <a href="https://github.com/nguyenquocanhz/diagward">Diagward 0.1.0</a></div>
+<div><span lang="vi">Thời điểm thu thập</span><span lang="en">Collected at</span>: 2026-10-01 09:00:27 &#43;00:00 · <span lang="vi">Thời gian thu thập</span><span lang="en">Collection took</span>: <span lang="vi">27 giây</span><span lang="en">27 s</span></div>
+<div>https://github.com/nguyenquocanhz/diagward</div>
+</footer>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  function all(sel) { return document.querySelectorAll(sel); }
+  function setLang(l) {
+    if (l !== "vi" && l !== "en") { l = "vi"; }
+    root.setAttribute("data-lang", l);
+    root.setAttribute("lang", l);
+    var b = all("[data-setlang]");
+    for (var i = 0; i < b.length; i++) {
+      b[i].setAttribute("aria-pressed", b[i].getAttribute("data-setlang") === l ? "true" : "false");
+    }
+    var t = root.getAttribute("data-title-" + l);
+    if (t) { document.title = t; }
+  }
+  function up(el, attr) {
+    while (el && el.nodeType === 1) {
+      if (el.hasAttribute(attr)) { return el; }
+      el = el.parentNode;
+    }
+    return null;
+  }
+  function flash(btn) {
+    btn.classList.add("is-done");
+    setTimeout(function () { btn.classList.remove("is-done"); }, 1600);
+  }
+  function copy(text, btn) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.top = "-1000px";
+      document.body.appendChild(ta);
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+      document.body.removeChild(ta);
+      if (ok) { flash(btn); }
+    }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(function () { flash(btn); }, fallback);
+    } else {
+      fallback();
+    }
+  }
+  document.addEventListener("click", function (e) {
+    var b;
+    if ((b = up(e.target, "data-setlang"))) { setLang(b.getAttribute("data-setlang")); return; }
+    if ((b = up(e.target, "data-theme-toggle"))) {
+      var cur = root.getAttribute("data-theme");
+      if (!cur) { cur = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light"; }
+      var next = cur === "dark" ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("dw-theme", next); } catch (x) {}
+      return;
+    }
+    if ((b = up(e.target, "data-copy-rma"))) {
+      var pre = document.getElementById("rma-" + (root.getAttribute("data-lang") || "vi"));
+      if (pre) { copy(pre.textContent, b); }
+      return;
+    }
+    if ((b = up(e.target, "data-copy-cmd"))) {
+      var code = b.parentNode.getElementsByTagName("code")[0];
+      if (code) { copy(code.textContent, b); }
+    }
+  });
+  var reopened = [];
+  window.addEventListener("beforeprint", function () {
+    var d = all("details");
+    reopened = [];
+    for (var i = 0; i < d.length; i++) {
+      if (!d[i].open) { d[i].open = true; reopened.push(d[i]); }
+    }
+  });
+  window.addEventListener("afterprint", function () {
+    for (var i = 0; i < reopened.length; i++) { reopened[i].open = false; }
+    reopened = [];
+  });
+  setLang(root.getAttribute("data-lang"));
+})();
+</script>
+</body>
+</html>

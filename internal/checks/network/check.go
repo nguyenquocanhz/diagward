@@ -93,12 +93,41 @@ func linuxCoverage(b *collect.Bundle, env model.Env, nics []NIC, res *model.Resu
 	c := model.Coverage{ID: "network.links", Component: model.CompNetwork,
 		Name: model.T("Network ports (link, speed, errors, bonding)", "Cổng mạng (link, tốc độ, lỗi, bonding)")}
 	eth := b.Get("network.ethtool")
+	tp, sys := b.Get("network.topology"), b.Get("network.sysfs")
 	switch {
 	case env.Container:
 		c.State, c.Reason = model.CovSkipped, hint.Virtual(env)
+	case len(nics) == 0 && tp == nil && sys == nil:
+		// Older or interrupted collector run: nobody looked for ports.
+		c.State = model.CovSkipped
+		c.Reason = model.T("The interface list (network.topology, /sys/class/net) was not collected: this bundle comes from an older or interrupted collector run. Nothing failed on the machine.",
+			"Danh sách cổng mạng (network.topology, /sys/class/net) không có trong bản thu thập này (collector cũ hoặc bị dừng giữa chừng). Đây không phải lỗi trên máy.")
+		c.Fix = model.T("Run the current version of diagward on the machine again to check this.", "Chạy lại bản diagward mới nhất trên máy để kiểm tra mục này.")
+	case len(nics) == 0 && tp != nil && !tp.Ran():
+		c.State = model.CovSkipped
+		c.Reason = model.Tf("The collector skipped the interface list (%s).", "Collector đã bỏ qua bước liệt kê cổng mạng (%s).", firstNonEmpty(tp.Skipped, tp.Missing))
+		if tp.Skipped == "not-root" {
+			c.Reason, c.Fix = hint.NeedRoot(env), hint.RunAsRoot(env)
+		}
+	case len(nics) == 0 && tp != nil && (tp.Timeout || tp.RC != 0) && strings.TrimSpace(tp.Out) == "":
+		c.State = model.CovFailed
+		c.Reason = model.T("The interface list (/sys/class/net) could not be read.", "Không đọc được danh sách cổng mạng (/sys/class/net).")
+		if e := strings.TrimSpace(tp.Err); e != "" {
+			c.Reason = model.Tf("The interface list (/sys/class/net) could not be read: %s", "Không đọc được danh sách cổng mạng (/sys/class/net): %s", firstLineOf(e))
+		}
 	case len(nics) == 0:
 		c.State = model.CovPartial
 		c.Reason = model.T("No physical network port was found.", "Không tìm thấy cổng mạng vật lý nào.")
+	case sys == nil && tp == nil:
+		c.State = model.CovPartial
+		c.Reason = model.T("The ports were found only in /proc/net/bonding: their sysfs data (link state, error counters, link changes) was not collected (older or interrupted collector run).",
+			"Chỉ thấy các cổng qua /proc/net/bonding: dữ liệu sysfs của cổng (trạng thái link, bộ đếm lỗi, số lần đổi link) không có trong bản thu thập này (collector cũ hoặc bị dừng giữa chừng).")
+		c.Fix = model.T("Run the current version of diagward on the machine again to check this.", "Chạy lại bản diagward mới nhất trên máy để kiểm tra mục này.")
+	case sys == nil:
+		c.State = model.CovPartial
+		c.Reason = model.T("The port counters (network.sysfs: link state, error counters, link changes) were not collected (older or interrupted collector run).",
+			"Bộ đếm của cổng mạng (network.sysfs: trạng thái link, bộ đếm lỗi, số lần đổi link) không có trong bản thu thập này (collector cũ hoặc bị dừng giữa chừng).")
+		c.Fix = model.T("Run the current version of diagward on the machine again to check this.", "Chạy lại bản diagward mới nhất trên máy để kiểm tra mục này.")
 	case eth != nil && eth.Missing != "":
 		c.State = model.CovPartial
 		c.Reason = model.T("ethtool is not installed: supported speeds, driver and firmware were not checked.", "Chưa cài ethtool: chưa kiểm tra được tốc độ hỗ trợ, driver và firmware.")
@@ -155,6 +184,7 @@ func linuxNICs(b *collect.Bundle) ([]NIC, []Bond) {
 	}
 	var bonds []Bond
 	bondOf := map[string]string{}
+	slaveOf := map[string]BondSlave{}
 	for _, s := range b.Prefix("network.bonding:") {
 		name := strings.TrimPrefix(s.Name, "network.bonding:")
 		if !s.Ran() {
@@ -163,6 +193,14 @@ func linuxNICs(b *collect.Bundle) ([]NIC, []Bond) {
 		bd := parseBonding(name, s.Text())
 		for _, sl := range bd.Slaves {
 			bondOf[sl.Name] = name
+			slaveOf[sl.Name] = sl
+			// Bonding enslaves Ethernet ports, so a member is a physical port
+			// even when the sysfs topology and counters are not in the bundle
+			// (older or interrupted collector run). The topology, when it
+			// lists the member, stays authoritative about its kind.
+			if _, listed := tp[sl.Name]; !listed && sl.Name != "" {
+				names[sl.Name] = true
+			}
 		}
 		bonds = append(bonds, bd)
 	}
@@ -233,6 +271,28 @@ func linuxNICs(b *collect.Bundle) ([]NIC, []Bond) {
 				n.Firmware = fw
 			}
 			n.BusInfo = kv["bus-info"]
+		}
+		if sl, ok := slaveOf[name]; ok {
+			// /proc/net/bonding fills what sysfs and ethtool did not give.
+			if n.Carrier == nil {
+				switch sl.MII {
+				case "up":
+					t := true
+					n.Carrier = &t
+				case "down":
+					f := false
+					n.Carrier = &f
+				}
+			}
+			if n.SpeedMbps == 0 && (n.Carrier == nil || *n.Carrier) {
+				n.SpeedMbps = parseSpeed(sl.Speed) // "1000 Mbps"; "Unknown" -> 0
+			}
+			if n.Duplex == "" && (sl.Duplex == "full" || sl.Duplex == "half") {
+				n.Duplex = sl.Duplex
+			}
+			if n.MAC == "" {
+				n.MAC = sl.PermMAC
+			}
 		}
 		if in := ips[name]; in != nil {
 			n.AdminUp = in.AdminUp
@@ -400,6 +460,16 @@ func (n *NIC) part() *model.Part {
 }
 
 func (n *NIC) stat(k string) uint64 { return n.Stats[k] }
+
+// hasStat reports whether any of the counters was collected.
+func (n *NIC) hasStat(keys ...string) bool {
+	for _, k := range keys {
+		if _, ok := n.Stats[k]; ok {
+			return true
+		}
+	}
+	return false
+}
 
 func speedText(mbps int) string {
 	switch {
@@ -972,7 +1042,12 @@ func nicTable(nics []NIC, bonds []Bond, status map[string]model.Severity, res *m
 			}
 		}
 		drv := strings.TrimSpace(strings.Join(nonEmpty(firstNonEmpty(n.Description, n.Driver), n.DriverVersion, n.Firmware), " / "))
-		errs := n.stat("rx_crc_errors") + n.stat("rx_frame_errors") + n.stat("win_rx_errors")
+		// Empty when no error counter was collected (no sysfs statistics,
+		// Windows adapter without statistics): unknown is not "0".
+		errs := ""
+		if n.hasStat("rx_crc_errors", "rx_frame_errors", "win_rx_errors") {
+			errs = fmt.Sprint(n.stat("rx_crc_errors") + n.stat("rx_frame_errors") + n.stat("win_rx_errors"))
+		}
 		flaps := ""
 		if n.CarrierChanges != nil {
 			flaps = fmt.Sprint(*n.CarrierChanges)
@@ -982,7 +1057,7 @@ func nicTable(nics []NIC, bonds []Bond, status map[string]model.Severity, res *m
 			ip = "(via " + firstNonEmpty(n.Master, "upper interface") + ")"
 		}
 		t.Rows = append(t.Rows, model.Row{Status: status[n.Name], Cells: []string{
-			n.Name, drv, link, sd, n.Master, ip, fmt.Sprint(errs), flaps,
+			n.Name, drv, link, sd, n.Master, ip, errs, flaps,
 		}})
 	}
 	res.Tables = append(res.Tables, t)
@@ -1013,4 +1088,16 @@ func pick(n *NIC, linux, windows model.Text) model.Text {
 		return windows
 	}
 	return linux
+}
+
+// firstLineOf returns the first line of s, at most 200 characters.
+func firstLineOf(s string) string {
+	s = strings.TrimSpace(s)
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		s = s[:i]
+	}
+	if r := []rune(s); len(r) > 200 {
+		s = string(r[:200]) + "…"
+	}
+	return strings.TrimSpace(s)
 }

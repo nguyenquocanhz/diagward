@@ -75,6 +75,7 @@ func Analyze(b *collect.Bundle) *model.Report {
 		rep.Results = append(rep.Results, res)
 	}
 	enrichParts(rep.Results)
+	foldDiskLogFindings(rep.Results)
 	if rep.Host.BMC == "" {
 		rep.Host.BMC = bmcAddress(rep.Results)
 	}
@@ -167,6 +168,78 @@ func enrichParts(results []model.Result) {
 			f.Part = &q
 		}
 	}
+}
+
+// foldDiskLogFindings merges a kernel/event-log finding about a disk into the
+// disk domain's own warning or critical finding for the same disk, so one
+// failing disk reads as one problem with two kinds of evidence (S.M.A.R.T.
+// counters and the log lines), not two separate problems. The merged finding
+// keeps the higher severity. Log findings about disks the disk domain found
+// healthy stay as they are: the log may be the only sign of trouble.
+func foldDiskLogFindings(results []model.Result) {
+	var diskRes, logRes *model.Result
+	for i := range results {
+		switch results[i].Domain {
+		case "disk":
+			diskRes = &results[i]
+		case "logs":
+			logRes = &results[i]
+		}
+	}
+	if diskRes == nil || logRes == nil {
+		return
+	}
+	keysOf := func(f model.Finding) []string {
+		var k []string
+		if f.Part != nil {
+			k = append(k, deviceKeys(f.Part.Location)...)
+		}
+		return append(k, deviceKeys(f.Target)...)
+	}
+	// The most severe disk finding per device.
+	target := map[string]int{}
+	for i, f := range diskRes.Findings {
+		if f.Severity < model.Warn || f.Component != model.CompDisk {
+			continue
+		}
+		for _, k := range keysOf(f) {
+			if j, ok := target[k]; !ok || diskRes.Findings[j].Severity < f.Severity {
+				target[k] = i
+			}
+		}
+	}
+	if len(target) == 0 {
+		return
+	}
+	kept := logRes.Findings[:0]
+	for _, f := range logRes.Findings {
+		j := -1
+		if f.Component == model.CompDisk && f.Severity >= model.Warn {
+			for _, k := range keysOf(f) {
+				if i, ok := target[k]; ok {
+					j = i
+					break
+				}
+			}
+		}
+		if j < 0 {
+			kept = append(kept, f)
+			continue
+		}
+		d := &diskRes.Findings[j]
+		d.Severity = model.Worst(d.Severity, f.Severity)
+		d.Detail = model.Text{
+			EN: strings.TrimSpace(d.Detail.EN + " The kernel/event log confirms it: " + f.Title.EN + "."),
+			VI: strings.TrimSpace(d.Detail.VI + " Log hệ thống cũng xác nhận: " + f.Title.VI + "."),
+		}
+		for _, e := range f.Evidence {
+			if len(d.Evidence) >= 12 {
+				break
+			}
+			d.Evidence = append(d.Evidence, e)
+		}
+	}
+	logRes.Findings = kept
 }
 
 // deviceKeys normalises a device name for matching: "/dev/sda", "sda" and

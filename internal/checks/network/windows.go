@@ -296,6 +296,11 @@ func windowsCoverage(b *collect.Bundle, env model.Env, ok bool, res *model.Resul
 	switch {
 	case s.Missing != "":
 		c.State, c.Reason = model.CovSkipped, model.T("The NetAdapter PowerShell module is not available (Windows Server 2012 or later is needed).", "Không có module PowerShell NetAdapter (cần Windows Server 2012 trở lên).")
+	case s.Skipped == "not-admin" || s.Skipped == "not-root":
+		c.State, c.Reason, c.Fix = model.CovSkipped, hint.NeedRoot(env), hint.RunAsRoot(env)
+	case s.Skipped != "":
+		c.State = model.CovSkipped
+		c.Reason = model.Tf("The collector skipped Get-NetAdapter (%s).", "Collector đã bỏ qua Get-NetAdapter (%s).", s.Skipped)
 	case !ok:
 		c.State = model.CovFailed
 		c.Reason = model.Tf("Get-NetAdapter failed: %s", "Get-NetAdapter bị lỗi: %s", strings.TrimSpace(firstNonEmpty(s.Err, "unreadable output")))

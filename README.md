@@ -36,6 +36,16 @@ a customer or a hardware vendor can read.
 - **One static binary.** No agent, no dependencies; the helper tools it can
   use (smartctl, ipmitool, …) are optional.
 
+<p align="center">
+  <img src="docs/terminal-vi.png" alt="Terminal report in Vietnamese" width="560" />
+  &nbsp;
+  <img src="docs/report-phone.png" alt="HTML report on a phone" width="220" />
+</p>
+
+<sub>The screenshots show a demo Dell PowerEdge R740 assembled from real tool
+outputs (`go run ./internal/devtools/demo`); the bundle and both reports are
+in [docs/demo](docs/demo).</sub>
+
 ## What it checks
 
 | Component | Linux | Windows |

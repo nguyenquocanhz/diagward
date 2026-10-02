@@ -1,0 +1,2 @@
+# The demo bundle is committed on purpose (the root .gitignore ignores *.dwb).
+!*.dwb

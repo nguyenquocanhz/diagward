@@ -1,0 +1,6 @@
+sda=/sys/devices/pci0000:00/0000:00:17.0/ata1/host0/target0:0:0/0:0:0:0/block/sda
+sdb=/sys/devices/pci0000:00/0000:00:17.0/ata2/host1/target1:0:0/1:0:0:0/block/sdb
+sdc=/sys/devices/pci0000:00/0000:00:1c.4/0000:03:00.0/host6/port-6:0/end_device-6:0/target6:0:0/6:0:0:0/block/sdc
+sdd=/sys/devices/pci0000:00/0000:00:17.0/ata3/host2/target2:0:0/2:0:0:0/block/sdd
+sde=/sys/devices/pci0000:00/0000:00:17.0/ata3/host2/target2:1:0/2:1:0:0/block/sde
+nvme0n1=/sys/devices/pci0000:00/0000:00:1d.0/0000:3d:00.0/nvme/nvme0/nvme0n1

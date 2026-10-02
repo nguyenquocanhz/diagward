@@ -28,10 +28,11 @@ type rule struct {
 
 // matchCtx carries what the whole log tells about device names.
 type matchCtx struct {
-	hctl      map[string]string // "0:0:2:0" -> "sdc", learnt from "sd 0:0:2:0: [sdc]"
+	hctl      map[string]string // "0:0:2:0" -> "sdc", learnt from "sd 0:0:2:0: [sdc]" (or the sysfs map)
 	ata       map[string]*model.Part
-	usbHosts  map[string]bool // SCSI host numbers created by usb-storage/uas
-	removable map[string]bool // "sdb" announced as "Attached SCSI removable disk"
+	usbHosts  map[string]bool      // SCSI host numbers created by usb-storage/uas
+	removable map[string]bool      // "sdb" announced as "Attached SCSI removable disk"
+	ataDisks  map[string][]ataDisk // "ata1" -> the disks under that libata port (logs.blockdevs)
 }
 
 func grp(i int) func(m []string, l logLine, ctx *matchCtx) string {

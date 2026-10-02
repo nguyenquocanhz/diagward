@@ -206,7 +206,8 @@ machine-translation tone. Example:
   mdstat, SEL). Both may appear: they are different evidence. A log finding
   about a disk names the device (`Part{Kind:"disk", Location:"/dev/sda"}`);
   `diag` then fills in model and serial from the disk domain's inventory.
-* The logs domain reads `disk.lsblk` (name, kname, tran, pkname),
+* The logs domain reads its own `logs.blockdevs` (block device → sysfs path,
+  to map libata ports such as ata1 to /dev/sdX) and `disk.lsblk` (name, kname, tran, pkname),
   `disk.win_physical` (DeviceId, BusType), `disk.win_diskdrive` (Index,
   InterfaceType, PNPDeviceID) and `filesystem.win_volume` (DriveLetter,
   DriveType) to tell USB or detached disks from server disks: keep those

@@ -22,8 +22,11 @@ func checkWindows(b *collect.Bundle, env model.Env, res *model.Result) {
 
 	c := model.Coverage{ID: "system.identity", Component: model.CompSystem,
 		Name: model.T("Server identity (vendor, model, service tag, BIOS)", "Thông tin máy chủ (hãng, model, serial/service tag, BIOS)")}
-	if ident.Source == "cim" {
+	if s := b.Get("system.win_computer"); ident.Source == "cim" {
 		c.State = model.CovRan
+	} else if !s.Ran() {
+		c.State = model.CovSkipped
+		c.Reason, c.Fix = notRun(env, s, model.T("Win32_ComputerSystem (vendor, model)", "Win32_ComputerSystem (hãng, model)"))
 	} else {
 		c.State = model.CovFailed
 		c.Reason = model.T("Win32_ComputerSystem could not be read.", "Không đọc được Win32_ComputerSystem.")
@@ -108,8 +111,19 @@ func windowsLoad(b *collect.Bundle, id Identity) (*Load, bool) {
 
 func windowsLoadFindings(ld *Load, res *model.Result) bool {
 	added := false
-	ev := []string{fmt.Sprintf("3 samples, 1 s apart: CPU %.0f%%, processor queue %.1f per CPU (%d CPUs), disk idle %.0f%%, disk queue %.1f",
-		deref(ld.CPUPct), deref(ld.QueuePerCPU), ld.CPUs, deref(ld.DiskIdlePct), deref(ld.DiskQueueLen))}
+	// A counter that was not collected is "?", not a fake 0.
+	opt := func(p *float64, format string) string {
+		if p == nil {
+			return "?"
+		}
+		return fmt.Sprintf(format, *p)
+	}
+	cpus := "?"
+	if ld.CPUs > 0 {
+		cpus = fmt.Sprint(ld.CPUs)
+	}
+	ev := []string{fmt.Sprintf("3 samples, 1 s apart: CPU %s, processor queue %s per CPU (%s CPUs), disk idle %s, disk queue %s",
+		opt(ld.CPUPct, "%.0f%%"), opt(ld.QueuePerCPU, "%.1f"), cpus, opt(ld.DiskIdlePct, "%.0f%%"), opt(ld.DiskQueueLen, "%.1f"))}
 	if ld.CPUPct != nil && ld.QueuePerCPU != nil && *ld.CPUPct >= winCPUWarn && *ld.QueuePerCPU > winQueuePerCPUWarn {
 		added = true
 		res.Findings = append(res.Findings, model.Finding{
