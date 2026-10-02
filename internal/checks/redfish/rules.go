@@ -3,6 +3,7 @@ package redfish
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/nguyenquocanhz/diagward/internal/units"
 	"github.com/nguyenquocanhz/diagward/model"
@@ -383,7 +384,9 @@ func voltSev(v Voltage, off bool) (model.Severity, string) {
 		return model.OK, ""
 	}
 	sev, why := model.OK, ""
-	if r := v.Reading; r != nil && !off {
+	// 0 V on a rail the BMC itself does not flag is "no reading" (an IPMI
+	// sensor of an empty CPU socket or a powered-down rail), not a failure.
+	if r := v.Reading; r != nil && !off && !(*r == 0 && v.Status.Sev() == model.OK) {
 		switch {
 		case pos(v.UpperCrit) && *r >= *v.UpperCrit, pos(v.LowerCrit) && *r <= *v.LowerCrit:
 			sev = model.Crit
@@ -433,7 +436,7 @@ func (c *checker) storage() {
 			c.add(model.Finding{
 				ID: domain + ".drive_failed", Component: model.CompDisk, Severity: model.Crit, Target: name, Evidence: ev, Part: drivePart(*d), Action: replace,
 				Title:  model.Tf("Drive %s has failed", "Ổ %s bị hỏng", name),
-				Detail: model.T("The RAID controller reports this drive's health as Critical (failed, offline or unreadable).", "Controller RAID báo tình trạng ổ này là Critical (hỏng, offline hoặc không đọc được)."),
+				Detail: model.T("The BMC reports this drive's health as Critical (failed, offline or unreadable), as seen by its RAID controller or by the drive itself.", "BMC báo tình trạng ổ này là Critical (hỏng, offline hoặc không đọc được), theo controller RAID hoặc chính ổ cứng."),
 			})
 			bad = true
 		case pred:
@@ -448,7 +451,9 @@ func (c *checker) storage() {
 		if d.Severity == model.Crit {
 			continue
 		}
-		if l := d.LifeLeftPercent; l != nil && *l <= wearWarnPct {
+		// Some BMCs fill PredictedMediaLifeLeftPercent with 0 for hard
+		// disks, which have no flash to wear out.
+		if l := d.LifeLeftPercent; l != nil && *l <= wearWarnPct && !strings.EqualFold(d.MediaType, "HDD") {
 			sev := model.Warn
 			if *l <= wearCritPct {
 				sev = model.Crit
@@ -468,7 +473,7 @@ func (c *checker) storage() {
 			c.add(model.Finding{
 				ID: domain + ".drive_warning", Component: model.CompDisk, Severity: model.Warn, Target: name, Evidence: ev, Part: drivePart(*d),
 				Title:  model.Tf("Drive %s reports a warning", "Ổ %s đang báo cảnh báo", name),
-				Detail: model.T("The controller rates this drive's health as Warning (media errors, predictive alerts or a rebuild in progress).", "Controller đánh giá ổ này ở mức Warning (lỗi bề mặt, cảnh báo dự đoán hoặc đang rebuild)."),
+				Detail: model.T("The BMC rates this drive's health as Warning (media errors, predictive alerts or a rebuild in progress).", "BMC đánh giá ổ này ở mức Warning (lỗi bề mặt, cảnh báo dự đoán hoặc đang rebuild)."),
 				Action: model.Tf("Check drive %s in the BMC storage page and the event log for the reason; make sure backups are current and prepare a replacement (serial %s).", "Xem chi tiết ổ %s trên trang Storage của BMC và nhật ký sự kiện để biết lý do; đảm bảo sao lưu đầy đủ và chuẩn bị ổ thay thế (serial %s).", name, serial),
 			})
 			bad = true
@@ -531,7 +536,19 @@ func (c *checker) storage() {
 		bad = true
 		c.add(f)
 	}
+	driveSev := map[string]model.Severity{}
+	for _, d := range c.facts.Drives {
+		if d.Serial != "" {
+			driveSev[strings.ToLower(d.Serial)] = d.Severity
+		}
+	}
 	for _, ct := range c.facts.Controllers {
+		// An NVMe drive is its own controller: HPE and Dell list a
+		// "controller" with the drive's serial for each one. The drive
+		// finding already covers it.
+		if ds, ok := driveSev[strings.ToLower(ct.Serial)]; ok && ct.Serial != "" && ds >= ct.Status.Sev() {
+			continue
+		}
 		name := first(ct.Name, ct.Model, "controller")
 		part := &model.Part{Kind: "controller", Model: ct.Model, Serial: ct.Serial, Firmware: ct.Firmware, Location: name}
 		ev := evidenceKV(name, "Model", ct.Model, "Health", ct.Status.Health, "State", ct.Status.State, "CacheHealth", ct.Cache.Health, "Firmware", ct.Firmware)
@@ -559,6 +576,11 @@ func (c *checker) storage() {
 			bad = true
 		}
 	}
+	for i := range c.facts.Batteries {
+		if c.battery(&c.facts.Batteries[i]) {
+			bad = true
+		}
+	}
 	n := 0
 	for _, d := range c.facts.Drives {
 		if !d.Status.Absent() {
@@ -566,14 +588,39 @@ func (c *checker) storage() {
 		}
 	}
 	if !bad && n > 0 {
-		c.add(model.Finding{
-			ID: domain + ".storage_ok", Component: model.CompDisk, Severity: model.OK,
-			Title: model.Text{
-				EN: fmt.Sprintf("%s and %s healthy", plural(n, "drive", "drives"), plural(len(c.facts.Volumes), "RAID volume", "RAID volumes")+" are"),
-				VI: fmt.Sprintf("%d ổ cứng và %d volume RAID đều bình thường", n, len(c.facts.Volumes)),
-			},
-		})
+		title := model.Text{
+			EN: fmt.Sprintf("%s and %s healthy", plural(n, "drive", "drives"), plural(len(c.facts.Volumes), "RAID volume", "RAID volumes")+" are"),
+			VI: fmt.Sprintf("%d ổ cứng và %d volume RAID đều bình thường", n, len(c.facts.Volumes)),
+		}
+		if len(c.facts.Volumes) == 0 {
+			title = model.Text{EN: plural(n, "drive is", "drives are") + " healthy", VI: fmt.Sprintf("%d ổ cứng đều bình thường", n)}
+		}
+		c.add(model.Finding{ID: domain + ".storage_ok", Component: model.CompDisk, Severity: model.OK, Title: title})
 	}
+}
+
+// battery reports a failed HPE Smart Storage Battery: Warn, the contract's
+// level for a controller battery/cache problem (writes slow down and the
+// cache is no longer protected, but no data is lost while power stays on).
+func (c *checker) battery(b *Battery) bool {
+	cond := strings.ToLower(b.Condition)
+	bad := b.Status.Sev() > model.OK || (cond != "" && cond != "ok" && cond != "charging")
+	if !bad {
+		return false
+	}
+	b.Severity = model.Warn
+	state := first(b.Condition, b.Status.Health)
+	c.add(model.Finding{
+		ID: domain + ".storage_battery", Component: model.CompRAID, Severity: model.Warn, Target: b.Name,
+		Part:     &model.Part{Kind: "battery", Vendor: "HPE", Model: first(b.Model, b.Spare), Serial: b.Serial, Location: b.Name, Firmware: b.Firmware},
+		Evidence: evidenceKV(b.Name, "Condition", b.Condition, "Health", b.Status.Health, "State", b.Status.State, "Model", b.Model, "Spare", b.Spare, "Serial", b.Serial),
+		Title:    model.Tf("Controller cache battery %s reports %s", "Pin bộ nhớ đệm controller %s báo %s", b.Name, state),
+		Detail: model.T("This battery backs the Smart Array write cache. While it is failed the controller turns write caching off (slower writes) and cached writes are no longer protected against a power cut. iLO raises the server's overall health to Warning for it.",
+			"Pin này bảo vệ bộ nhớ đệm ghi (write cache) của controller Smart Array. Khi pin hỏng, controller tắt write cache (ghi chậm hơn) và dữ liệu đang đệm không còn được bảo vệ khi mất điện. iLO vì thế báo tình trạng tổng thể của server là Warning."),
+		Action: model.Tf("Replace the HPE Smart Storage Battery (part %s, spare %s, serial %s), then check in iLO that the battery warning has cleared.",
+			"Thay pin HPE Smart Storage Battery (part %s, mã spare %s, serial %s), sau đó kiểm tra trên iLO cảnh báo pin đã hết.", first(b.Model, "?"), first(b.Spare, "?"), first(b.Serial, "?")),
+	})
+	return true
 }
 
 func boolText(b *bool) string {
@@ -706,8 +753,8 @@ func (c *checker) eventFindings() {
 		if g.Last != nil {
 			ago := units.Duration(c.env.Now.Sub(*g.Last))
 			last = model.Text{
-				EN: fmt.Sprintf("%s, %s ago", g.Last.Format("2006-01-02 15:04"), ago.EN),
-				VI: fmt.Sprintf("%s, %s trước", g.Last.Format("2006-01-02 15:04"), ago.VI),
+				EN: fmt.Sprintf("%s, %s ago", c.when(*g.Last), ago.EN),
+				VI: fmt.Sprintf("%s, %s trước", c.when(*g.Last), ago.VI),
 			}
 		}
 		msg := g.Message
@@ -734,7 +781,7 @@ func (c *checker) eventFindings() {
 	if info > 0 {
 		c.add(model.Finding{
 			ID: domain + ".event_history", Component: model.CompLogs, Severity: model.Info,
-			Title:  model.Tf("%d more BMC event type(s) in the last %d days (older than %d days, repaired, or beyond the list)", "Thêm %d loại sự kiện BMC trong %d ngày qua (cũ hơn %d ngày, đã sửa, hoặc ngoài danh sách)", info, c.facts.WindowDays, recentDays),
+			Title:  model.Tf("%d more BMC event type(s) in the last %d days: older than %d days, repaired or recovered, or beyond the list", "Còn %d loại sự kiện BMC khác trong %d ngày qua: cũ hơn %d ngày, đã sửa hoặc đã tự hết, hoặc vượt quá danh sách hiển thị", info, c.facts.WindowDays, recentDays),
 			Detail: model.T("They are listed in the BMC events table. Old faults that are fixed need no action; a fault that keeps coming back does.", "Các sự kiện này nằm trong bảng sự kiện BMC. Lỗi cũ đã khắc phục thì không cần làm gì; lỗi lặp lại nhiều lần thì cần xử lý."),
 		})
 	}
@@ -744,6 +791,16 @@ func (c *checker) eventFindings() {
 			Title: model.Tf("No critical or warning events in the BMC logs in the last %d days", "Không có sự kiện nghiêm trọng hay cảnh báo nào trong nhật ký BMC %d ngày qua", c.facts.WindowDays),
 		})
 	}
+}
+
+// when shows an event time in the reader's time zone (that of env.Now):
+// BMCs stamp entries in their own zone (iDRAC "-05:00", iLO "Z"), and a
+// table mixing zones without saying so misleads.
+func (c *checker) when(t time.Time) string {
+	if loc := c.env.Now.Location(); !c.env.Now.IsZero() && loc != nil {
+		t = t.In(loc)
+	}
+	return t.Format("2006-01-02 15:04 MST")
 }
 
 // plural formats "1 fan" / "3 fans" (English only; Vietnamese has no plural).

@@ -29,6 +29,15 @@ type DIMM struct {
 	Rank         int    `json:"rank,omitempty"`
 	TotalWidth   int    `json:"totalWidth,omitempty"`
 	DataWidth    int    `json:"dataWidth,omitempty"`
+	// Technology is the SMBIOS 3.2 "Memory Technology" (DRAM, NVDIMM-N,
+	// "Intel persistent memory"); empty on older tables.
+	Technology string `json:"technology,omitempty"`
+	// PMem marks persistent memory (Optane PMem, NVDIMM): its capacity is
+	// not RAM the OS counts in MemTotal unless it runs in Memory Mode.
+	PMem bool `json:"pmem,omitempty"`
+	// VolatileBytes is the part of the module the OS can use as RAM
+	// ("Volatile Size" on SMBIOS 3.2+, else the size of a DRAM module).
+	VolatileBytes uint64 `json:"volatileBytes,omitempty"`
 	// EDAC counters joined to this slot; -1 when unknown.
 	CE        int64  `json:"ce"`
 	UE        int64  `json:"ue"`
@@ -63,8 +72,10 @@ type Array struct {
 func dmiMemory(s string) ([]Array, []DIMM) {
 	recs := dmi.Parse(s)
 	var arrays []Array
+	other := map[string]bool{} // handles of arrays that are not system RAM
 	for _, r := range dmi.OfType(recs, 16) {
 		if u := strings.ToLower(r.Get("Use")); u != "" && u != "system memory" {
+			other[r.Handle] = true
 			continue // flash, video or cache memory arrays
 		}
 		arrays = append(arrays, Array{
@@ -75,6 +86,9 @@ func dmiMemory(s string) ([]Array, []DIMM) {
 	}
 	var dimms []DIMM
 	for _, r := range dmi.OfType(recs, 17) {
+		if other[r.Get("Array Handle")] {
+			continue // a device of a flash/video array, not a DIMM
+		}
 		size, ok := dmi.Size(r.Get("Size"))
 		d := DIMM{
 			Locator:      firstNonEmpty(dmi.Clean(r.Get("Locator")), r.Handle),
@@ -97,6 +111,22 @@ func dmiMemory(s string) ([]Array, []DIMM) {
 		}
 		if !d.Populated {
 			d.Type, d.TypeDetail, d.SpeedMT, d.ConfiguredMT, d.Manufacturer, d.PartNumber, d.Serial = "", "", 0, 0, "", "", ""
+		} else {
+			d.Technology = dmi.Clean(r.Get("Memory Technology"))
+			lt := strings.ToLower(d.Technology)
+			d.PMem = strings.Contains(lt, "persistent memory") || strings.Contains(lt, "nvdimm") ||
+				strings.Contains(strings.ToLower(d.TypeDetail), "non-volatile")
+			if v, present := r.Fields["Volatile Size"]; present {
+				d.VolatileBytes, _ = dmi.Size(v) // "None" = 0
+			} else if !d.PMem {
+				d.VolatileBytes = size
+			}
+			if d.PMem && d.Type == "" { // Optane reports Type <OUT OF SPEC>
+				d.Type = "PMem"
+				if strings.Contains(lt, "intel") {
+					d.Type = "Optane PMem"
+				}
+			}
 		}
 		dimms = append(dimms, d)
 	}

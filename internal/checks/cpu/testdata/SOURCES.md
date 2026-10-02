@@ -30,3 +30,6 @@ section format our snippets produce (`collect/linux/20-cpu.sh`).
 | `mcelog_client_issue16.txt` | Real. andikleen/mcelog issue #16 (`mcelog --client`). https://github.com/andikleen/mcelog/issues/16 |
 | `win_processor_laptop.json` | Real. `cpu.win_processor` from the dev machine (Windows 10, not elevated). |
 | `win_processor_2s_disabled.json` | Synthesized in the same shape: second socket with CpuStatus 3 ("CPU Disabled By BIOS (POST Error)", Microsoft Win32_Processor docs). |
+| `ras_summary_nodb_ubuntu_0.8.4.err`, `ras_errors_nodb_ubuntu_0.8.4.err` | Real. stderr of `ras-mc-ctl --summary` (rc 2) and `--errors` (rc 255), rasdaemon 0.8.4-1ubuntu0.1 in WSL Ubuntu, with `/var/lib/rasdaemon/ras-mc_event.db` absent (rasdaemon never started). Running them also creates an empty database file, which is why the collector now checks for the file first. |
+| `sysfs_cpu_hotplug_slots.txt` | Synthesized `cpu.sysfs` dump of a server whose ACPI tables announce 128 possible CPUs with 32 present ("smpboot: Allowing 128 CPUs, 96 hotplug CPUs"); `offline` = possible & ~online, per `drivers/base/cpu.c` `print_cpus_offline()`. |
+| `throttle_sysfs_boot_blip.txt` | Synthesized `cpu.throttle` dump: a couple of short episodes (tens of ms), the kind `drivers/thermal/intel/therm_throt.c` counts without logging. |

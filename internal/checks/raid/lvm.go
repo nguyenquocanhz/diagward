@@ -98,7 +98,8 @@ func (c *checker) checkLVM() {
 		return
 	}
 	if sec.Missing != "" {
-		c.cover("raid.lvm", lvmName, model.CovSkipped, hint.Missing("lvs"), installPkg(c.env, "lvm2"))
+		fix, cmd := installPkg(c.env, "lvm2")
+		c.cover("raid.lvm", lvmName, model.CovSkipped, hint.Missing("lvs"), fix, cmd)
 		return
 	}
 	if sec.Skipped != "" {
@@ -215,9 +216,13 @@ func (c *checker) analyzeLV(lv *LVMRaid, msgs []string) model.Severity {
 			s = model.Info
 		}
 		sev = model.Worst(sev, s)
+		title := model.Tf("LVM RAID %s: scrub found %d mismatches", "LVM RAID %s: lần scrub tìm thấy %d chỗ không khớp", target, lv.Mismatches)
+		if lv.Mismatches <= 0 { // only lv_attr bit 9 = 'm' (old LVM has no count)
+			title = model.Tf("LVM RAID %s: scrub found mismatches", "LVM RAID %s: lần scrub tìm thấy chỗ không khớp", target)
+		}
 		c.add(model.Finding{
 			ID: "raid.lvm_mismatch", Severity: s, Target: target,
-			Title: model.Tf("LVM RAID %s: scrub found %d mismatches", "LVM RAID %s: lần scrub tìm thấy %d chỗ không khớp", target, lv.Mismatches),
+			Title: title,
 			Detail: model.T("The images disagree in some places. Harmless on RAID1 with swap or files being rewritten; on RAID5/6 it points to an unclean shutdown or faulty hardware.",
 				"Các bản sao không khớp nhau ở một số chỗ. Vô hại với RAID1 có swap hoặc file đang ghi đè; với RAID5/6 là dấu hiệu tắt máy đột ngột hoặc phần cứng lỗi."),
 			Action:   model.Tf("Check disk S.M.A.R.T. and RAM, then run 'lvchange --syncaction repair %s' and check again.", "Kiểm tra S.M.A.R.T. ổ cứng và RAM, sau đó chạy 'lvchange --syncaction repair %s' rồi kiểm tra lại.", target),

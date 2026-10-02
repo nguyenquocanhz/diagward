@@ -69,8 +69,8 @@ func TestMDProcfsFindings(t *testing.T) {
 		}
 	}
 	c := cov(t, res, "raid.md", model.CovPartial)
-	if !strings.Contains(c.Fix.EN, "dnf install -y mdadm") {
-		t.Errorf("fix: %q", c.Fix.EN)
+	if c.Cmd != "dnf install -y mdadm" || c.Fix.IsZero() {
+		t.Errorf("fix: %q cmd: %q", c.Fix.EN, c.Cmd)
 	}
 	tb := table(t, res, "raid.arrays")
 	if len(tb.Rows) != 18 {

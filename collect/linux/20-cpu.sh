@@ -5,7 +5,7 @@
 # lscpu: JSON on util-linux >= 2.31 (RHEL 8+, Ubuntu 18.04+); plain text on
 # older systems (CentOS 7 ships 2.23 without -J).
 if dw_has lscpu; then
-	if lscpu -J >/dev/null 2>&1; then
+	if $DW_TO lscpu -J >/dev/null 2>&1; then
 		dw_run cpu.lscpu_json lscpu -J
 	else
 		dw_run cpu.lscpu lscpu
@@ -67,8 +67,8 @@ _cp_svc() {
 		_cp_a=""
 		_cp_e=""
 		if dw_has systemctl; then
-			_cp_a=$(systemctl is-active "$_cp_s.service" 2>/dev/null)
-			_cp_e=$(systemctl is-enabled "$_cp_s.service" 2>/dev/null)
+			_cp_a=$($DW_TO systemctl is-active "$_cp_s.service" 2>/dev/null)
+			_cp_e=$($DW_TO systemctl is-enabled "$_cp_s.service" 2>/dev/null)
 		fi
 		_cp_p=0
 		if dw_has pgrep; then
@@ -132,7 +132,14 @@ else
 		else
 			dw_skip cpu.ras_status not-applicable
 		fi
-		if [ "$DW_ROOT" = 1 ]; then
+		# ras-mc-ctl opens the SQLite database read-write: when rasdaemon
+		# never ran, that creates an empty /var/lib/rasdaemon/ras-mc_event.db.
+		# Do not leave that behind; record the missing database instead.
+		_cp_db=/var/lib/rasdaemon/ras-mc_event.db
+		if [ "$DW_ROOT" = 1 ] && [ -d /var/lib/rasdaemon ] && [ ! -e "$_cp_db" ]; then
+			dw_missing cpu.ras_summary "$_cp_db"
+			dw_missing cpu.ras_errors "$_cp_db"
+		elif [ "$DW_ROOT" = 1 ]; then
 			dw_run cpu.ras_summary ras-mc-ctl $_cp_rasdb --summary
 			dw_fn cpu.ras_errors _cp_raserr
 		else

@@ -63,7 +63,8 @@
       "crit": 0,
       "warn": 1,
       "info": 0,
-      "checked": true
+      "checked": true,
+      "partial": true
     },
     {
       "component": "disk",
@@ -75,7 +76,8 @@
       "crit": 2,
       "warn": 1,
       "info": 0,
-      "checked": true
+      "checked": true,
+      "partial": true
     },
     {
       "component": "raid",
@@ -87,7 +89,8 @@
       "crit": 1,
       "warn": 0,
       "info": 0,
-      "checked": true
+      "checked": true,
+      "partial": true
     },
     {
       "component": "filesystem",
@@ -159,7 +162,8 @@
       "crit": 0,
       "warn": 0,
       "info": 1,
-      "checked": true
+      "checked": true,
+      "partial": true
     },
     {
       "component": "logs",
@@ -906,9 +910,10 @@
             "vi": "Chưa cài sensors."
           },
           "fix": {
-            "en": "Install it: dnf install -y lm_sensors",
-            "vi": "Cài đặt: dnf install -y lm_sensors"
-          }
+            "en": "Install lm_sensors, then run Diagward again.",
+            "vi": "Cài lm_sensors rồi chạy lại Diagward."
+          },
+          "cmd": "sudo dnf install -y lm_sensors"
         },
         {
           "id": "sensors.dmi",
@@ -1139,9 +1144,10 @@
         "vi": "Chưa cài sensors."
       },
       "fix": {
-        "en": "Install it: dnf install -y lm_sensors",
-        "vi": "Cài đặt: dnf install -y lm_sensors"
-      }
+        "en": "Install lm_sensors, then run Diagward again.",
+        "vi": "Cài lm_sensors rồi chạy lại Diagward."
+      },
+      "cmd": "sudo dnf install -y lm_sensors"
     },
     {
       "id": "sensors.dmi",

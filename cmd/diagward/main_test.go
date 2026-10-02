@@ -203,7 +203,7 @@ func TestFlagErrorVietnamese(t *testing.T) {
 	if rc := a.main([]string{"check", "--nope", "--lang", "vi"}); rc != exitError {
 		t.Fatalf("rc %d", rc)
 	}
-	if !strings.Contains(a.err.String(), "không có tuỳ chọn -nope") || !strings.Contains(a.err.String(), "diagward help check") {
+	if !strings.Contains(a.err.String(), "không có tùy chọn -nope") || !strings.Contains(a.err.String(), "diagward help check") {
 		t.Fatalf("stderr: %s", a.err.String())
 	}
 }
@@ -347,14 +347,14 @@ func TestQuietLine(t *testing.T) {
 		{ID: "disk.x", Severity: model.Crit, Title: model.T("Disk /dev/sda is failing", "Ổ /dev/sda sắp hỏng")},
 		{ID: "disk.y", Severity: model.Warn, Title: model.T("w", "w")},
 	}, Coverage: []model.Coverage{{ID: "disk.smart", State: model.CovRan, Component: model.CompDisk}}}
-	got := quietLine(rep, "vi")
+	got := quietLine(rep, "vi", false)
 	if got != "srv01: CẦN XỬ LÝ NGAY (1 lỗi nghiêm trọng, 1 cảnh báo): Ổ /dev/sda sắp hỏng" {
 		t.Fatalf("%q", got)
 	}
-	if got := quietLine(rep, "en"); !strings.HasPrefix(got, "srv01: ACTION NEEDED NOW (1 critical, 1 warnings): Disk /dev/sda") {
+	if got := quietLine(rep, "en", false); !strings.HasPrefix(got, "srv01: ACTION NEEDED NOW (1 critical, 1 warnings): Disk /dev/sda") {
 		t.Fatalf("%q", got)
 	}
-	_ = quietLine(&model.Report{}, "en")
+	_ = quietLine(&model.Report{}, "en", false)
 }
 
 func TestCheckInterrupted(t *testing.T) {
@@ -576,8 +576,24 @@ func TestHelpAndVersion(t *testing.T) {
 			if lang == "vi" {
 				want = "Mã thoát"
 			}
-			if !strings.Contains(a.out.String(), want) || !strings.Contains(a.out.String(), "3  ") {
-				t.Errorf("help %s %s: no exit codes", topic, lang)
+			out := a.out.String()
+			switch topic {
+			case "version", "help":
+				if strings.Contains(out, want) {
+					t.Errorf("help %s %s: exit codes are not relevant here", topic, lang)
+				}
+			default:
+				if !strings.Contains(out, want) || !strings.Contains(out, "3  ") {
+					t.Errorf("help %s %s: no exit codes", topic, lang)
+				}
+			}
+			// The verdict codes (1 warnings, 2 critical) only belong to
+			// commands that analyse.
+			if verdict := strings.Contains(out, "\n  2  "); verdict != (topic == "" || topic == "check" || topic == "analyze" || topic == "bmc") {
+				t.Errorf("help %s %s: verdict exit codes shown=%v", topic, lang, verdict)
+			}
+			if strings.Contains(out, "\n\n\n") {
+				t.Errorf("help %s %s: double blank line", topic, lang)
 			}
 		}
 	}

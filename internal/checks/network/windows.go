@@ -148,7 +148,7 @@ func windowsNICs(b *collect.Bundle) ([]NIC, []Bond, bool) {
 	byName, byDesc := map[string]int{}, map[string]int{}
 	for _, a := range ads {
 		n := NIC{
-			Name: a.Name, Kind: "phys", Description: a.InterfaceDescription,
+			Name: a.Name, Kind: "phys", Description: a.InterfaceDescription, win: true,
 			Driver: strings.TrimSpace(a.DriverProvider), DriverVersion: a.DriverVersionString,
 			MAC: strings.ToLower(strings.ReplaceAll(a.MacAddress, "-", ":")),
 		}
@@ -268,6 +268,23 @@ func windowsNICs(b *collect.Bundle) ([]NIC, []Bond, bool) {
 		}
 		bonds = append(bonds, bd)
 	}
+	// Without elevation Get-VMSwitch is skipped, but the vms_pp binding
+	// still says which physical adapters are external-switch uplinks. They
+	// are grouped under one master so a down uplink is a Warn while another
+	// uplink is up (it may be a SET team) and Crit when it was the only one.
+	var bound []struct{ Name, InterfaceDescription string }
+	_ = collect.DecodeJSON(b.Get("network.win_vmswitch_bound").Text(), &bound)
+	for _, x := range bound {
+		i, ok := byName[x.Name]
+		if !ok {
+			i, ok = byDesc[x.InterfaceDescription]
+		}
+		if !ok || nics[i].Master != "" {
+			continue
+		}
+		nics[i].Master, nics[i].CarriesIP = "Hyper-V vSwitch", true
+		nics[i].UsedBy = "Hyper-V external switch"
+	}
 	return nics, bonds, true
 }
 
@@ -282,10 +299,22 @@ func windowsCoverage(b *collect.Bundle, env model.Env, ok bool, res *model.Resul
 	case !ok:
 		c.State = model.CovFailed
 		c.Reason = model.Tf("Get-NetAdapter failed: %s", "Get-NetAdapter bị lỗi: %s", strings.TrimSpace(firstNonEmpty(s.Err, "unreadable output")))
-	case sw != nil && sw.Skipped == "not-admin":
+	case sw != nil && sw.Skipped == "not-admin" && !noExternalSwitch(b):
 		c.State, c.Reason, c.Fix = model.CovPartial, model.T("Hyper-V virtual switches (SET teams) need Administrator rights to read.", "Cần quyền Administrator để đọc switch ảo Hyper-V (SET team)."), hint.RunAsRoot(env)
 	default:
 		c.State = model.CovRan
 	}
 	res.Coverage = append(res.Coverage, c)
+}
+
+// noExternalSwitch reports whether the (unelevated) vms_pp binding query
+// ran and found no physical adapter bound to a Hyper-V external switch: then
+// there is no SET team that Get-VMSwitch could have shown.
+func noExternalSwitch(b *collect.Bundle) bool {
+	s := b.Get("network.win_vmswitch_bound")
+	if !s.OK() {
+		return false
+	}
+	var v []struct{ Name string }
+	return collect.DecodeJSON(s.Text(), &v) == nil && len(v) == 0
 }

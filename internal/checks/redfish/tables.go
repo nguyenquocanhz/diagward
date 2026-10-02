@@ -23,6 +23,16 @@ func dash(s string) string {
 	return s
 }
 
+// fmtLimit shows a threshold or rating; 0 and negative values are BMC
+// placeholders for "none" (iLO 4 sends UpperThresholdCritical: 0, and a
+// PowerCapacityWatts of 0 while the server is off).
+func fmtLimit(p *float64, unit string) string {
+	if !pos(p) {
+		return "-"
+	}
+	return fmtNum(p, unit)
+}
+
 func (c *checker) tables() {
 	f := c.facts
 	if len(f.Temperatures) > 0 {
@@ -33,7 +43,7 @@ func (c *checker) tables() {
 			if crit == nil {
 				crit = s.Fatal
 			}
-			t.Rows = append(t.Rows, model.Row{Status: s.Severity, Cells: []string{dash(s.Name), fmtNum(s.Reading, "°C"), fmtNum(s.Warn, "°C"), fmtNum(crit, "°C"), s.Status.Text()}})
+			t.Rows = append(t.Rows, model.Row{Status: s.Severity, Cells: []string{dash(s.Name), fmtNum(s.Reading, "°C"), fmtLimit(s.Warn, "°C"), fmtLimit(crit, "°C"), s.Status.Text()}})
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
@@ -45,7 +55,7 @@ func (c *checker) tables() {
 			if unit == "Percent" {
 				unit = "%"
 			}
-			t.Rows = append(t.Rows, model.Row{Status: s.Severity, Cells: []string{dash(s.Name), fmtNum(s.Reading, unit), fmtNum(s.LowerCrit, unit), s.Status.Text()}})
+			t.Rows = append(t.Rows, model.Row{Status: s.Severity, Cells: []string{dash(s.Name), fmtNum(s.Reading, unit), fmtLimit(s.LowerCrit, unit), s.Status.Text()}})
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
@@ -53,7 +63,7 @@ func (c *checker) tables() {
 		t := model.Table{ID: domain + ".psus", Title: model.T("Power supplies (BMC)", "Bộ nguồn (BMC)"),
 			Columns: cols("PSU", "Nguồn", "Model", "Model", "Serial", "Serial", "Capacity", "Công suất", "Input", "Điện vào", "Output", "Đang cấp", "Status", "Trạng thái")}
 		for _, p := range f.PSUs {
-			t.Rows = append(t.Rows, model.Row{Status: p.Severity, Cells: []string{dash(p.Name), dash(first(p.Model, p.Part)), dash(p.Serial), fmtNum(p.CapacityW, "W"), fmtNum(p.InputV, "V"), fmtNum(p.OutputW, "W"), p.Status.Text()}})
+			t.Rows = append(t.Rows, model.Row{Status: p.Severity, Cells: []string{dash(p.Name), dash(first(p.Model, p.Part)), dash(p.Serial), fmtLimit(p.CapacityW, "W"), fmtNum(p.InputV, "V"), fmtNum(p.OutputW, "W"), p.Status.Text()}})
 		}
 		if f.PowerWatts != nil {
 			t.Note = model.Tf("Server power draw: %s", "Công suất server đang tiêu thụ: %s", fmtNum(f.PowerWatts, "W"))
@@ -124,11 +134,14 @@ func (c *checker) tables() {
 		for _, g := range f.Events {
 			last := "?"
 			if g.Last != nil {
-				last = g.Last.Format("2006-01-02 15:04")
+				last = c.when(*g.Last)
 			}
 			raw := g.Raw
-			if g.Repaired {
+			switch {
+			case g.Repaired:
 				raw += " (repaired)"
+			case g.Cleared:
+				raw += " (recovered)"
 			}
 			t.Rows = append(t.Rows, model.Row{Status: g.Severity, Cells: []string{raw, last, strconv.Itoa(g.Count), dash(g.Log), dash(g.MessageID), dash(g.Message)}})
 		}

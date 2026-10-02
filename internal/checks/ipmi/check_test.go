@@ -396,7 +396,7 @@ func TestCoverageMissingTool(t *testing.T) {
 	// bare metal with a BMC in SMBIOS
 	res := run(t, testkit.Bundle(collect.OSLinux, secs(missing, devices("node=\nsmbios38=1\n"))...), testkit.Env(collect.OSLinux))
 	c := testkit.Cov(res, "ipmi.sdr")
-	if c == nil || c.State != model.CovSkipped || !strings.Contains(c.Fix.EN, "dnf install -y ipmitool") || !strings.Contains(c.Reason.EN, "has a BMC") {
+	if c == nil || c.State != model.CovSkipped || c.Cmd != "dnf install -y ipmitool" || !strings.Contains(c.Reason.EN, "has a BMC") {
 		t.Fatalf("%+v", c)
 	}
 	// VM
@@ -433,7 +433,7 @@ func TestCoverageNoDevice(t *testing.T) {
 	// BMC in SMBIOS, driver not loaded -> modprobe fix
 	res := run(t, testkit.Bundle(collect.OSLinux, secs(na, devices("node=\nsmbios38=1\ndmi_interface=KCS (Keyboard Control Style)\n"))...), testkit.Env(collect.OSLinux))
 	c := testkit.Cov(res, "ipmi.sdr")
-	if c == nil || c.State != model.CovSkipped || !strings.Contains(c.Fix.EN, "modprobe ipmi_devintf ipmi_si") {
+	if c == nil || c.State != model.CovSkipped || c.Cmd != "modprobe ipmi_devintf ipmi_si" {
 		t.Fatalf("%+v", c)
 	}
 	// no BMC at all on bare metal (desktop board)
@@ -448,7 +448,7 @@ func TestCoverageErrors(t *testing.T) {
 	fail := func(n string) *collect.Section { return testkit.RC(n, 1, "", open) }
 	res := run(t, testkit.Bundle(collect.OSLinux, secs(fail, devices("node=/dev/ipmi0\n"))...), testkit.Env(collect.OSLinux))
 	c := testkit.Cov(res, "ipmi.sdr")
-	if c == nil || c.State != model.CovFailed || !strings.Contains(c.Reason.EN, "Could not open device") || !strings.Contains(c.Fix.EN, "modprobe") {
+	if c == nil || c.State != model.CovFailed || !strings.Contains(c.Reason.EN, "Could not open device") || !strings.Contains(c.Cmd, "modprobe") {
 		t.Fatalf("%+v", c)
 	}
 	// wedged BMC: mc info timed out, the rest skipped

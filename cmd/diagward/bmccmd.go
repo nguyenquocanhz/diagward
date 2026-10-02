@@ -55,9 +55,9 @@ func (a *app) parseBMC(args []string) (*bmcOpts, error) {
 			break
 		}
 		if isPasswordFlag(arg) {
-			return nil, errors.New(a.t(
+			return nil, ue(
 				"the BMC password is never taken on the command line (it would be visible in ps and shell history). Set DIAGWARD_BMC_PASSWORD or type it when asked. (The port is --port.)",
-				"không nhận mật khẩu BMC trên dòng lệnh (sẽ lộ trong ps và lịch sử shell). Hãy đặt biến DIAGWARD_BMC_PASSWORD hoặc gõ khi được hỏi. (Cổng là --port.)"))
+				"không nhận mật khẩu BMC trên dòng lệnh (sẽ lộ trong ps và lịch sử shell). Hãy đặt biến DIAGWARD_BMC_PASSWORD hoặc gõ khi được hỏi. (Cổng là --port.)")
 		}
 	}
 	o := &bmcOpts{protocol: "auto"}
@@ -77,25 +77,25 @@ func (a *app) parseBMC(args []string) (*bmcOpts, error) {
 	}
 	switch {
 	case len(pos) == 0:
-		return nil, errors.New(a.t("which BMC? Usage: diagward bmc HOST --user USER", "BMC nào? Cách dùng: diagward bmc ĐỊA_CHỈ --user TÀI_KHOẢN"))
+		return nil, ue("which BMC? Usage: diagward bmc HOST --user USER", "BMC nào? Cách dùng: diagward bmc ĐỊA_CHỈ --user TÀI_KHOẢN")
 	case len(pos) > 1:
-		return nil, fmt.Errorf("unexpected argument %q", pos[1])
+		return nil, unexpectedArg(pos[1])
 	}
 	o.host = strings.TrimSpace(pos[0])
 	if o.host == "" || strings.ContainsAny(o.host, " \t\r\n") {
-		return nil, fmt.Errorf("invalid BMC address %q", pos[0])
+		return nil, ue("invalid BMC address %q", "địa chỉ BMC không hợp lệ: %q", pos[0])
 	}
 	o.protocol = strings.ToLower(o.protocol)
 	switch o.protocol {
 	case "auto", "redfish", "ipmi":
 	default:
-		return nil, fmt.Errorf("--protocol %q: use auto, redfish or ipmi", o.protocol)
+		return nil, ue("--protocol %q: use auto, redfish or ipmi", "--protocol %q: dùng auto, redfish hoặc ipmi", o.protocol)
 	}
 	if o.port < 0 || o.port > 65535 {
-		return nil, fmt.Errorf("--port %d: use 1 to 65535", o.port)
+		return nil, ue("--port %d: use 1 to 65535", "--port %d: dùng từ 1 đến 65535", o.port)
 	}
 	if o.timeout != 0 && (o.timeout < 5 || o.timeout > 3600) {
-		return nil, fmt.Errorf("--timeout %d: use 5 to 3600 seconds", o.timeout)
+		return nil, ue("--timeout %d: use 5 to 3600 seconds", "--timeout %d: dùng từ 5 đến 3600 giây", o.timeout)
 	}
 	if o.user == "" {
 		o.user = a.getenv("DIAGWARD_BMC_USER")
@@ -178,7 +178,7 @@ func (a *app) cmdBMC(args []string) int {
 		}
 	}
 	rep := diag.Analyze(b)
-	if rc := a.emit(rep, &o.out, saved); rc != exitOK {
+	if rc := a.emit(rep, &o.out, saved, err != nil); rc != exitOK {
 		return rc
 	}
 	if code != exitOK || err != nil {

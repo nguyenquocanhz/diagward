@@ -215,7 +215,7 @@ var keyTexts = map[string]keyText{
 			"Lưu nhật ký trước (ipmitool sel elist > sel-$(hostname)-$(date +%F).txt), sau đó xóa: ipmitool sel clear."),
 	},
 	"state_asserted": {
-		model.T("%s: BMC sensor is asserted", "%s: cảm biến BMC đang báo bật"),
+		model.T("%s: BMC sensor is asserted", "%s: cảm biến BMC đang báo lỗi (asserted)"),
 		model.T("This discrete sensor's fault state is asserted (Dell \"PG\"/\"FAIL\" sensors use this for power-good and failure signals).",
 			"Cảm biến rời rạc này đang ở trạng thái lỗi (các cảm biến \"PG\"/\"FAIL\" của Dell dùng trạng thái này cho tín hiệu nguồn và lỗi)."),
 		model.T("Check the sensor in the BMC web interface; contact the vendor if it stays asserted.", "Kiểm tra cảm biến trên giao diện web của BMC; liên hệ hãng nếu trạng thái không tự hết."),
@@ -246,8 +246,8 @@ func thresholdText(class string, crit bool) keyText {
 			model.T("%s: fan speed beyond its threshold", "%s: tốc độ quạt vượt ngưỡng"),
 			model.T("The fan runs slower (or faster) than the BMC allows: a failing or blocked fan, or a fan that is missing.",
 				"Quạt quay chậm (hoặc nhanh) hơn mức BMC cho phép: quạt sắp hỏng, bị kẹt hoặc bị thiếu."),
-			model.T("Check the fan module: reseat it, clean it, replace it if it stays out of range (most server fans are hot-swap).",
-				"Kiểm tra module quạt: cắm lại, vệ sinh, thay nếu vẫn ngoài ngưỡng (đa số quạt máy chủ thay nóng được)."),
+			model.T("Check the fan module: reseat it, clean it, replace it if it stays out of range (most server fans are hot-swap). If slower non-original fans were fitted on purpose (common on Supermicro boards), lower the BMC thresholds instead, e.g. ipmitool sensor thresh FAN1 lower 100 200 300.",
+				"Kiểm tra module quạt: cắm lại, vệ sinh, thay nếu vẫn ngoài ngưỡng (đa số quạt máy chủ thay nóng được). Nếu đã cố ý lắp quạt không chính hãng quay chậm hơn (hay gặp trên bo mạch Supermicro), hãy hạ ngưỡng trong BMC, ví dụ: ipmitool sensor thresh FAN1 lower 100 200 300."),
 		}
 	case clVoltage, clCurrent, clPower, clPSU:
 		return keyText{

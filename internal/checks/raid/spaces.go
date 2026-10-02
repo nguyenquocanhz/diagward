@@ -161,10 +161,15 @@ func spOp(s flexStr) string {
 	return strings.Join(out, ", ")
 }
 
+// spNorm folds case and drops blanks and dashes, so the type data's display
+// strings ("Lost Communication", "Read-only") and bare enum names
+// ("LostCommunication", "ReadOnly") compare equal.
+var spNorm = strings.NewReplacer(" ", "", "-", "", "_", "")
+
 func hasOp(op string, names ...string) bool {
-	lo := strings.ToLower(op)
+	lo := spNorm.Replace(strings.ToLower(op))
 	for _, n := range names {
-		if strings.Contains(lo, strings.ToLower(n)) {
+		if strings.Contains(lo, spNorm.Replace(strings.ToLower(n))) {
 			return true
 		}
 	}

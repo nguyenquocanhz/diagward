@@ -135,6 +135,10 @@ var rules = []rule{
 	{match: "lower critical going low", sev: model.Crit, key: "*threshold"},
 	{match: "upper non-critical going high", sev: model.Warn, key: "*threshold"},
 	{match: "lower non-critical going low", sev: model.Warn, key: "*threshold"},
+	// watchdog expired with no action configured (sensor type 23h offset
+	// 0, "Timer expired, status only" in IPMI 2.0 table 42-3, ipmitool prints
+	// "Timer expired"): the server was not reset
+	{match: "timer expired", exact: true, sev: model.Info, key: "watchdog", comp: model.CompSystem},
 	// whole-system power
 	{match: "ac lost", exact: true, sev: model.Warn, key: "ac_lost", comp: model.CompPower},
 	{match: "soft-power control failure", sev: model.Warn, key: "power_control", comp: model.CompPower},

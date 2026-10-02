@@ -84,7 +84,7 @@ func (m *mdWriter) render(r *model.Report) {
 	m.line("")
 
 	sev := headlineSeverity(r)
-	m.line("### %s %s", sevEmoji(sev, sev != model.Info), m.t(Headline(r)))
+	m.line("### %s %s", sevEmoji(sev, !nothingChecked(r)), m.t(Headline(r)))
 	m.line("%s", m.t(subline(r)))
 
 	// Findings
@@ -171,8 +171,8 @@ func (m *mdWriter) render(r *model.Report) {
 				s += ": " + mdEsc(reason)
 			}
 			m.line("%s", s)
-			if fix := strings.TrimSpace(g.Fix.In(m.lang)); fix != "" {
-				prose, cmd := splitFix(fix)
+			if fix := strings.TrimSpace(g.Fix.In(m.lang)); fix != "" || strings.TrimSpace(g.Cmd) != "" {
+				prose, cmd := fixParts(fix, g.Cmd)
 				switch {
 				case cmd != "" && prose != "":
 					m.line("  - %s %s", mdEsc(prose), mdCode(cmd))

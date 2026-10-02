@@ -32,7 +32,10 @@ type Facts struct {
 	Chassis    *Chassis  `json:"chassis,omitempty"`
 	PowerWatts *float64  `json:"powerWatts,omitempty"`
 	FRUs       []*FRU    `json:"frus,omitempty"`
-	Window     int       `json:"windowDays"`
+	// BMCClockOffset is BMC clock minus collection time, in seconds
+	// (includes the host's UTC offset: ipmitool prints local time).
+	BMCClockOffset *int64 `json:"bmcClockOffsetSec,omitempty"`
+	Window         int    `json:"windowDays"`
 }
 
 // System is the board/product identity from FRU 0.
@@ -251,9 +254,15 @@ func (c *checker) sdr() {
 	seen := map[string]bool{}
 	worst := model.OK
 	readable := 0
+	single := c.singlePSU()
 	for _, sn := range c.sensors {
 		if sn.Readable() {
 			readable++
+		}
+		if single && sn.key == "redundancy_lost" && sn.Severity == model.Warn && (sn.Class == clPowerUnit || sn.Class == clPSU) {
+			sn.Severity = model.Info
+			c.add(singlePSUFinding(sensorTarget(sn), []string{sn.line}))
+			continue
 		}
 		if sn.Severity >= model.Warn {
 			worst = model.Worst(worst, sn.Severity)
@@ -281,6 +290,37 @@ func (c *checker) sdr() {
 	}
 	c.psuSummary()
 	c.sdrTables()
+}
+
+// singlePSU: exactly one supply is known to be present, every other bay
+// the BMC knows of is empty, and the present one is healthy. Dell iDRAC
+// keeps reporting "Redundancy Lost" on such a server while its power
+// redundancy policy is "PSU Redundant" (the default), which is a setting,
+// not a fault.
+func (c *checker) singlePSU() bool {
+	present := 0
+	for _, p := range c.psus {
+		switch {
+		case p.Present == nil:
+			return false
+		case *p.Present:
+			present++
+			if p.Failed || p.InputLost || p.Predictive {
+				return false
+			}
+		}
+	}
+	return present == 1
+}
+
+func singlePSUFinding(target string, ev []string) model.Finding {
+	return model.Finding{ID: domain + ".redundancy_lost", Component: model.CompPower, Severity: model.Info, Target: target,
+		Title: model.Tf("%s: no power redundancy, only one power supply is installed", "%s: không có nguồn dự phòng vì máy chỉ lắp một bộ nguồn", target),
+		Detail: model.T("The BMC reports redundancy lost because only one PSU is fitted while its redundancy policy expects two. The server runs normally, but one PSU or power-feed failure takes it down.",
+			"BMC báo mất dự phòng vì máy chỉ lắp một bộ nguồn trong khi chính sách nguồn của BMC yêu cầu hai. Máy vẫn chạy bình thường, nhưng chỉ cần bộ nguồn hoặc đường điện đó hỏng là máy sập."),
+		Action: model.T("If the server should be redundant, install a second PSU of the same model and plug it into a separate power feed. Otherwise set the power redundancy policy to \"Not Redundant\" in the BMC (iDRAC: Configuration > Power Management) to clear the warning.",
+			"Nếu máy cần nguồn dự phòng, lắp thêm bộ nguồn cùng model và cắm vào một đường điện riêng. Nếu không, đặt chính sách nguồn thành \"Not Redundant\" trong BMC (iDRAC: Configuration > Power Management) để tắt cảnh báo."),
+		Evidence: ev}
 }
 
 func (c *checker) psuOf(name string, entityID, instance int) *PSU {
@@ -581,7 +621,8 @@ func (c *checker) sel() {
 	if now.IsZero() {
 		now = c.b.Finished
 	}
-	entries := parseSEL(s.Out, now)
+	dayFirst := dayFirstDates(s.Out)
+	entries := parseSELShift(s.Out, now, c.bmcClock(now, dayFirst), dayFirst)
 	empty := strings.Contains(s.Out, "SEL has no entries")
 	c.selParsed = len(entries) > 0 || empty
 	if !c.selParsed {
@@ -656,6 +697,56 @@ func (c *checker) sel() {
 	c.eventTable()
 }
 
+// clockTolerance: below this the BMC clock is only a time zone away from
+// the OS (ipmitool prints SEL times in the host's zone, UTC+14 at most)
+// and nothing is shifted.
+const clockTolerance = 48 * time.Hour
+
+// bmcClock compares `ipmitool sel time get` with the collection time.
+// SEL time stamps come from the BMC clock; when it is wrong by days or
+// years (never set, CMOS battery flat, reset to the firmware build date)
+// recent faults look old and are missed. It returns the offset to remove
+// from every SEL time and reports the wrong clock.
+func (c *checker) bmcClock(now time.Time, dayFirst bool) time.Duration {
+	s := c.b.Get("ipmi.sel_time")
+	if !s.Ran() || now.IsZero() {
+		return 0
+	}
+	var bmc time.Time
+	ok := false
+	for _, l := range s.Lines() {
+		fs := strings.Fields(l)
+		if len(fs) >= 2 {
+			if bmc, ok = parseSELTimeOrder(fs[0], strings.Join(fs[1:], " "), dayFirst); ok {
+				break
+			}
+		}
+	}
+	if !ok {
+		return 0
+	}
+	off := bmc.Sub(now)
+	sec := int64(off / time.Second)
+	c.facts.BMCClockOffset = &sec
+	if off < clockTolerance && off > -clockTolerance {
+		return 0
+	}
+	d := units.Duration(off)
+	dir := model.T("behind", "chậm")
+	if off > 0 {
+		dir = model.T("ahead", "nhanh")
+	}
+	c.add(model.Finding{ID: domain + ".bmc_clock", Component: model.CompBMC, Severity: model.Info, Target: "BMC",
+		Title: model.T(fmt.Sprintf("The BMC clock is %s %s (BMC %s, OS %s UTC)", d.EN, dir.EN, fmtTime(bmc), fmtTime(now.UTC())),
+			fmt.Sprintf("Đồng hồ BMC %s %s (BMC %s, hệ điều hành %s UTC)", dir.VI, d.VI, fmtTime(bmc), fmtTime(now.UTC()))),
+		Detail: model.T("The BMC stamps its event log with its own clock. Diagward moved the SEL times by this offset to tell recent events from old ones, so the dates shown are corrected; events logged before the clock went wrong may show wrong dates.",
+			"BMC ghi thời gian vào nhật ký sự kiện theo đồng hồ của chính nó. Diagward đã bù độ lệch này để phân biệt sự kiện mới và cũ, nên ngày giờ hiển thị là đã hiệu chỉnh; các sự kiện ghi trước khi đồng hồ bị sai có thể hiện sai ngày."),
+		Action: model.T("Set the BMC clock: enable NTP in the BMC web interface (iDRAC/iLO/XCC), or on the server run ipmitool sel time set \"$(date '+%m/%d/%Y %H:%M:%S')\". If the clock is lost again after a power cut, replace the CMOS battery.",
+			"Đặt lại giờ BMC: bật NTP trên giao diện web của BMC (iDRAC/iLO/XCC), hoặc chạy trên máy chủ: ipmitool sel time set \"$(date '+%m/%d/%Y %H:%M:%S')\". Nếu mất điện xong lại sai giờ, hãy thay pin CMOS."),
+		Evidence: units.Evidence(s.Lines(), 2)})
+	return off
+}
+
 func plural(n int, one, many string) string {
 	if n == 1 {
 		return "1 " + one
@@ -667,6 +758,10 @@ func plural(n int, one, many string) string {
 // the same part healthy now: the SEL is history, Crit means "failing now".
 // Only for PSU and threshold events, where the SDR state is unambiguous.
 func (c *checker) currentState(g *selGroup) {
+	if g.v.key == "redundancy_lost" && g.Severity == model.Warn && c.sdrParsed && (g.Class == clPowerUnit || g.Class == clPSU) && c.singlePSU() {
+		g.Severity = model.Info // one PSU by design: see singlePSU
+		return
+	}
 	if g.Severity != model.Crit || !c.sdrParsed {
 		return
 	}
@@ -832,9 +927,11 @@ func (c *checker) eventTable() {
 
 // ---- coverage ----
 
-func (c *checker) errText(s *collect.Section) string {
+// errText is the first lines of stderr. stdout is used only when nothing
+// was parsed from it (then it holds the error message, not data).
+func (c *checker) errText(s *collect.Section, parsed bool) string {
 	src := s.Err
-	if strings.TrimSpace(src) == "" {
+	if strings.TrimSpace(src) == "" && !parsed {
 		src = s.Out
 	}
 	var lines []string
@@ -856,19 +953,30 @@ func (c *checker) errText(s *collect.Section) string {
 	return t
 }
 
+// driverCmd loads the IPMI system interface (KCS/SMIC/BT through ipmi_si)
+// and the /dev/ipmi0 character device (ipmi_devintf).
+const driverCmd = "modprobe ipmi_devintf ipmi_si"
+
 var (
-	driverFix = model.T("Load the IPMI driver: modprobe ipmi_devintf ipmi_si (ipmi_ssif on SSIF boards), then run Diagward again. To load it at boot: printf 'ipmi_devintf\\nipmi_si\\n' > /etc/modules-load.d/ipmi.conf",
-		"Nạp driver IPMI: modprobe ipmi_devintf ipmi_si (bo mạch SSIF dùng ipmi_ssif), rồi chạy lại Diagward. Để tự nạp khi khởi động: printf 'ipmi_devintf\\nipmi_si\\n' > /etc/modules-load.d/ipmi.conf")
+	driverFix = model.T(`Load the IPMI driver (boards with an SSIF BMC need ipmi_ssif instead of ipmi_si), then run Diagward again. To load it at every boot: printf 'ipmi_devintf\nipmi_si\n' > /etc/modules-load.d/ipmi.conf`,
+		`Nạp driver IPMI (bo mạch dùng BMC kiểu SSIF thì nạp ipmi_ssif thay cho ipmi_si), rồi chạy lại Diagward. Để tự nạp mỗi lần khởi động: printf 'ipmi_devintf\nipmi_si\n' > /etc/modules-load.d/ipmi.conf`)
 	resetFix = model.T("Check the BMC web interface. Reset the BMC with ipmitool mc reset cold (this restarts only the BMC, not the server) and run Diagward again; or read it over the network: diagward bmc <address>.",
 		"Kiểm tra giao diện web của BMC. Reset BMC bằng ipmitool mc reset cold (chỉ khởi động lại BMC, không ảnh hưởng máy chủ) rồi chạy lại Diagward; hoặc đọc qua mạng: diagward bmc <địa chỉ>.")
 )
 
-func (c *checker) installFix() model.Text {
+func (c *checker) installFix() (model.Text, string) {
 	if c.env.OS == collect.OSWindows {
 		return model.T("Install ipmitool for Windows (for example Dell OpenManage BMC Utility) and run Diagward as Administrator, or read the BMC over the network: diagward bmc <iDRAC/iLO/XCC address>.",
-			"Cài ipmitool cho Windows (ví dụ Dell OpenManage BMC Utility) rồi chạy Diagward bằng quyền Administrator, hoặc đọc BMC qua mạng: diagward bmc <địa chỉ iDRAC/iLO/XCC>.")
+			"Cài ipmitool cho Windows (ví dụ Dell OpenManage BMC Utility) rồi chạy Diagward bằng quyền Administrator, hoặc đọc BMC qua mạng: diagward bmc <địa chỉ iDRAC/iLO/XCC>."), ""
 	}
-	return hint.Install(c.env, "ipmitool")
+	return hint.InstallFix(c.env, "ipmitool")
+}
+
+func (c *checker) asRoot(cmd string) string {
+	if c.env.Root || c.env.OS == collect.OSWindows {
+		return cmd
+	}
+	return "sudo " + cmd
 }
 
 func (c *checker) covState(cv *model.Coverage, s *collect.Section, parsed bool) {
@@ -884,21 +992,24 @@ func (c *checker) covState(cv *model.Coverage, s *collect.Section, parsed bool) 
 		case c.evidence:
 			m := hint.Missing("ipmitool")
 			cv.Reason = model.T(m.EN+" This server has a BMC.", m.VI+" Máy chủ này có BMC.")
-			cv.Fix = c.installFix()
+			cv.Fix, cv.Cmd = c.installFix()
 		default:
 			m := hint.Missing("ipmitool")
 			cv.Reason = model.T(m.EN+" No BMC was detected either.", m.VI+" Cũng không phát hiện BMC nào.")
-			cv.Fix = c.installFix()
+			cv.Fix, cv.Cmd = c.installFix()
 		}
 	case s.Skipped == "not-root" || s.Skipped == "not-admin":
 		cv.State, cv.Reason, cv.Fix = model.CovSkipped, hint.NeedRoot(c.env), hint.RunAsRoot(c.env)
+		if c.env.OS != collect.OSWindows {
+			cv.Cmd = "sudo diagward check"
+		}
 	case s.Skipped == "not-applicable":
 		cv.State = model.CovSkipped
 		switch {
 		case c.evidence:
 			cv.Reason = model.T("A BMC is present (SMBIOS type 38) but the IPMI driver is not loaded: /dev/ipmi0 does not exist.",
 				"Máy có BMC (SMBIOS type 38) nhưng chưa nạp driver IPMI: không có /dev/ipmi0.")
-			cv.Fix = driverFix
+			cv.Fix, cv.Cmd = driverFix, c.asRoot(driverCmd)
 		case virtual:
 			cv.Reason = hint.Virtual(c.env)
 		default:
@@ -919,16 +1030,26 @@ func (c *checker) covState(cv *model.Coverage, s *collect.Section, parsed bool) 
 		cv.Reason = model.Tf("ipmitool did not finish in time (timeout %d s or more): the BMC is hung or very slow.",
 			"ipmitool không chạy xong kịp (quá %d giây trở lên): BMC bị treo hoặc rất chậm.", to)
 		cv.Fix = resetFix
-	case parsed && (s.RC != 0 || s.Timeout):
-		e := c.errText(s)
+	case parsed && s.Timeout && s.Name == "ipmi.sel":
+		// ipmitool lists the SEL oldest first: a cut-off read lacks the newest entries.
+		cv.State = model.CovPartial
+		cv.Reason = model.T("ipmitool timed out while reading the event log: the newest entries may be missing, so recent faults can be unreported.",
+			"ipmitool hết thời gian khi đọc nhật ký sự kiện: có thể thiếu các mục mới nhất nên lỗi gần đây có thể không được báo.")
+		cv.Fix = model.T("Read the log in the BMC web interface, or run ipmitool sel elist on the server and look at the last lines.",
+			"Xem nhật ký trên giao diện web của BMC, hoặc chạy ipmitool sel elist trên máy chủ và xem các dòng cuối.")
+	case parsed && s.Timeout:
+		cv.State = model.CovPartial
+		cv.Reason = model.T("ipmitool timed out halfway: some records are missing.", "ipmitool hết thời gian giữa chừng: thiếu một phần dữ liệu.")
+	case parsed && s.RC != 0:
+		e := c.errText(s, true)
 		cv.State, cv.Reason = model.CovPartial, model.Tf("ipmitool reported errors, some data may be missing: %s", "ipmitool báo lỗi, có thể thiếu dữ liệu: %s", e)
 	case parsed:
 		cv.State = model.CovRan
 	case s.RC != 0:
-		e := c.errText(s)
+		e := c.errText(s, false)
 		cv.State, cv.Reason = model.CovFailed, model.Tf("ipmitool could not read the BMC: %s", "ipmitool không đọc được BMC: %s", e)
 		if strings.Contains(e, "Could not open device") || strings.Contains(e, "No such file") {
-			cv.Fix = driverFix
+			cv.Fix, cv.Cmd = driverFix, c.asRoot(driverCmd)
 		} else {
 			cv.Fix = resetFix
 		}

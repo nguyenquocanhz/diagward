@@ -141,6 +141,16 @@ func chipDriver(chip string) string {
 // `"Adapter": "PCI adapter",` followed by `}`).
 var trailingComma = regexp.MustCompile(`,(\s*[}\]])`)
 
+// leadingComma fixes lm-sensors 3.5.0, which counted unreadable
+// subfeatures when placing commas (prog/sensors/chips.c print_chip_json;
+// "Fixed a stray comma bug in the JSON output" in 3.6.0): a feature whose
+// first subfeature cannot be read prints `{` then `,`.
+var leadingComma = regexp.MustCompile(`([{\[]\s*),`)
+
+// nanValue: printf("%.3f") of a NaN or infinite reading prints nan/inf,
+// which is not JSON. Such values become null and are skipped.
+var nanValue = regexp.MustCompile(`(:\s*)[-+]?(?i:nan|inf(?:inity)?)\b`)
+
 // parseLMJSON parses `sensors -j` (lm-sensors >= 3.5). It also accepts the
 // structured `-J` form of newer releases ({"input": {"value": 42}}).
 func parseLMJSON(s string) ([]*reading, bool) {
@@ -149,6 +159,8 @@ func parseLMJSON(s string) ([]*reading, bool) {
 		return nil, false
 	}
 	s = trailingComma.ReplaceAllString(s, "$1")
+	s = leadingComma.ReplaceAllString(s, "$1")
+	s = nanValue.ReplaceAllString(s, "${1}null")
 	var chips map[string]json.RawMessage
 	if err := json.Unmarshal([]byte(s), &chips); err != nil {
 		return nil, false
@@ -179,6 +191,9 @@ func parseLMJSON(s string) ([]*reading, bool) {
 				continue
 			}
 			for sub, raw := range subs {
+				if strings.TrimSpace(string(raw)) == "null" {
+					continue
+				}
 				if m := subRe.FindStringSubmatch(sub); m != nil {
 					var v float64
 					if json.Unmarshal(raw, &v) != nil {

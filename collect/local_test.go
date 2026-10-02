@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -270,4 +271,20 @@ func TestRunLocalCancelPartial(t *testing.T) {
 		t.Fatalf("cancel took %v", d)
 	}
 	t.Logf("partial: %d sections, err=%v", len(b.Sections), err)
+}
+
+// A trimmed PATH (service account, scheduled task) must not stop the
+// Windows collector: powershell.exe is found in %SystemRoot%.
+func TestResolveShellWithoutPath(t *testing.T) {
+	if got := resolveShell("sh", func(string) string { return "" }); got != "sh" {
+		t.Fatalf("sh: %q", got)
+	}
+	if runtime.GOOS != "windows" {
+		t.Skip("windows only")
+	}
+	t.Setenv("PATH", "")
+	got := resolveShell("powershell.exe", os.Getenv)
+	if !filepath.IsAbs(got) || !strings.EqualFold(filepath.Base(got), "powershell.exe") {
+		t.Fatalf("got %q", got)
+	}
 }

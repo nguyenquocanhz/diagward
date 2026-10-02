@@ -371,13 +371,13 @@ func (c *checker) windowsRules(d *diskInfo) []model.Finding {
 	case strings.EqualFold(w.HealthStatus, "Unhealthy") || predictive:
 		fs = append(fs, d.finding("win_health", model.Crit,
 			model.Tf("Windows reports disk %s as unhealthy", "Windows báo ổ %s không khỏe (Unhealthy)", d.target()),
-			model.Tf("Storage health is %s (operational status: %s). Windows marks a disk Unhealthy when it has failed or predicts its own failure.",
-				"Tình trạng lưu trữ: %s (trạng thái hoạt động: %s). Windows đánh dấu Unhealthy khi ổ đã hỏng hoặc tự báo sắp hỏng.", w.HealthStatus, w.OpStatus),
+			model.Tf("Windows reports HealthStatus %s (OperationalStatus: %s). Windows marks a disk Unhealthy when it has failed or predicts its own failure.",
+				"Windows báo HealthStatus %s (OperationalStatus: %s). Windows đánh dấu Unhealthy khi ổ đã hỏng hoặc tự báo sắp hỏng.", w.HealthStatus, w.OpStatus),
 			d.replaceAction("", ""), ev))
 	case strings.EqualFold(w.HealthStatus, "Warning"):
 		fs = append(fs, d.finding("win_health", model.Warn,
 			model.Tf("Windows reports a warning on disk %s", "Windows báo cảnh báo trên ổ %s", d.target()),
-			model.Tf("Storage health is Warning (operational status: %s).", "Tình trạng lưu trữ là Warning (trạng thái hoạt động: %s).", w.OpStatus),
+			model.Tf("Windows reports HealthStatus Warning (OperationalStatus: %s).", "Windows báo HealthStatus Warning (OperationalStatus: %s).", w.OpStatus),
 			model.Tf("Back up %s, check Event Viewer (System log, disk/storport events) and plan a replacement (%s).",
 				"Sao lưu %s, xem Event Viewer (System log, sự kiện disk/storport) và lên kế hoạch thay ổ (%s).", d.target(), d.ident()), ev))
 	}
@@ -473,19 +473,21 @@ func (c *checker) windowsCoverage(raidNames []string) {
 			hint.RunAsRoot(c.env))
 	case smartOK && len(raidNames) > 0:
 		c.cover("smart", covSmart, model.CovPartial, raidHiddenText(raidNames), raidHiddenFix(raidNames))
+	case smartOK && len(c.standby) > 0:
+		c.cover("smart", covSmart, model.CovPartial, standbyText(c.standby), model.Text{})
 	case smartOK:
 		c.cover("smart", covSmart, model.CovRan, model.Text{}, model.Text{})
 	case rel.Ran() || pred.Ran():
 		reason := model.T("Windows reliability counters only; install smartmontools for full S.M.A.R.T. detail (attributes, self-tests, error logs).",
 			"Chỉ có bộ đếm độ tin cậy của Windows; cài smartmontools để xem đầy đủ S.M.A.R.T. (thuộc tính, self-test, nhật ký lỗi).")
-		fix := model.Text{}
+		fix, cmd := model.Text{}, ""
 		if smartMissing {
-			fix = hint.Install(c.env, "smartctl")
+			fix, cmd = hint.InstallFix(c.env, "smartctl")
 		}
-		c.cover("smart", covSmart, model.CovPartial, reason, fix)
+		c.coverCmd("smart", covSmart, model.CovPartial, reason, fix, cmd)
 	default:
-		c.cover("smart", covSmart, model.CovPartial,
-			model.T("Only the Windows health status was available.", "Chỉ có trạng thái sức khỏe của Windows."),
-			hint.Install(c.env, "smartctl"))
+		fix, cmd := hint.InstallFix(c.env, "smartctl")
+		c.coverCmd("smart", covSmart, model.CovPartial,
+			model.T("Only the Windows health status was available.", "Chỉ có trạng thái sức khỏe của Windows."), fix, cmd)
 	}
 }

@@ -6,6 +6,12 @@
 #  * ACPI thermal zones with their trip points.
 # Units in sysfs: millidegree Celsius, millivolt, milliampere, microwatt, RPM.
 # Read-only; nothing is loaded or changed (sensors-detect is NOT run).
+#
+# The sysfs dumps run under the timeout: reading drivetemp asks the drive
+# itself (an ATA command that can hang on a dying disk), nvme asks the
+# controller, and acpi_power_meter / ACPI thermal zones evaluate firmware
+# methods that may wait on the BMC or EC. Drive chips are read last, so a
+# hung drive costs only the drive temperatures.
 # The alarm globs spell out the digits because POSIX globs have no
 # alternation: "temp*_alarm" would also match temp1_crit_alarm and
 # "in*_alarm" would match intrusion0_alarm.
@@ -17,24 +23,49 @@ if [ -n "$DW_CONTAINER" ]; then
 else
 	if dw_has sensors; then
 		# `sensors -j` exits 1 with a usage message on lm-sensors < 3.5
-		# (CentOS 7 ships 3.4.0): fall back to the raw text format then.
-		if ! dw_run sensors.lmsensors_json sensors -j; then
+		# (CentOS 7 ships 3.4.0): fall back to the raw text format then,
+		# but not after a timeout (-u would hang the same way).
+		dw_run sensors.lmsensors_json sensors -j
+		_sn_rc=$?
+		if [ "$_sn_rc" != 0 ] && [ "$_sn_rc" != 124 ] && [ "$_sn_rc" != 137 ]; then
 			dw_run sensors.lmsensors sensors -u
 		fi
 	else
 		dw_missing sensors.lmsensors_json sensors
 	fi
-	_sn_h=/sys/class/hwmon/hwmon*
-	dw_sysfs sensors.hwmon \
-		"$_sn_h/name" "$_sn_h/device/model" \
-		"$_sn_h/temp*_input" "$_sn_h/temp*_label" "$_sn_h/temp*_max" "$_sn_h/temp*_crit" \
-		"$_sn_h/temp*_emergency" "$_sn_h/temp*_max_alarm" "$_sn_h/temp*_crit_alarm" "$_sn_h/temp*_fault" \
-		"$_sn_h/temp[0-9]_alarm" "$_sn_h/temp[0-9][0-9]_alarm" "$_sn_h/temp[0-9][0-9][0-9]_alarm" \
-		"$_sn_h/fan*_input" "$_sn_h/fan*_label" "$_sn_h/fan*_min" "$_sn_h/fan*_alarm" \
-		"$_sn_h/in*_input" "$_sn_h/in*_label" "$_sn_h/in*_min" "$_sn_h/in*_max" \
-		"$_sn_h/in[0-9]_alarm" "$_sn_h/in[0-9][0-9]_alarm" \
-		"$_sn_h/power*_input" "$_sn_h/power*_average" "$_sn_h/power*_label" \
-		"$_sn_h/intrusion*_alarm"
-	_sn_t=/sys/class/thermal/thermal_zone*
-	dw_sysfs sensors.thermal "$_sn_t/type" "$_sn_t/temp" "$_sn_t/trip_point_*_temp" "$_sn_t/trip_point_*_type"
+	dw_sh sensors.hwmon '
+		_d() {
+			for f in "$1"/name "$1"/device/model \
+				"$1"/temp*_input "$1"/temp*_label "$1"/temp*_max "$1"/temp*_crit \
+				"$1"/temp*_emergency "$1"/temp*_max_alarm "$1"/temp*_crit_alarm "$1"/temp*_fault \
+				"$1"/temp[0-9]_alarm "$1"/temp[0-9][0-9]_alarm "$1"/temp[0-9][0-9][0-9]_alarm \
+				"$1"/fan*_input "$1"/fan*_label "$1"/fan*_min "$1"/fan*_alarm \
+				"$1"/in*_input "$1"/in*_label "$1"/in*_min "$1"/in*_max \
+				"$1"/in[0-9]_alarm "$1"/in[0-9][0-9]_alarm \
+				"$1"/power*_input "$1"/power*_average "$1"/power*_label \
+				"$1"/intrusion*_alarm; do
+				[ -f "$f" ] && [ -r "$f" ] || continue
+				printf "%s=%s\n" "$f" "$(head -n 1 "$f" 2>/dev/null)"
+			done
+		}
+		for pass in other drive; do
+			for h in /sys/class/hwmon/hwmon*; do
+				[ -d "$h" ] || continue
+				n=$(head -n 1 "$h/name" 2>/dev/null)
+				case "$n" in
+				drivetemp | nvme) [ "$pass" = drive ] && _d "$h" ;;
+				*) [ "$pass" = other ] && _d "$h" ;;
+				esac
+			done
+		done
+		exit 0'
+	dw_sh sensors.thermal '
+		for z in /sys/class/thermal/thermal_zone*; do
+			[ -d "$z" ] || continue
+			for f in "$z"/type "$z"/temp "$z"/trip_point_*_temp "$z"/trip_point_*_type; do
+				[ -f "$f" ] && [ -r "$f" ] || continue
+				printf "%s=%s\n" "$f" "$(head -n 1 "$f" 2>/dev/null)"
+			done
+		done
+		exit 0'
 fi

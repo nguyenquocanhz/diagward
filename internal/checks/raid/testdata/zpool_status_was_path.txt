@@ -1,0 +1,30 @@
+  pool: clintards
+ state: DEGRADED
+status: One or more devices is currently being resilvered.  The pool will
+	continue to function, possibly in a degraded state.
+action: Wait for the resilver to complete.
+  scan: resilver in progress since Tue Feb  2 11:54:41 2016
+    222G scanned out of 1003G at 239M/s, 0h55m to go
+    73.6G resilvered, 22.11% done
+config:
+
+	NAME                                                      STATE     READ WRITE CKSUM
+	clintards                                                 DEGRADED     0     0     2
+	  raidz1-0                                                DEGRADED     0     0     8
+	    replacing-0                                           DEGRADED     0     0     0
+	      5332611342296232703                                 UNAVAIL      0     0     0  was /dev/disk/by-id/ata-ST1000DM005_HD103SJ_S246J9EC432652-part1
+	      ata-WDC_WD2002FAEX-007BA0_WD-WCAY01444149-part1     ONLINE       0     0     0  (resilvering)
+	    ata-ST1000DM003-1CH162_Z1D5GTBT-part1                 ONLINE       0     0     0
+	    ata-WDC_WD2003FZEX-00Z4SA0_WD-WCC1P0541357-part1      ONLINE       0     0     0
+	logs
+	  mirror-1                                                ONLINE       0     0     0
+	    ata-Samsung_SSD_840_PRO_Series_S12HNEAD201527D-part3  ONLINE       0     0     0
+	    ata-Samsung_SSD_840_PRO_Series_S12HNEAD201516T-part3  ONLINE       0     0     0
+	cache
+	  ata-Samsung_SSD_840_PRO_Series_S12HNEAD201527D-part4    ONLINE       0     0     0
+	  ata-Samsung_SSD_840_PRO_Series_S12HNEAD201516T-part4    ONLINE       0     0     0
+
+errors: Permanent errors have been detected in the following files:
+
+        clintards/clintar-home:<0xa9a22b>
+        clintards/clintar-home:<0xa9aefb>

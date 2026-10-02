@@ -167,17 +167,43 @@ func virtualModel(vendor, model string) bool {
 func raidVolume(vendor, product string) bool {
 	v := strings.ToLower(strings.TrimSpace(vendor))
 	switch v {
-	case "lsi", "avago", "broadcom", "adaptec", "megaraid":
+	case "lsi", "avago", "broadcom", "adaptec", "megaraid",
+		"areca", // Areca ARC-1xxx volumes ("ARC-1883-VOL#000")
+		"amcc":  // 3ware 9xxx units ("9650SE-4LPML DISK")
 		return true
 	}
 	p := strings.ToLower(vendor + " " + product)
+	// "dellboss": Dell BOSS-S1/S2 M.2 mirror, an ATA disk "DELLBOSS VD"
+	// without S.M.A.R.T. (smartctl output in forums.freebsd.org thread 73878).
 	for _, k := range []string{"perc ", "perc_", "logical volume", "raid", "megaraid", "serveraid", "smart array",
-		"mr9", "rs3dc", "rs3mc", "rs3sc", "rs3wc", "rs3uc", "rms3", "smc3108", "smc2208", "asr8", "asr7", "asr6"} {
+		"mr9", "rs3dc", "rs3mc", "rs3sc", "rs3wc", "rs3uc", "rms3", "smc3108", "smc2208", "asr8", "asr7", "asr6",
+		"dellboss", "boss vd", "-vol#"} {
 		if strings.Contains(p, k) {
 			return true
 		}
 	}
 	return strings.HasSuffix(p, " perc")
+}
+
+// bmcVirtualMedia recognises the USB devices a BMC presents for virtual
+// media and its own utility partitions: Dell iDRAC "LCDRIVE" (Lifecycle
+// Controller) and "Virtual Floppy"/"Virtual CD" (vendor "iDRAC", as udev
+// reports them in Red Hat bugzilla 1111693), Supermicro/AMI "Virtual
+// Floppy0"/"Virtual HDisk0"/"Virtual CDROM0". They are not disks: they have
+// no S.M.A.R.T., are usually empty ("No medium found") and must not make
+// the S.M.A.R.T. coverage look incomplete.
+func bmcVirtualMedia(vendor, model string) bool {
+	v := strings.ToLower(strings.TrimSpace(vendor))
+	m := strings.ToLower(strings.TrimSpace(model))
+	if v == "idrac" {
+		return true
+	}
+	for _, k := range []string{"lcdrive", "virtual floppy", "virtual_floppy", "virtual hdisk", "virtual cdrom", "virtual cd"} {
+		if strings.HasPrefix(m, k) {
+			return true
+		}
+	}
+	return false
 }
 
 // passthroughType reports whether a smartctl -d type addresses a physical

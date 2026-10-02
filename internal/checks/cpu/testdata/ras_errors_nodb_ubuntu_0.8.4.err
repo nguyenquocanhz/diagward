@@ -1,0 +1,2 @@
+DBD::SQLite::db prepare failed: no such table: mc_event at /usr/sbin/ras-mc-ctl line 1878.
+ras-mc-ctl: Error: mc_event table missing from /var/lib/rasdaemon/ras-mc_event.db. Run 'rasdaemon --record'.

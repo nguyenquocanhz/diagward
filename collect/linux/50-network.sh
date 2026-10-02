@@ -87,3 +87,17 @@ if dw_has ip; then
 else
 	dw_missing network.ip ip
 fi
+
+# Which ports are configured to come up at boot. NetworkManager (RHEL 8+)
+# and systemd-networkd remove the IP address of a port whose cable or
+# switch port went down, so "has an IP" alone misses that outage. Only the
+# few keys that name the port, its autoconnect setting and its bond/bridge
+# are printed (never addresses or secrets). NM keyfiles are root-only.
+_nw_cfg() {
+	for _nw_f in /etc/NetworkManager/system-connections/* /etc/sysconfig/network-scripts/ifcfg-* /etc/sysconfig/network/ifcfg-*; do
+		[ -f "$_nw_f" ] && [ -r "$_nw_f" ] || continue
+		grep -H -E '^(interface-name|autoconnect|type|master|controller|slave-type|port-type|DEVICE|ONBOOT|STARTMODE|MASTER|BRIDGE|TYPE)=' "$_nw_f" 2>/dev/null
+	done
+	return 0
+}
+dw_fn network.config _nw_cfg

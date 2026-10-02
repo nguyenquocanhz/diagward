@@ -17,10 +17,17 @@ func detectLang(getenv func(string) string, locale func() string) string {
 	if v, err := parseLang(getenv("DIAGWARD_LANG")); err == nil {
 		return v
 	}
+	// POSIX precedence: the first of LC_ALL, LC_MESSAGES, LANG that is set
+	// decides (LC_ALL=C in a cron job means English even with LANG=vi_VN).
 	for _, k := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
-		if strings.HasPrefix(strings.ToLower(strings.TrimSpace(getenv(k))), "vi") {
+		v := strings.ToLower(strings.TrimSpace(getenv(k)))
+		if v == "" {
+			continue
+		}
+		if strings.HasPrefix(v, "vi") {
 			return "vi"
 		}
+		break
 	}
 	if locale != nil && strings.HasPrefix(strings.ToLower(locale()), "vi") {
 		return "vi"
@@ -37,7 +44,7 @@ func parseLang(s string) (string, error) {
 	case strings.HasPrefix(l, "en"):
 		return "en", nil
 	}
-	return "", fmt.Errorf("language %q: use vi or en", s)
+	return "", ue("language %q: use vi or en", "ngôn ngữ %q: dùng vi hoặc en", s)
 }
 
 // preScanLang finds --lang before the flags are parsed, so usage errors and
@@ -64,7 +71,8 @@ func parseSince(s string) (int, error) {
 	v := strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(s), "d"), "D")
 	n, err := strconv.Atoi(v)
 	if err != nil || n < 1 || n > 3650 {
-		return 0, fmt.Errorf("--since %q: use a number of days from 1 to 3650, e.g. 7 or 30d", s)
+		return 0, ue("--since %q: use a number of days from 1 to 3650, e.g. 7 or 30d",
+			"--since %q: nhập số ngày từ 1 đến 3650, ví dụ 7 hoặc 30d", s)
 	}
 	return n, nil
 }
@@ -75,7 +83,8 @@ var sizeRe = regexp.MustCompile(`^([0-9]{1,9})\s*([kmgt]?)(i?b)?$`)
 func parseSizeMiB(s string) (int, error) {
 	m := sizeRe.FindStringSubmatch(strings.ToLower(strings.TrimSpace(s)))
 	if m == nil {
-		return 0, fmt.Errorf("size %q: use a number with an optional K, M or G suffix, e.g. 256M or 1G", s)
+		return 0, ue("size %q: use a number with an optional K, M or G suffix, e.g. 256M or 1G",
+			"dung lượng %q: nhập một số, có thể kèm K, M hoặc G, ví dụ 256M hoặc 1G", s)
 	}
 	n, _ := strconv.ParseInt(m[1], 10, 64)
 	switch m[2] {
@@ -94,11 +103,8 @@ func parseSizeMiB(s string) (int, error) {
 // typo from filling a volume.
 func parseBenchSize(s string) (int, error) {
 	n, err := parseSizeMiB(s)
-	if err != nil {
-		return 0, fmt.Errorf("--bench-size: %w", err)
-	}
-	if n < 16 || n > 65536 {
-		return 0, fmt.Errorf("--bench-size %q: use 16M to 64G", s)
+	if err != nil || n < 16 || n > 65536 {
+		return 0, ue("--bench-size %q: use 16M to 64G, e.g. 256M or 1G", "--bench-size %q: dùng từ 16M đến 64G, ví dụ 256M hoặc 1G", s)
 	}
 	return n, nil
 }
@@ -109,7 +115,7 @@ func parseBenchSize(s string) (int, error) {
 func normMemtest(s string) (string, error) {
 	m := sizeRe.FindStringSubmatch(strings.ToLower(strings.TrimSpace(s)))
 	if m == nil || m[2] == "t" {
-		return "", fmt.Errorf("--memtest %q: use a size such as 512M or 2G", s)
+		return "", ue("--memtest %q: use a size such as 512M or 2G", "--memtest %q: nhập dung lượng, ví dụ 512M hoặc 2G", s)
 	}
 	n, _ := strconv.ParseInt(m[1], 10, 64)
 	suffix := strings.ToUpper(m[2])
@@ -124,7 +130,7 @@ func normMemtest(s string) (string, error) {
 		mib = n * 1024
 	}
 	if mib < 1 || n > 999999 {
-		return "", fmt.Errorf("--memtest %q: use a size from 1M to 999G, e.g. 512M or 2G", s)
+		return "", ue("--memtest %q: use a size from 1M to 999G, e.g. 512M or 2G", "--memtest %q: dùng từ 1M đến 999G, ví dụ 512M hoặc 2G", s)
 	}
 	return strconv.FormatInt(n, 10) + suffix, nil
 }
@@ -217,10 +223,19 @@ func (o *outOpts) validate() error {
 		}
 	}
 	if n > 1 {
-		return errors.New("only one of --html, --md and --json can be \"-\" (standard output)")
+		return ue("only one of --html, --md and --json can be \"-\" (standard output)",
+			"chỉ một trong --html, --md và --json được là \"-\" (stdout)")
 	}
 	if o.save == "-" {
-		return errors.New("--save needs a file name")
+		return ue("--save needs a file name, e.g. --save srv01.dwb", "--save cần tên tệp, ví dụ --save srv01.dwb")
+	}
+	for _, f := range []struct{ name, v string }{{"--html", o.html}, {"--md", o.md}, {"--json", o.json}, {"--save", o.save}} {
+		if err := fileArg(f.name, f.v); err != nil {
+			return err
+		}
+		if err := outDirOK(f.name, f.v); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -245,22 +260,96 @@ func parseArgs(fs *flag.FlagSet, args []string) ([]string, error) {
 	}
 }
 
-// flagError rewrites the flag package's English errors for Vietnamese.
+// uerr is a usage error in both languages; Error() is the English text.
+type uerr struct{ en, vi string }
+
+func (e uerr) Error() string { return e.en }
+
+// ue formats a bilingual usage error (same arguments for both texts).
+func ue(en, vi string, args ...any) error {
+	return uerr{fmt.Sprintf(en, args...), fmt.Sprintf(vi, args...)}
+}
+
+// fileArg rejects a missing file name: "--html -v" would otherwise write
+// the report to a file called "-v". "-" (standard output) is allowed by
+// the caller where it makes sense.
+func fileArg(flagName, v string) error {
+	if len(v) > 1 && strings.HasPrefix(v, "-") {
+		return ue("%s needs a file name (got %q); e.g. %s report%s",
+			"%s cần tên tệp (đang nhận %q); ví dụ %s report%s", flagName, v, flagName, fileExt(flagName))
+	}
+	return nil
+}
+
+func fileExt(flagName string) string {
+	switch flagName {
+	case "--html":
+		return ".html"
+	case "--md":
+		return ".md"
+	case "--json":
+		return ".json"
+	}
+	return ".dwb"
+}
+
+// flagValueParsers re-parse a rejected flag value to get its bilingual
+// message: the flag package flattens Set errors into English text.
+var flagValueParsers = map[string]func(string) error{
+	"since": func(s string) error { _, err := parseSince(s); return err },
+	"lang":  func(s string) error { _, err := parseLang(s); return err },
+}
+
+var invalidValueRe = regexp.MustCompile(`^invalid (?:boolean )?value "(.*)" for flag -([A-Za-z0-9-]+): (.*)$`)
+
+// viFlagMessage translates an error of the flag package (or one of ours).
+func viFlagMessage(err error) string {
+	var u uerr
+	if errors.As(err, &u) {
+		return u.vi
+	}
+	msg := err.Error()
+	switch {
+	case strings.HasPrefix(msg, "flag provided but not defined: "):
+		return "không có tùy chọn " + strings.TrimPrefix(msg, "flag provided but not defined: ")
+	case strings.HasPrefix(msg, "flag needs an argument: "):
+		return "tùy chọn " + strings.TrimPrefix(msg, "flag needs an argument: ") + " cần một giá trị"
+	}
+	if m := invalidValueRe.FindStringSubmatch(msg); m != nil {
+		why := m[3]
+		if p, ok := flagValueParsers[m[2]]; ok {
+			var u uerr
+			if errors.As(p(m[1]), &u) {
+				why = u.vi
+			}
+		} else if why == "parse error" || why == "value out of range" {
+			why = "cần một số nguyên"
+		}
+		return fmt.Sprintf("giá trị %q không hợp lệ cho tùy chọn -%s: %s", m[1], m[2], why)
+	}
+	return msg
+}
+
+// flagError prints a usage error (in Vietnamese when asked) and the hint
+// to read the help.
 func (a *app) flagError(cmd string, err error) int {
 	msg := err.Error()
 	if a.lang == "vi" {
-		switch {
-		case strings.HasPrefix(msg, "flag provided but not defined: "):
-			msg = "không có tuỳ chọn " + strings.TrimPrefix(msg, "flag provided but not defined: ")
-		case strings.HasPrefix(msg, "flag needs an argument: "):
-			msg = "tuỳ chọn " + strings.TrimPrefix(msg, "flag needs an argument: ") + " cần một giá trị"
-		case strings.HasPrefix(msg, "invalid value "):
-			msg = "giá trị không hợp lệ: " + strings.TrimPrefix(msg, "invalid value ")
-		case strings.HasPrefix(msg, "invalid boolean value "):
-			msg = "giá trị không hợp lệ: " + strings.TrimPrefix(msg, "invalid boolean value ")
-		}
+		msg = viFlagMessage(err)
 	}
 	a.errorf("%s: %s", cmd, msg)
-	fmt.Fprintf(a.stderr, a.t("Run 'diagward help %s' for the options.\n", "Chạy 'diagward help %s' để xem các tuỳ chọn.\n"), cmd)
+	fmt.Fprintf(a.stderr, a.t("Run 'diagward help %s' for the options.\n", "Chạy 'diagward help %s' để xem các tùy chọn.\n"), cmd)
 	return exitError
+}
+
+func unexpectedArg(s string) error {
+	return ue("unexpected argument %q", "thừa tham số %q", s)
+}
+
+// checkTimeout validates the per-command --timeout (0 = default).
+func checkTimeout(n int) error {
+	if n != 0 && (n < 5 || n > 3600) {
+		return ue("--timeout %d: use 5 to 3600 seconds (per command)", "--timeout %d: dùng từ 5 đến 3600 giây (cho mỗi lệnh)", n)
+	}
+	return nil
 }

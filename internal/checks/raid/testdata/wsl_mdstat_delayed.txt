@@ -1,0 +1,10 @@
+Personalities : [raid1] 
+md96 : active raid1 loop2p2[2] loop0p2[0]
+      142336 blocks super 1.2 [2/1] [U_]
+      	resync=DELAYED
+      
+md95 : active raid1 loop2p1[2] loop0p1[0]
+      142336 blocks super 1.2 [2/1] [U_]
+      [>....................]  recovery =  3.2% (4608/142336) finish=1.4min speed=1536K/sec
+      
+unused devices: <none>

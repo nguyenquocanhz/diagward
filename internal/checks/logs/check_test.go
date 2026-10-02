@@ -18,6 +18,7 @@ func check(t *testing.T, env model.Env, os string, secs ...*collect.Section) mod
 	t.Helper()
 	res := Check(testkit.Bundle(os, secs...), env)
 	testkit.Validate(t, res)
+	checkTexts(t, res)
 	return res
 }
 
@@ -283,7 +284,8 @@ func TestVolatileJournal(t *testing.T) {
 	)
 	for _, id := range []string{"logs.kernel", "logs.reboots"} {
 		c := testkit.Cov(res, id)
-		if c == nil || c.State != model.CovPartial || !strings.Contains(c.Fix.EN, "mkdir -p /var/log/journal") {
+		if c == nil || c.State != model.CovPartial || c.Cmd != "mkdir -p /var/log/journal && systemctl restart systemd-journald" ||
+			strings.Contains(c.Fix.EN, "mkdir") {
 			t.Errorf("%s coverage = %+v", id, c)
 		}
 	}
@@ -353,7 +355,10 @@ func TestNoiseIsCapped(t *testing.T) {
 	b.WriteString("# source=journal persistent=1 tz=+0000\n")
 	for i := 0; i < 300; i++ {
 		for j := 0; j < 5; j++ {
-			fmt.Fprintf(&b, "2026-10-01T08:%02d:%02d+00:00 h kernel: veth%d: Link is Down\n", j, i%60, i)
+			fmt.Fprintf(&b, "2026-10-01T08:%02d:%02d+00:00 h kernel: igb 0000:%02x:00.0 eno%d: igb: eno%d NIC Link is Down\n", j, i%60, i%256, i, i)
+			// Container and VM interfaces flap with their guests: ignored.
+			fmt.Fprintf(&b, "2026-10-01T08:%02d:%02d+00:00 h kernel: veth%x: Link is Down\n", j, i%60, i)
+			fmt.Fprintf(&b, "2026-10-01T08:%02d:%02d+00:00 h kernel: fwpr%dp0: Link is Down\n", j, i%60, i)
 		}
 	}
 	for i := 0; i < 500; i++ {
@@ -390,13 +395,23 @@ func TestWindowsReal(t *testing.T) {
 		testkit.S("logs.win_boots", testkit.Read(t, "real_win_boots.json")),
 	)
 	f := want(t, res, "logs.win_bugcheck", "0x000000BE ATTEMPTED_WRITE_TO_READONLY_MEMORY", model.Crit)
-	if !strings.Contains(f.Detail.VI, "thường do driver") {
-		t.Errorf("bugcheck detail: %s", f.Detail.VI)
+	// Real run: the detail read "Mã này thường do thường do driver."
+	if !strings.Contains(f.Detail.VI, "Mã này thường do driver lỗi.") || strings.Contains(f.Detail.EN, "usually points to usually") {
+		t.Errorf("bugcheck detail: %s / %s", f.Detail.VI, f.Detail.EN)
 	}
 	none(t, res, "logs.unexpected_reboot") // the 6008 belongs to the blue screen
-	want(t, res, "logs.win_storage_reset", "RaidPort2 (UASPStor)", model.Warn)
-	want(t, res, "logs.win_ntfs_needs_chkdsk", "G:", model.Crit)
-	want(t, res, "logs.win_disk_paging_error", "PhysicalDrive1", model.Crit)
+	// The USB disk storm of 2026-09-26 is 6 days old with no recurrence:
+	// resets decay to Info, the paging errors (20 in one burst) are Warn,
+	// and everything about that disk says it is a USB disk.
+	want(t, res, "logs.win_storage_reset", "RaidPort2 (UASPStor)", model.Info)
+	p := want(t, res, "logs.win_disk_paging_error", "PhysicalDrive1", model.Warn)
+	if !strings.Contains(p.Detail.EN, "USB disk") || !strings.Contains(p.Detail.VI, "ổ USB") || p.Part != nil {
+		t.Errorf("paging: %s / part %+v", p.Detail.EN, p.Part)
+	}
+	ch := want(t, res, "logs.win_ntfs_needs_chkdsk", "G:", model.Warn) // G: logged NTFS 140 during the USB resets
+	if !strings.Contains(ch.Detail.EN, "USB disk") || !strings.Contains(ch.Action.VI, "ổ USB") {
+		t.Errorf("chkdsk: %s / %s", ch.Detail.EN, ch.Action.VI)
+	}
 	for _, id := range []string{"logs.windows", "logs.reboots"} {
 		if c := testkit.Cov(res, id); c == nil || c.State != model.CovRan {
 			t.Errorf("%s coverage = %+v", id, c)

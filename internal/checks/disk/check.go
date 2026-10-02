@@ -190,7 +190,9 @@ type checker struct {
 	disks []*diskInfo
 
 	scanFailed []scanEntry
-	smartRan   bool // smartctl scan ran
+	smartRan   bool            // smartctl scan ran
+	standby    []string        // disks smartctl left asleep (-n standby)
+	ignored    map[string]bool // devices that are not disks (BMC virtual media)
 }
 
 func (c *checker) add(f model.Finding) {
@@ -198,8 +200,13 @@ func (c *checker) add(f model.Finding) {
 }
 
 func (c *checker) cover(id string, name model.Text, state string, reason, fix model.Text) {
+	c.coverCmd(id, name, state, reason, fix, "")
+}
+
+// coverCmd is cover with the one command that enables the check.
+func (c *checker) coverCmd(id string, name model.Text, state string, reason, fix model.Text, cmd string) {
 	c.res.Coverage = append(c.res.Coverage, model.Coverage{
-		ID: domain + "." + id, Component: model.CompDisk, Name: name, State: state, Reason: reason, Fix: fix,
+		ID: domain + "." + id, Component: model.CompDisk, Name: name, State: state, Reason: reason, Fix: fix, Cmd: cmd,
 	})
 }
 
@@ -231,11 +238,13 @@ func (c *checker) linuxInventory() {
 	}
 	var devs []*blockDev
 	state, reason, fix := model.CovRan, model.Text{}, model.Text{}
+	invCmd := ""
 	switch {
 	case ls == nil:
 		state, reason = model.CovPartial, model.T("Only /sys/block was available.", "Chỉ đọc được /sys/block.")
 	case ls.Missing != "":
-		state, reason, fix = model.CovPartial, hint.Missing("lsblk"), hint.Install(c.env, "lsblk")
+		state, reason = model.CovPartial, hint.Missing("lsblk")
+		fix, invCmd = hint.InstallFix(c.env, "lsblk")
 	case !ls.Ran():
 		state, reason = model.CovSkipped, model.Tf("lsblk was not run (%s).", "lsblk không được chạy (%s).", ls.Skipped)
 	default:
@@ -256,6 +265,10 @@ func (c *checker) linuxInventory() {
 		if skipBlockName(bd.Name) {
 			continue
 		}
+		if bmcVirtualMedia(bd.Vendor, bd.Model) {
+			c.ignore(bd.Path)
+			continue
+		}
 		d := &diskInfo{Dev: bd.Path, Vendor: bd.Vendor, Model: bd.Model, Serial: bd.Serial, Firmware: bd.Rev,
 			Bytes: bd.Bytes, HCTL: bd.HCTL, Mounts: bd.Mounts, Block: bd, WinIndex: -1}
 		d.Iface = tranName(bd.Tran)
@@ -274,7 +287,17 @@ func (c *checker) linuxInventory() {
 		}
 		c.disks = append(c.disks, d)
 	}
-	c.cover("inventory", covInventory, state, reason, fix)
+	c.coverCmd("inventory", covInventory, state, reason, fix, invCmd)
+}
+
+func (c *checker) ignore(dev string) {
+	if dev == "" {
+		return
+	}
+	if c.ignored == nil {
+		c.ignored = map[string]bool{}
+	}
+	c.ignored[dev] = true
 }
 
 func tranName(t string) string {
@@ -312,27 +335,23 @@ func (c *checker) smart() {
 			}
 		}
 	}
+	for _, s := range c.b.Prefix("disk.smart:") {
+		c.smartSection(s)
+	}
+	// After the sections: they may reveal devices to ignore (BMC media).
 	if scan := c.b.Get("disk.smart_scan"); scan.Ran() {
 		c.smartRan = true
 		for _, e := range parseScan(scan.Text()) {
-			if e.OpenFailed {
+			if e.OpenFailed && !c.ignored[e.Dev] {
 				c.scanFailed = append(c.scanFailed, e)
 			}
 		}
 	}
-	for _, s := range c.b.Prefix("disk.smart:") {
-		c.smartSection(s)
-	}
 }
 
 func (c *checker) smartSection(s *collect.Section) {
-	inst := strings.TrimPrefix(s.Name, "disk.smart:")
-	dev, typ := inst, ""
-	// "/dev/bus/0,megaraid,3" -> dev "/dev/bus/0", type "megaraid,3"
-	if i := strings.IndexByte(inst, ','); i > 0 {
-		dev, typ = inst[:i], inst[i+1:]
-	}
-	if !s.Ran() {
+	dev, typ := splitSmartInstance(strings.TrimPrefix(s.Name, "disk.smart:"))
+	if !s.Ran() || c.ignored[dev] {
 		return
 	}
 	var sd *smartData
@@ -350,6 +369,10 @@ func (c *checker) smartSection(s *collect.Section) {
 	}
 	if sd != nil && sd.Exit < 0 && s.RC >= 0 && s.RC < 124 {
 		sd.Exit = s.RC
+	}
+	if sd != nil && typ == "" && bmcVirtualMedia(firstNonEmpty(sd.Vendor, vendorFromModel(sd.Model)), firstNonEmpty(sd.Product, sd.Model)) {
+		c.ignore(dev)
+		return
 	}
 	d := c.findOrAdd(dev, typ, sd)
 	d.SmartDev, d.SmartType = dev, typ
@@ -373,6 +396,52 @@ func (c *checker) smartSection(s *collect.Section) {
 	}
 	d.Smart = sd
 	c.mergeSmart(d, sd)
+}
+
+// winNVMeMatch ties smartctl's /dev/nvmeN on Windows to a Get-PhysicalDisk
+// entry. The /dev/nvmeN number is not the disk number, and Windows often
+// shows the namespace EUI-64 as the serial
+// ("0000_0000_0000_0000_0026_B738_4082_5615.") while smartctl prints the
+// real one, so match on the EUI-64 first, then on a model that only one
+// free disk has.
+func (c *checker) winNVMeMatch(dev string, sd *smartData, free func(*diskInfo) bool) *diskInfo {
+	if c.b.OS != collect.OSWindows || sd == nil || (sd.Protocol != "NVMe" && !strings.HasPrefix(dev, "/dev/nvme")) {
+		return nil
+	}
+	if sd.EUI64 != "" && strings.Trim(sd.EUI64, "0") != "" {
+		for _, d := range c.disks {
+			if free(d) && d.Win != nil && strings.HasSuffix(normSerial(d.Serial), sd.EUI64) {
+				return d
+			}
+		}
+	}
+	var hit *diskInfo
+	n := 0
+	for _, d := range c.disks {
+		if free(d) && d.Win != nil && sd.Model != "" && strings.EqualFold(strings.TrimSpace(d.Model), sd.Model) {
+			hit = d
+			n++
+		}
+	}
+	if n == 1 {
+		return hit
+	}
+	return nil
+}
+
+// splitSmartInstance splits a disk.smart:<instance> name into the smartctl
+// device and -d type: "/dev/bus/0,megaraid,3" -> "/dev/bus/0", "megaraid,3".
+// The type starts with a letter; a comma followed by a digit belongs to the
+// device name (smartctl on Windows: "/dev/csmi0,1" = CSMI port 1).
+func splitSmartInstance(inst string) (dev, typ string) {
+	for i := 1; i+1 < len(inst); i++ {
+		if inst[i] == ',' {
+			if c := inst[i+1]; (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+				return inst[:i], inst[i+1:]
+			}
+		}
+	}
+	return inst, ""
 }
 
 func smartUnavailableText(s *smartData) string {
@@ -406,6 +475,9 @@ func (c *checker) findOrAdd(dev, typ string, sd *smartData) *diskInfo {
 					return d
 				}
 			}
+		}
+		if d := c.winNVMeMatch(dev, sd, free); d != nil {
+			return d
 		}
 	}
 	d := &diskInfo{Dev: dev, WinIndex: -1}
@@ -471,7 +543,9 @@ func (c *checker) mergeSmart(d *diskInfo, s *smartData) {
 	if s.Protocol == "SCSI" && sanVolume(s.Vendor, firstNonEmpty(s.Product, s.Model), "") {
 		d.SAN, d.Virtual = true, true
 	}
-	if s.Protocol == "SCSI" && !hasHealth(s) && raidVolume(s.Vendor, firstNonEmpty(s.Product, s.Model)) {
+	// SCSI logical drives (PERC, MegaRAID, Smart Array) and ATA ones (Dell
+	// BOSS "DELLBOSS VD") answer without any S.M.A.R.T. data.
+	if (s.Protocol == "SCSI" || s.Protocol == "ATA" || s.Protocol == "") && !hasHealth(s) && raidVolume(s.Vendor, firstNonEmpty(s.Product, s.Model)) {
 		d.RAIDVol = true
 	}
 }
@@ -550,6 +624,7 @@ func (c *checker) summary() {
 		switch {
 		case d.Smart != nil && d.Smart.Standby != "":
 			standby++
+			c.standby = append(c.standby, d.target())
 		case checked:
 			if d.sev <= model.Info {
 				healthy++
@@ -607,7 +682,8 @@ func (c *checker) linuxSmartCoverage(physical, unreadable, virtual, san, raidVol
 		case scan.Missing != "" && !c.env.Bare():
 			c.cover("smart", covSmart, model.CovSkipped, hint.Virtual(c.env), model.Text{})
 		case scan.Missing != "":
-			c.cover("smart", covSmart, model.CovSkipped, hint.Missing("smartctl"), hint.Install(c.env, "smartctl"))
+			fix, cmd := hint.InstallFix(c.env, "smartctl")
+			c.coverCmd("smart", covSmart, model.CovSkipped, hint.Missing("smartctl"), fix, cmd)
 		default:
 			c.cover("smart", covSmart, model.CovSkipped, model.Tf("Skipped (%s).", "Bỏ qua (%s).", scan.Skipped), model.Text{})
 		}
@@ -626,7 +702,7 @@ func (c *checker) linuxSmartCoverage(physical, unreadable, virtual, san, raidVol
 		case san > 0 && virtual == 0 && c.env.Bare():
 			c.cover("smart", covSmart, model.CovSkipped,
 				model.T("Only SAN/iSCSI volumes are attached: their disks are inside the storage array, not in this server.", "Chỉ có ổ SAN/iSCSI: các ổ vật lý nằm trong thiết bị lưu trữ, không nằm trong máy chủ này."),
-				model.T("Check disk health with the storage array.s own management tool.", "Kiểm tra sức khỏe ổ bằng công cụ quản lý của thiết bị lưu trữ."))
+				model.T("Check disk health with the storage array's own management tool.", "Kiểm tra sức khỏe ổ bằng công cụ quản lý của thiết bị lưu trữ."))
 		case virtual > 0 || !c.env.Bare():
 			c.cover("smart", covSmart, model.CovSkipped, hint.Virtual(c.env), model.Text{})
 		default:
@@ -650,6 +726,9 @@ func (c *checker) linuxSmartCoverage(physical, unreadable, virtual, san, raidVol
 			n = append(n, e.Dev)
 		}
 		reasons = append(reasons, model.Tf("smartctl could not open: %s.", "smartctl không mở được: %s.", strings.Join(n, ", ")))
+	}
+	if len(c.standby) > 0 {
+		reasons = append(reasons, standbyText(c.standby))
 	}
 	if len(reasons) == 0 {
 		c.cover("smart", covSmart, model.CovRan, model.Text{}, model.Text{})
@@ -680,6 +759,9 @@ func raidHiddenText(names []string) model.Text {
 func raidHiddenFix(names []string) model.Text {
 	all := strings.ToLower(strings.Join(names, " "))
 	switch {
+	case strings.Contains(all, "dellboss") || strings.Contains(all, "boss vd") || strings.Contains(all, "boss-"):
+		return model.T("Dell BOSS: the M.2 drives of the boot mirror are only visible to the BOSS controller. Check them in iDRAC (Storage > Physical Disks) or with Dell's BOSS CLI (mvcli info -o pd on BOSS-S1).",
+			"Dell BOSS: các ổ M.2 của cặp mirror khởi động chỉ hiện với card BOSS. Kiểm tra trong iDRAC (Storage > Physical Disks) hoặc bằng BOSS CLI của Dell (mvcli info -o pd với BOSS-S1).")
 	case strings.Contains(all, "logical volume") || strings.Contains(all, "smart array"):
 		return model.T("HPE Smart Array: read each disk with smartctl -a -d cciss,N /dev/sdX (N = 0, 1, 2...), or check the controller with ssacli (see the RAID section).",
 			"HPE Smart Array: đọc từng ổ bằng smartctl -a -d cciss,N /dev/sdX (N = 0, 1, 2...), hoặc kiểm tra card bằng ssacli (xem phần RAID).")
@@ -898,4 +980,12 @@ func validTemp(t *int) *int {
 		return nil
 	}
 	return t
+}
+
+// standbyText explains disks that were not checked because smartctl -n
+// standby did not wake them.
+func standbyText(names []string) model.Text {
+	return model.Tf("Asleep (standby) and not woken up, so S.M.A.R.T. was not read: %s. Run Diagward again while the disks are active.",
+		"Ổ đang ngủ (standby) nên không bị đánh thức, chưa đọc được S.M.A.R.T.: %s. Chạy lại Diagward khi ổ đang hoạt động.",
+		strings.Join(names, ", "))
 }

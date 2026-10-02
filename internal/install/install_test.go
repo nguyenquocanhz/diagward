@@ -8,6 +8,7 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -125,7 +126,7 @@ func TestAlmaLinuxWithBMCAndMemtester(t *testing.T) {
 		t.Fatalf("probe: %+v", p)
 	}
 	pl := MakePlan(p)
-	want := "dnf install -y epel-release && dnf install -y smartmontools lm_sensors ipmitool nvme-cli rasdaemon memtester"
+	want := "dnf install -y epel-release; dnf install -y smartmontools lm_sensors ipmitool nvme-cli rasdaemon memtester"
 	if got := pl.Display(); got != want {
 		t.Fatalf("plan:\n got %s\nwant %s", got, want)
 	}
@@ -156,7 +157,7 @@ func TestCentOS7Yum(t *testing.T) {
 	f := baseSys(osCentOS7, "yum")
 	p := Detect(context.Background(), f, Options{Memtester: true})
 	pl := MakePlan(p)
-	want := "yum install -y epel-release && yum install -y smartmontools lm_sensors nvme-cli dmidecode ethtool rasdaemon memtester"
+	want := "yum install -y epel-release; yum install -y smartmontools lm_sensors nvme-cli dmidecode ethtool rasdaemon memtester"
 	if got := pl.Display(); got != want {
 		t.Fatalf("got  %s\nwant %s", got, want)
 	}
@@ -165,7 +166,7 @@ func TestCentOS7Yum(t *testing.T) {
 func TestRHEL9EPELFromURL(t *testing.T) {
 	f := baseSys(osRHEL9, "dnf", "yum")
 	pl := MakePlan(Detect(context.Background(), f, Options{Memtester: true}))
-	if !strings.HasPrefix(pl.Display(), "dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && dnf install -y ") {
+	if !strings.HasPrefix(pl.Display(), "dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm; dnf install -y ") {
 		t.Fatalf("got %s", pl.Display())
 	}
 	if len(pl.Notes) == 0 || !strings.Contains(pl.Notes[0].VI, "CodeReady") {
@@ -195,10 +196,55 @@ func TestUbuntuApt(t *testing.T) {
 	if len(f.ran) != 2 || !strings.HasPrefix(f.ran[1], "DEBIAN_FRONTEND=noninteractive apt-get install") {
 		t.Fatalf("ran %q", f.ran)
 	}
-	// The install failing is an error.
-	f.failRun["apt-get install -y --no-install-recommends lm-sensors ipmitool nvme-cli dmidecode ethtool rasdaemon memtester"] = true
+	// One package missing from the repositories (Ubuntu without
+	// "universe": "E: Unable to locate package lm-sensors") makes apt-get
+	// reject the whole command; the fallback installs the others one by
+	// one.
+	bulk := "apt-get install -y --no-install-recommends lm-sensors ipmitool nvme-cli dmidecode ethtool rasdaemon memtester"
+	f.failRun[bulk] = true
+	f.failRun["apt-get install -y --no-install-recommends lm-sensors"] = true
+	f.ran = nil
+	var failed []string
+	if err := pl.Run(context.Background(), f, func(s Step, _ error) { failed = append(failed, s.String()) }); err != nil {
+		t.Fatalf("fallback: %v", err)
+	}
+	if len(f.ran) != 2+7 || f.ran[len(f.ran)-1] != "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends memtester" {
+		t.Fatalf("ran %q", f.ran)
+	}
+	if !reflect.DeepEqual(failed, []string{"apt-get update", bulk, "apt-get install -y --no-install-recommends lm-sensors"}) {
+		t.Fatalf("warned %q", failed)
+	}
+	// Nothing installable at all is an error.
+	for _, pkg := range pl.Packages {
+		f.failRun["apt-get install -y --no-install-recommends "+pkg] = true
+	}
 	if err := pl.Run(context.Background(), f, nil); err == nil {
 		t.Fatal("want error")
+	}
+	// Ubuntu's universe packages get a hint when still missing.
+	h := MissingHint(p, []Tool{{Name: "sensors", Package: "lm-sensors"}, {Name: "nvme", Package: "nvme-cli"}})
+	if !strings.Contains(h.EN, "universe") || !strings.Contains(h.EN, "lm-sensors") || strings.Contains(h.EN, "nvme-cli") || !strings.Contains(h.VI, "add-apt-repository") {
+		t.Fatalf("hint %+v", h)
+	}
+	if h := MissingHint(p, []Tool{{Name: "nvme", Package: "nvme-cli"}}); !h.IsZero() {
+		t.Fatalf("hint for a main package: %+v", h)
+	}
+}
+
+func TestEPELFailureStillInstallsTheRest(t *testing.T) {
+	f := baseSys(osAlma9, "dnf")
+	pl := MakePlan(Detect(context.Background(), f, Options{Memtester: true}))
+	f.failRun["dnf install -y epel-release"] = true
+	f.failRun["dnf install -y "+strings.Join(pl.Packages, " ")] = true
+	f.failRun["dnf install -y memtester"] = true
+	if err := pl.Run(context.Background(), f, nil); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(f.ran, "dnf install -y smartmontools") || !slices.Contains(f.ran, "dnf install -y rasdaemon") {
+		t.Fatalf("ran %q", f.ran)
+	}
+	if h := MissingHint(Detect(context.Background(), f, Options{Memtester: true}), []Tool{{Name: "memtester", Package: "memtester"}}); !strings.Contains(h.EN, "EPEL") {
+		t.Fatalf("hint %+v", h)
 	}
 }
 

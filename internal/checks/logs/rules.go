@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/nguyenquocanhz/diagward/model"
 )
@@ -27,8 +28,10 @@ type rule struct {
 
 // matchCtx carries what the whole log tells about device names.
 type matchCtx struct {
-	hctl map[string]string // "0:0:2:0" -> "sdc", learnt from "sd 0:0:2:0: [sdc]"
-	ata  map[string]*model.Part
+	hctl      map[string]string // "0:0:2:0" -> "sdc", learnt from "sd 0:0:2:0: [sdc]"
+	ata       map[string]*model.Part
+	usbHosts  map[string]bool // SCSI host numbers created by usb-storage/uas
+	removable map[string]bool // "sdb" announced as "Attached SCSI removable disk"
 }
 
 func grp(i int) func(m []string, l logLine, ctx *matchCtx) string {
@@ -127,6 +130,12 @@ func scsiTarget(_ []string, l logLine, ctx *matchCtx) string {
 	return ""
 }
 
+// SCSI lines from CD/DVD drives (sr), tapes (st) and enclosures (ses): an
+// empty or scratched disc in a VM's virtual drive reports Medium Error too.
+var reSCSINotDisk = regexp.MustCompile(`^(?:sr|st|ses|osst|ch) \d+:\d+:\d+:\d+:|\[(?:sr|st|nst)\d+\]`)
+
+func skipSCSINotDisk(_ []string, l logLine) bool { return reSCSINotDisk.MatchString(l.Msg) }
+
 func skipNotDisk(i int) func(m []string, l logLine) bool {
 	return func(m []string, _ logLine) bool { return i < len(m) && notDiskRe.MatchString(m[i]) }
 }
@@ -164,8 +173,8 @@ var (
 		"Check fans, air filters and room temperature; look at the BMC temperature and fan sensors (ipmitool sdr). Make sure blanking panels are in place and nothing blocks the airflow. Replace failed fans; re-apply thermal paste if one CPU runs much hotter than the other.",
 		"Kiểm tra quạt, lưới lọc bụi và nhiệt độ phòng máy; xem cảm biến nhiệt độ và quạt trên BMC (ipmitool sdr). Đảm bảo có tấm che khe trống và không có gì cản luồng gió. Thay quạt hỏng; tra lại keo tản nhiệt nếu một CPU nóng hơn hẳn CPU còn lại.")
 	actPCIe = model.T(
-		"Identify the device with lspci -s {t} -vv. Reseat the card or riser, check the slot, and update the device firmware and BIOS. Repeated errors on one device point to that card, its slot or its riser.",
-		"Xác định thiết bị bằng lspci -s {t} -vv. Cắm lại card hoặc riser, kiểm tra khe cắm, cập nhật firmware thiết bị và BIOS. Lỗi lặp lại trên một thiết bị cho thấy card, khe cắm hoặc riser đó có vấn đề.")
+		"Identify the device {t} with lspci -vv and look at the BMC event log at the same time. Reseat the card or riser, check the slot, and update the device firmware and BIOS. Repeated errors on one device point to that card, its slot or its riser.",
+		"Xác định thiết bị {t} bằng lspci -vv và xem log sự kiện BMC cùng thời điểm. Cắm lại card hoặc riser, kiểm tra khe cắm, cập nhật firmware thiết bị và BIOS. Lỗi lặp lại trên một thiết bị cho thấy card, khe cắm hoặc riser đó có vấn đề.")
 	actHang = model.T(
 		"Look at what the CPU or task was doing (the call trace after the line). On a VM this is usually the host being overloaded. On bare metal, update BIOS, firmware and drivers; if it repeats with different call traces, test the RAM and check the BMC event log.",
 		"Xem CPU hoặc tiến trình đang làm gì (call trace ngay sau dòng log). Trên máy ảo, nguyên nhân thường là máy host quá tải. Trên máy vật lý, cập nhật BIOS, firmware và driver; nếu lặp lại với call trace khác nhau, kiểm tra RAM và log sự kiện BMC.")
@@ -254,11 +263,11 @@ var (
 		Action: model.T("Check mdadm --detail {t} and add a spare, or update mdadm.conf if the spare was removed on purpose.", "Kiểm tra mdadm --detail {t} và thêm ổ spare, hoặc sửa mdadm.conf nếu ổ spare được gỡ có chủ đích.")}
 
 	spMemCE = &spec{ID: "memory_corrected", Comp: model.CompMemory, Sev: model.Warn,
-		Title:  model.T("Corrected memory (ECC) errors on {t}", "Lỗi RAM đã được ECC sửa trên {t}"),
+		Title:  model.T("Corrected memory (ECC) errors: {t}", "Lỗi RAM đã được ECC sửa: {t}"),
 		Detail: model.T("ECC corrected memory errors. No data was lost, but repeated corrected errors on one DIMM predict uncorrectable errors (Schroeder et al., \"DRAM Errors in the Wild\", 2009).", "ECC đã sửa lỗi bộ nhớ. Không mất dữ liệu, nhưng lỗi corrected lặp lại trên một thanh RAM là dấu hiệu sắp có lỗi không sửa được (Schroeder và cộng sự, \"DRAM Errors in the Wild\", 2009)."),
 		Action: actMemCE}
 	spMemUE = &spec{ID: "memory_uncorrected", Comp: model.CompMemory, Sev: model.Crit,
-		Title:  model.T("Uncorrectable memory error on {t}", "Lỗi RAM không sửa được trên {t}"),
+		Title:  model.T("Uncorrectable memory error: {t}", "Lỗi RAM không sửa được: {t}"),
 		Detail: model.T("ECC detected memory errors it could not correct. The affected data was lost or the page was taken out of service.", "ECC phát hiện lỗi bộ nhớ không thể sửa. Dữ liệu ở vùng đó bị mất hoặc trang nhớ bị loại khỏi sử dụng."),
 		Action: actMemUE}
 	spMemPoison = &spec{ID: "memory_page_offlined", Comp: model.CompMemory, Sev: model.Crit,
@@ -326,7 +335,7 @@ var (
 		Action: model.T("Check the BMC event log (ipmitool sel elist) at the same time for the failing component; update BIOS/BMC firmware.", "Xem log sự kiện BMC (ipmitool sel elist) cùng thời điểm để biết thành phần lỗi; cập nhật firmware BIOS/BMC.")}
 	spOOM = &spec{ID: "oom_kill", Comp: model.CompMemory, Sev: model.Warn, Decay: true,
 		Title:  model.T("Out of memory: the kernel killed processes", "Hết RAM: kernel đã buộc dừng tiến trình"),
-		Detail: model.T("The OOM killer ended processes because RAM and swap ran out. This is a capacity problem, not a hardware fault.", "OOM killer đã dừng tiến trình vì hết RAM và swap. Đây là thiếu dung lượng, không phải lỗi phần cứng."),
+		Detail: model.T("The OOM killer ended processes because RAM and swap ran out. This is a capacity problem, not a hardware fault.", "OOM killer đã dừng tiến trình vì hết RAM và swap. Đây là vấn đề thiếu dung lượng, không phải lỗi phần cứng."),
 		Action: model.T("Find what used the memory (the OOM report lists processes; check free -h, ps aux --sort=-rss). Limit or fix that service, add swap, or add RAM.", "Tìm tiến trình chiếm RAM (báo cáo OOM có danh sách; xem free -h, ps aux --sort=-rss). Giới hạn hoặc sửa dịch vụ đó, thêm swap hoặc nâng RAM.")}
 	spOOMcg = &spec{ID: "oom_cgroup", Comp: model.CompMemory, Sev: model.Info,
 		Title:  model.T("A service hit its own memory limit (cgroup OOM)", "Một dịch vụ chạm giới hạn RAM của chính nó (cgroup OOM)"),
@@ -459,10 +468,10 @@ func buildRules() []rule {
 		{sp: spDiskProt, re: regexp.MustCompile(`\bprotection error,? dev ([^\s,]+)`), target: diskGrp(1), skip: skipNotDisk(1)},
 		{sp: spDiskIO, re: regexp.MustCompile(`Buffer I/O error on (?:dev(?:ice)? )?([^\s,]+)`), target: diskGrp(1), skip: skipNotDisk(1)},
 		// ---- disks: SCSI ----
-		{sp: spDiskMedium, re: regexp.MustCompile(`Sense Key ?: ?Medium Error|Add\. Sense: Unrecovered read error|Unrecovered read error - auto reallocate failed`), target: scsiTarget},
-		{sp: spDiskHW, re: regexp.MustCompile(`Sense Key ?: ?Hardware Error`), target: scsiTarget},
-		{sp: spDiskOffline, re: regexp.MustCompile(`rejecting I/O to (?:offline|dead) device|Device offlined - not ready after error recovery`), target: scsiTarget},
-		{sp: spDiskCmd, re: regexp.MustCompile(`Sense Key ?: ?Aborted Command|timing out command, waited \d+s|FAILED Result: hostbyte=DID_(?:TIME_OUT|ABORT|ERROR|RESET|BAD_TARGET|NO_CONNECT|SOFT_ERROR|TRANSPORT_\w+)`), target: scsiTarget},
+		{sp: spDiskMedium, re: regexp.MustCompile(`Sense Key ?: ?Medium Error|Add\. Sense: Unrecovered read error|Unrecovered read error - auto reallocate failed`), target: scsiTarget, skip: skipSCSINotDisk},
+		{sp: spDiskHW, re: regexp.MustCompile(`Sense Key ?: ?Hardware Error`), target: scsiTarget, skip: skipSCSINotDisk},
+		{sp: spDiskOffline, re: regexp.MustCompile(`rejecting I/O to (?:offline|dead) device|Device offlined - not ready after error recovery`), target: scsiTarget, skip: skipSCSINotDisk},
+		{sp: spDiskCmd, re: regexp.MustCompile(`Sense Key ?: ?Aborted Command|timing out command, waited \d+s|FAILED Result: hostbyte=DID_(?:TIME_OUT|ABORT|ERROR|RESET|BAD_TARGET|NO_CONNECT|SOFT_ERROR|TRANSPORT_\w+)`), target: scsiTarget, skip: skipSCSINotDisk},
 		// ---- disks: SATA (libata) ----
 		r(spDiskMedium, `^(ata\d+)(?:\.\d+)?: error: \{[^}]*\bUNC\b`, grp(1)),
 		r(spCRC, `^(ata\d+)(?:\.\d+)?: error: \{[^}]*\bICRC\b|^(ata\d+): SError: \{[^}]*\bBadCRC\b`, func(m []string, _ logLine, _ *matchCtx) string {
@@ -479,7 +488,13 @@ func buildRules() []rule {
 		r(spNVMeDead, `^nvme (nvme\d+): (?:controller is down; will reset: CSTS=0xffffffff|Device not ready; aborting (?:reset|initialisation)|Removing after probe failure|Disabling device after reset failure)`, grp(1)),
 		r(spNVMeTimeout, `^nvme (nvme\d+): (?:I/O (?:tag )?\d+ .*QID \d+ timeout|controller is down; will reset)`, grp(1)),
 		{sp: spNVMeTimeout, re: regexp.MustCompile(`^nvme (nvme\d+): (?:resetting controller|Abort status:)`), target: grp(1), evidence: true},
-		{sp: spDiskMedium, re: regexp.MustCompile(`^(nvme\d+n\d+): .*\(sct 0x2 / sc 0x[0-9a-f]+\)`), target: diskGrp(1)},
+		// Status code type 2 is "Media and Data Integrity Errors" (NVMe base
+		// spec, Figure "Status Code - Media and Data Integrity Errors"), but
+		// 0x86 Access Denied (locked Opal range) and 0x87 Deallocated or
+		// Unwritten Logical Block (reading a trimmed block with DULBE set)
+		// are not media defects.
+		{sp: spDiskMedium, re: regexp.MustCompile(`^(nvme\d+n\d+): .*\(sct 0x2 / sc 0x([0-9a-f]+)\)`), target: diskGrp(1),
+			skip: func(m []string, _ logLine) bool { return m[2] == "86" || m[2] == "87" }},
 		// ---- storage controllers ----
 		r(spHBAFault, `^(mpt[23]sas_cm\d+): fault_state\(0x[0-9a-f]+\)`, grp(1)),
 		r(spHBAFault, `^megaraid_sas (\S+): (?:Found )?FW in FAULT state|^(megasas): FW in FAULT state`, func(m []string, _ logLine, _ *matchCtx) string {
@@ -495,7 +510,8 @@ func buildRules() []rule {
 		// ---- filesystems ----
 		{sp: spFSReadOnly, re: regexp.MustCompile(`EXT[234]-fs \(([^)]+)\): (?:error: )?[Rr]emounting filesystem read-only`), target: devGrp(1), skip: skipNotDisk(1)},
 		{sp: spFSReadOnly, re: regexp.MustCompile(`XFS \(([^)]+)\): (?:.*Shutting down filesystem|Filesystem has been shut down|xfs_do_force_shutdown)`), target: devGrp(1), skip: skipNotDisk(1)},
-		{sp: spFSReadOnly, re: regexp.MustCompile(`BTRFS(?: \w+)? \(device ([^)]+)\):? (?:.*)?forced readonly`), target: devGrp(1), skip: skipNotDisk(1)},
+		// Since 6.x btrfs adds the filesystem state: "BTRFS info (device dm-0: state EA): forced readonly" (fs/btrfs/messages.c).
+		{sp: spFSReadOnly, re: regexp.MustCompile(`BTRFS(?: \w+)?:? \(device ([^):\s]+)(?:: state \w+)?\):? (?:.*)?forced readonly`), target: devGrp(1), skip: skipNotDisk(1)},
 		{sp: spFSRecorded, re: regexp.MustCompile(`EXT[34]-fs \(([^)]+)\): error count since last fsck: (\d+)`), target: devGrp(1), skip: skipNotDisk(1)},
 		{sp: spFSError, re: regexp.MustCompile(`EXT[234]-fs error \(device ([^)]+)\)|EXT[234]-fs \(([^)]+)\): I/O error while writing superblock`), target: func(m []string, _ logLine, _ *matchCtx) string {
 			if m[1] != "" {
@@ -504,8 +520,8 @@ func buildRules() []rule {
 			return devPath(m[2])
 		}, skip: func(m []string, _ logLine) bool { return notDiskRe.MatchString(m[1]) || notDiskRe.MatchString(m[2]) }},
 		{sp: spFSError, re: regexp.MustCompile(`XFS \(([^)]+)\): (?:Corruption|Metadata corruption|Metadata CRC error|metadata I/O error|Log I/O Error|log I/O error|Corruption warning)`), target: devGrp(1), skip: skipNotDisk(1)},
-		{sp: spFSCsum, re: regexp.MustCompile(`BTRFS warning \(device ([^)]+)\): csum failed`), target: devGrp(1), skip: skipNotDisk(1)},
-		{sp: spFSError, re: regexp.MustCompile(`BTRFS(?:: error| error| critical) \(device ([^)]+)\)`), target: devGrp(1), skip: skipNotDisk(1)},
+		{sp: spFSCsum, re: regexp.MustCompile(`BTRFS warning \(device ([^):\s]+)(?:: state \w+)?\): csum failed`), target: devGrp(1), skip: skipNotDisk(1)},
+		{sp: spFSError, re: regexp.MustCompile(`BTRFS(?:: error| error| critical) \(device ([^):\s]+)(?:: state \w+)?\)`), target: devGrp(1), skip: skipNotDisk(1)},
 		// ---- md software RAID (kernel side) ----
 		{sp: spMDFail, re: regexp.MustCompile(`md/raid\d*:(md\d+): Disk failure on (\S+?),? disabling device`), target: mdTarget, skip: skipNotDisk(2)},
 		{sp: spMDFail, re: regexp.MustCompile(`md/raid\d*:(md\d+): Operation continuing on \d+ devices`), target: mdTarget, evidence: true},
@@ -520,7 +536,7 @@ func buildRules() []rule {
 			}
 			return "thermal zone"
 		}),
-		r(spThrottle, `CPU\d+: (?:Core|Package) temperature (?:is )?above threshold|Temperature above threshold, cpu clock throttled`, fixed("CPU")),
+		{sp: spThrottle, re: reThrottle, target: fixed("CPU")},
 		r(spMCECorr, `Machine check events logged`, fixed("CPU")),
 
 		// ---- PCIe AER ----
@@ -546,7 +562,9 @@ func buildRules() []rule {
 			return m[2]
 		}),
 		{sp: spLinkDown, re: regexp.MustCompile(`([A-Za-z][\w.@-]*):? (?:NIC )?[Ll]ink (?:is )?[Dd]own\b`), target: grp(1),
-			skip: func(m []string, l logLine) bool { return strings.HasPrefix(l.Msg, "IPv6") || m[1] == "NIC" }},
+			skip: func(m []string, l logLine) bool {
+				return strings.HasPrefix(l.Msg, "IPv6") || m[1] == "NIC" || virtualIfRe.MatchString(m[1])
+			}},
 		r(spNICHang, `NETDEV WATCHDOG: ([\w.@-]+) \([^)]*\): transmit (?:queue \d+ )?timed out`, grp(1)),
 		r(spNICHang, `([\w.@-]+): (?:Detected (?:Hardware|Tx) Unit Hang|[Tt][Xx] timeout)`, grp(1)),
 
@@ -589,14 +607,36 @@ var reMCEBank = regexp.MustCompile(`\[Hardware Error\]: CPU (\d+): Machine Check
 var (
 	reGHESSev     = regexp.MustCompile(`(?:\{(\d+)\})?\[Hardware Error\]: event severity: (corrected|recoverable|fatal)`)
 	reGHESSection = regexp.MustCompile(`section_type: (.+?)\s*$`)
+	reGHESDevice  = regexp.MustCompile(`\bdevice_id: ([0-9a-f]{4}:[0-9a-f]{2}:[0-9a-f]{2}\.[0-7])\b`)
 )
 
 // ATA identify lines give the disk model on a port: "ata1.00: ATA-9: ST4000NM0035-1V4107, TN03, max UDMA/133".
 var reATAIdent = regexp.MustCompile(`^(ata\d+)\.\d+: ATA-\d+: (.+?), (\S+), max`)
+
+// Virtual network interfaces (containers, VM taps, Proxmox firewall
+// bridges, tunnels): their links go up and down with the guests, which is
+// not a NIC or cable problem.
+var virtualIfRe = regexp.MustCompile(`^(?:veth|tap|tun|vnet|fwpr|fwln|fwbr|docker|br-|virbr|cali|flannel|cni|lxc|vxlan|wg|kube-|weave|genev|vmbr\d+v)`)
 
 func ruleTag(tag string) string {
 	if tag == "" {
 		return "kernel"
 	}
 	return tag
+}
+
+// CPU thermal throttling (arch/x86/kernel/cpu/mce/therm_throt.c).
+var reThrottle = regexp.MustCompile(`CPU\d+: (?:Core|Package) temperature (?:is )?above threshold|Temperature above threshold, cpu clock throttled`)
+
+// near reports whether t is within d of one of ts.
+func near(t time.Time, ts []time.Time, d time.Duration) bool {
+	if t.IsZero() {
+		return false
+	}
+	for _, x := range ts {
+		if t.Sub(x) <= d && x.Sub(t) <= d {
+			return true
+		}
+	}
+	return false
 }

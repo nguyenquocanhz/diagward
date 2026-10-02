@@ -153,6 +153,14 @@ for _rd_c in ssacli hpssacli hpacucli; do dw_has "$_rd_c" && { _rd_hp=$_rd_c; br
 _rd_mc=""
 for _rd_c in MegaCli64 MegaCli megacli; do dw_has "$_rd_c" && { _rd_mc=$_rd_c; break; }; done
 
+# _rd_arclist - arcconf LIST, also kept in $DW_T/rd_arc.txt.
+_rd_arclist() {
+	_rd_inT arcconf LIST >"$DW_T/rd_arc.txt"
+	_rd_rc=$?
+	cat "$DW_T/rd_arc.txt"
+	return $_rd_rc
+}
+
 # _rd_megaraid PREFIX CLI - the storcli/perccli command set (identical JSON).
 _rd_megaraid() {
 	dw_fn "raid.$1_ctrl" _rd_inT "$2" /call show all J
@@ -178,8 +186,9 @@ else
 				dw_fn raid.ssacli_status _rd_inT "$_rd_hp" ctrl all show status
 			fi
 			if dw_has arcconf; then
-				dw_fn raid.arcconf_list _rd_inT arcconf LIST
-				_rd_n=$( (_rd_inT arcconf LIST) 2>/dev/null | sed -n 's/^Controllers found: *\([0-9][0-9]*\).*/\1/p' | head -n 1)
+				# One LIST run: captured, and read back for the controller count.
+				dw_fn raid.arcconf_list _rd_arclist
+				_rd_n=$(sed -n 's/^Controllers found: *\([0-9][0-9]*\).*/\1/p' "$DW_T/rd_arc.txt" 2>/dev/null | head -n 1)
 				_rd_i=1
 				while [ -n "$_rd_n" ] && [ "$_rd_i" -le "$_rd_n" ] && [ "$_rd_i" -le 16 ]; do
 					dw_fn "raid.arcconf:$_rd_i" _rd_inT arcconf GETCONFIG "$_rd_i" AL

@@ -24,3 +24,17 @@ the real format. Windows LBFO/SET JSON in the tests follows the property names o
 Get-NetLbfoTeam/Get-NetLbfoTeamMember/Get-VMSwitch as written by `50-network.ps1` (enums as
 strings); these cmdlets returned no teams on the dev machine, so their populated shape is
 unverified against real output.
+
+## Added in the sysnet review
+
+`network.win_vmswitch_bound` (adapters with the Hyper-V Extensible Virtual Switch protocol
+`vms_pp` enabled, from `Get-NetAdapterBinding`) was verified unelevated on the dev machine,
+which has Hyper-V but no external switch (all bindings `Enabled: False`, so the section is
+`[]`). The bound-uplink JSON in `review_test.go` is synthesised in the shape the collector
+writes (`Name`, `InterfaceDescription`). The Open vSwitch topology in `review_test.go` follows
+how the kernel exposes OVS ports (`master` link to the `ovs-system` datapath device).
+
+`network.config` lines in `TestConfiguredPortWithoutIP` are in the exact `grep -H` format the
+collector prints (verified in WSL with GNU grep and BusyBox grep against a keyfile written per
+nm-settings-keyfile(5) and an ifcfg file per the RHEL ifcfg documentation); no NetworkManager
+host was available to capture real profiles.

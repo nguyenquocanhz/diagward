@@ -6,6 +6,7 @@ package sensors
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -105,6 +106,7 @@ type judged struct {
 	note      model.Text
 	ignored   bool // implausible / no reading: not judged, not counted
 	connected bool // fans: something is plugged in
+	disk      bool // drive temperature: shown, judged by the disk domain
 }
 
 // gather reads every source and merges them. lm-sensors and hwmon read the
@@ -155,7 +157,8 @@ func (c *checker) gather() {
 	if s := c.b.Get("sensors.thermal"); s.Ran() {
 		var zs []*reading
 		for _, r := range parseThermal(s) {
-			if !drivers[r.Driver] {
+			// x86_pkg_temp reads the same package MSR as coretemp.
+			if !drivers[r.Driver] && !(r.Driver == "x86_pkg_temp" && drivers["coretemp"]) {
 				zs = append(zs, r)
 			}
 		}
@@ -183,19 +186,23 @@ func (c *checker) gather() {
 }
 
 // ignoredChip drops hwmon devices that are not server hardware health:
-// batteries and AC adapters (power_supply class), USB-C PD, Wi-Fi radios.
+// batteries and AC adapters (power_supply class, named after the supply:
+// AC, ACAD, ADP1, BAT0), USB-C PD, Wi-Fi radios. Real chips whose driver
+// merely starts with "ac"/"ad" (acbel_fsg032 PSU, adt7475, adm1275) stay.
 func ignoredChip(drv string) bool {
 	d := strings.ToLower(drv)
-	if strings.HasPrefix(d, "acpitz") || strings.HasPrefix(d, "acpi_") {
-		return false // ACPI thermal zone / power meter
+	if powerSupplyRe.MatchString(d) {
+		return true
 	}
-	for _, p := range []string{"bat", "ac", "adp", "ucsi", "hidpp_battery", "iwlwifi", "mt76", "mt79", "ath1", "ath9"} {
+	for _, p := range []string{"ucsi", "hidpp_battery", "iwlwifi", "mt76", "mt79", "ath1", "ath9"} {
 		if strings.HasPrefix(d, p) {
 			return true
 		}
 	}
 	return false
 }
+
+var powerSupplyRe = regexp.MustCompile(`^(ac|acad|adp|bat|battery)[0-9]*$`)
 
 // Plausibility limits. Super-I/O inputs that are not wired read 0, -62 or
 // 127 °C, and some BIOSes publish nonsense ACPI trip points (210 °C, 31 °C,
@@ -263,7 +270,18 @@ func (c *checker) analyze() {
 	for _, r := range c.readings {
 		switch r.Kind {
 		case kTemp:
+			if r.Driver == "k10temp" {
+				// temp1_max is a constant 70 °C ("*val = 70 * 1000" in
+				// drivers/hwmon/k10temp.c, exported on Zen by kernels
+				// before ~5.6), not a limit: EPYCs run above it under load.
+				r.Max = nil
+			}
 			j := evalTemp(r)
+			if isDiskSensor(r) {
+				// Contract: drive temperatures are the disk domain's.
+				j.disk, j.rule = true, ""
+				j.note = model.T("drive: see the disk section", "ổ cứng: xem phần ổ cứng")
+			}
 			if r.Driver == "k10temp" && strings.EqualFold(r.Label, "Tctl") && hasTdie[r.Chip] && j.sev > model.OK {
 				j.sev, j.rule = model.OK, ""
 				j.note = model.T("offset (see Tdie)", "có độ lệch (xem Tdie)")
@@ -540,9 +558,6 @@ func tempAction(r *reading) model.Text {
 	case isCPU(r):
 		return model.T("Check the CPU cooling now: are all fans spinning, is the heatsink seated, is the airflow blocked (missing blanking panels, cables, dust filters)? Check the room/inlet temperature and compare with the BMC readings. Reduce the load or shut down if it keeps rising.",
 			"Kiểm tra tản nhiệt CPU ngay: các quạt có quay đủ không, tản nhiệt có bị lỏng không, luồng gió có bị chặn không (thiếu tấm che khe trống, dây cáp, lưới lọc bụi)? Kiểm tra nhiệt độ phòng/khí vào và đối chiếu với số liệu BMC. Giảm tải hoặc tắt máy nếu nhiệt độ tiếp tục tăng.")
-	case isDiskSensor(r):
-		return model.T("Improve the airflow over the drive (drive-bay fans, blanking panels, a heatsink for M.2 drives) and check the room temperature. Make sure backups are current: drives fail sooner when they run hot.",
-			"Tăng luồng gió qua ổ (quạt khoang ổ, tấm che, tản nhiệt cho ổ M.2) và kiểm tra nhiệt độ phòng. Đảm bảo bản sao lưu còn mới: ổ cứng chạy nóng sẽ hỏng sớm hơn.")
 	}
 	return model.T("Check the fans and the airflow inside the chassis and the room temperature; compare with the BMC readings (ipmitool sdr elist).",
 		"Kiểm tra quạt, luồng gió trong thùng máy và nhiệt độ phòng; đối chiếu với số liệu của BMC (ipmitool sdr elist).")
@@ -674,7 +689,7 @@ func (c *checker) okFindings() {
 	var hot *judged
 	worstT := model.OK
 	for _, j := range c.temps {
-		if j.ignored {
+		if j.ignored || j.disk {
 			continue
 		}
 		nT++
@@ -853,15 +868,27 @@ func (c *checker) coverage() {
 	covF := model.Coverage{ID: domain + ".fans", Component: model.CompFan,
 		Name: model.T("Fan speeds (OS)", "Tốc độ quạt (từ hệ điều hành)")}
 
-	nTemps, nFans := 0, 0
+	nTemps, nDisk, nFans := 0, 0, 0
 	for _, j := range c.temps {
-		if !j.ignored {
+		switch {
+		case j.ignored:
+		case j.disk:
+			nDisk++
+		default:
 			nTemps++
 		}
 	}
 	for _, j := range c.fans {
 		if j.connected {
 			nFans++
+		}
+	}
+	// A sysfs read or `sensors` that hung (drivetemp on a dying drive, an
+	// ACPI power meter waiting on the BMC) was cut by the collector.
+	cut := false
+	for _, n := range []string{"sensors.lmsensors_json", "sensors.lmsensors", "sensors.hwmon", "sensors.thermal"} {
+		if s := c.b.Get(n); s.Ran() && s.Timeout {
+			cut = true
 		}
 	}
 	bmcT, bmcF := c.bmcCovers()
@@ -880,6 +907,10 @@ func (c *checker) coverage() {
 	virtual := container || (!c.env.Bare() && c.env.OS != collect.OSBMC)
 	set := func(cov *model.Coverage, n int, bmc bool, why model.Text, temp bool) {
 		switch {
+		case n > 0 && cut:
+			cov.State = model.CovPartial
+			cov.Reason = model.T("Reading the sensors timed out (a drive or the BMC did not answer), so some readings are missing.",
+				"Đọc cảm biến bị quá thời gian (một ổ cứng hoặc BMC không phản hồi) nên thiếu một số số đo.")
 		case n > 0:
 			cov.State = model.CovRan
 		case virtual:
@@ -889,10 +920,16 @@ func (c *checker) coverage() {
 			cov.Reason = model.T("Not visible to the operating system; read from the BMC instead (see the IPMI results).",
 				"Hệ điều hành không đọc được; đã đọc từ BMC thay thế (xem phần IPMI).")
 		default:
-			cov.State, cov.Reason, cov.Fix = model.CovPartial, c.reasonNone(why, temp), c.fix(temp)
+			cov.State, cov.Reason = model.CovPartial, c.reasonNone(why, temp)
+			cov.Fix, cov.Cmd = c.fix(temp)
 		}
 	}
-	set(&covT, nTemps, bmcT, model.T("No temperature sensors are visible to the operating system.", "Hệ điều hành không thấy cảm biến nhiệt độ nào."), true)
+	whyT := model.T("No temperature sensors are visible to the operating system.", "Hệ điều hành không thấy cảm biến nhiệt độ nào.")
+	if nDisk > 0 {
+		whyT = model.T("Only drive temperatures are visible to the operating system (they are judged in the disk section); no CPU or board sensor.",
+			"Hệ điều hành chỉ thấy nhiệt độ ổ cứng (được đánh giá ở phần ổ cứng); không thấy cảm biến CPU hay bo mạch.")
+	}
+	set(&covT, nTemps, bmcT, whyT, true)
 	set(&covF, nFans, bmcF, model.T("No fan speeds are visible to the operating system (on most servers only the BMC reads the fans).",
 		"Hệ điều hành không đọc được tốc độ quạt (trên đa số máy chủ chỉ BMC mới đọc được quạt)."), false)
 	c.res.Coverage = append(c.res.Coverage, covT, covF)
@@ -911,36 +948,46 @@ func (c *checker) reasonNone(base model.Text, temp bool) model.Text {
 		return model.T(base.EN+" Windows has no generic sensor interface: the ACPI thermal zone is not implemented on this machine and LibreHardwareMonitor is not running.",
 			base.VI+" Windows không có giao diện cảm biến chung: máy này không hỗ trợ vùng nhiệt ACPI và LibreHardwareMonitor không chạy.")
 	}
-	if s := c.b.Get("sensors.lmsensors_json"); s != nil && s.Missing != "" {
+	if c.lmMissing() {
 		return model.T(base.EN+" lm-sensors is not installed.", base.VI+" Chưa cài lm-sensors.")
 	}
 	return base
 }
 
-// fix follows the khoserver.com guide (install lm_sensors, let
-// sensors-detect load the right drivers) and points at the BMC.
-func (c *checker) fix(temp bool) model.Text {
+func (c *checker) lmMissing() bool {
+	s := c.b.Get("sensors.lmsensors_json")
+	return s != nil && s.Missing != ""
+}
+
+// fix follows the lm-sensors documentation (install it, let sensors-detect
+// load the right drivers) and points at the BMC. The returned command goes
+// into Coverage.Cmd.
+func (c *checker) fix(temp bool) (model.Text, string) {
 	if c.env.OS == collect.OSWindows {
 		t := model.T("Read the sensors from the BMC: diagward bmc <iDRAC/iLO/XCC address>; or run LibreHardwareMonitor (it publishes its sensors to WMI) and collect again.",
 			"Đọc cảm biến từ BMC: diagward bmc <địa chỉ iDRAC/iLO/XCC>; hoặc chạy LibreHardwareMonitor (phần mềm này đưa cảm biến lên WMI) rồi thu thập lại.")
 		if s := c.b.Get("sensors.win_thermalzone"); temp && s != nil && s.Skipped == "not-admin" {
 			pre := hint.RunAsRoot(c.env)
-			return model.T(pre.EN+" "+t.EN, pre.VI+" "+t.VI)
+			return model.T(pre.EN+" "+t.EN, pre.VI+" "+t.VI), ""
 		}
-		return t
+		return t, ""
 	}
 	detect := "sensors-detect --auto"
 	if !c.env.Root {
 		detect = "sudo " + detect
 	}
-	if s := c.b.Get("sensors.lmsensors_json"); s != nil && s.Missing != "" {
+	bmc := model.T(" Or read the BMC: ipmitool sdr elist (on the server) or diagward bmc <BMC address>.",
+		" Hoặc đọc qua BMC: ipmitool sdr elist (ngay trên máy) hay diagward bmc <địa chỉ BMC>.")
+	if c.lmMissing() {
 		if inst := hint.InstallCommand(c.env, hint.Package(c.env, "sensors")); inst != "" {
-			return model.Tf("Install lm-sensors and detect the sensor chips: %s && %s, then run Diagward again. Or read the BMC: ipmitool sdr elist (on the server) or diagward bmc <BMC address>.",
-				"Cài lm-sensors và dò chip cảm biến: %s && %s, rồi chạy lại Diagward. Hoặc đọc qua BMC: ipmitool sdr elist (ngay trên máy) hay diagward bmc <địa chỉ BMC>.", inst, detect)
+			return model.T("Install lm-sensors, then let it detect the sensor chips ("+detect+") and run Diagward again."+bmc.EN,
+				"Cài lm-sensors, sau đó cho nó dò chip cảm biến ("+detect+") rồi chạy lại Diagward."+bmc.VI), inst
 		}
+		return model.T("Install the lm-sensors package, then let it detect the sensor chips ("+detect+") and run Diagward again."+bmc.EN,
+			"Cài gói lm-sensors, sau đó cho nó dò chip cảm biến ("+detect+") rồi chạy lại Diagward."+bmc.VI), ""
 	}
-	return model.Tf("Load the sensor drivers with %s, then run Diagward again. Or read the BMC: ipmitool sdr elist (on the server) or diagward bmc <BMC address>.",
-		"Nạp driver cảm biến bằng %s rồi chạy lại Diagward. Hoặc đọc qua BMC: ipmitool sdr elist (ngay trên máy) hay diagward bmc <địa chỉ BMC>.", detect)
+	return model.T("Let lm-sensors detect and load the sensor drivers, then run Diagward again."+bmc.EN,
+		"Cho lm-sensors dò và nạp driver cảm biến rồi chạy lại Diagward."+bmc.VI), detect
 }
 
 // bmcCovers reports whether the IPMI SDR in the same bundle has

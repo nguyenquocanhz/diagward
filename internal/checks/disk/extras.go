@@ -147,12 +147,18 @@ func (c *checker) bench() {
 		return
 	}
 	if !s.Ran() {
-		if s.Skipped == "disabled" {
+		switch {
+		case s.Skipped == "disabled":
+			c.coverCmd("bench", covBench, model.CovSkipped,
+				model.T("Opt-in test, not enabled because it writes a test file to disk.", "Bài đo tùy chọn, chưa được bật vì nó ghi một file thử lên ổ."),
+				model.T("Pass --bench with a directory on the disk to measure (test size: --bench-size, default 256M). It needs 3x the test size free, never touches existing files and deletes its own file afterwards.",
+					"Thêm --bench kèm một thư mục nằm trên ổ cần đo (dung lượng thử: --bench-size, mặc định 256M). Cần trống gấp 3 lần dung lượng thử; bài đo không đụng tới file có sẵn và tự xóa file thử sau khi đo."),
+				"diagward check --bench /var/tmp")
+		case s.Skipped == "not-applicable":
 			c.cover("bench", covBench, model.CovSkipped,
-				model.T("Opt-in test, not requested: it writes a test file to disk.", "Bài kiểm tra tùy chọn, không được yêu cầu: nó ghi một file thử lên ổ."),
-				model.T("To run it, give Diagward a benchmark directory on the disk to test (the BenchDir option, e.g. --bench-dir /var/tmp); it needs 3x the test size free and deletes its file afterwards.",
-					"Muốn chạy, chỉ định thư mục kiểm tra nằm trên ổ cần đo (tùy chọn BenchDir, ví dụ --bench-dir /var/tmp); cần trống gấp 3 lần dung lượng thử và file thử sẽ tự xóa sau khi đo."))
-		} else {
+				model.T("The dd speed test is only available on Linux.", "Bài đo tốc độ bằng dd chỉ có trên Linux."),
+				model.T("On Windows, measure the disk with Microsoft DiskSpd or winsat disk if needed.", "Trên Windows, nếu cần đo tốc độ ổ, dùng Microsoft DiskSpd hoặc winsat disk."))
+		default:
 			c.cover("bench", covBench, model.CovSkipped, model.Tf("Skipped (%s).", "Bỏ qua (%s).", firstNonEmpty(s.Skipped, s.Missing)), model.Text{})
 		}
 		return
@@ -175,12 +181,12 @@ func (c *checker) bench() {
 	case "no-space":
 		c.cover("bench", covBench, model.CovSkipped,
 			model.Tf("Not enough free space in %s (%s kB free, the test needs 3x %d MiB).", "Không đủ chỗ trống trong %s (còn %s kB, cần gấp 3 lần %d MiB).", bf.Dir, kv["free_kb"], bf.MB),
-			model.T("Choose a directory with more free space.", "Chọn thư mục còn nhiều chỗ trống hơn."))
+			model.T("Choose a directory with more free space (--bench DIR) or a smaller test (--bench-size, e.g. 64M).", "Chọn thư mục còn nhiều chỗ trống hơn (--bench DIR) hoặc giảm dung lượng thử (--bench-size, ví dụ 64M)."))
 		return
 	case "write-timeout":
 		c.cover("bench", covBench, model.CovRan, model.Text{}, model.Text{})
 		c.add(model.Finding{ID: "disk.bench_slow", Component: model.CompDisk, Severity: model.Warn, Target: bf.Dir,
-			Title:  model.Tf("Disk speed test in %s did not finish in time", "Kiểm tra tốc độ trong %s không xong kịp", bf.Dir),
+			Title:  model.Tf("Disk speed test in %s did not finish within the time limit", "Bài đo tốc độ trong %s không chạy xong trong thời gian cho phép", bf.Dir),
 			Detail: model.Tf("Writing %d MiB took longer than the time limit, i.e. well under 10 MB/s.", "Ghi %d MiB mất lâu hơn thời gian cho phép, tức là chậm hơn nhiều so với 10 MB/s.", bf.MB),
 			Action: benchSlowAction(bf), Evidence: benchEvidence(kv)})
 		return

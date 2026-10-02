@@ -29,3 +29,22 @@ The collector was also run (cross-compiled `bmc` test binary, `TestLive`)
 in WSL against the real DMTF Redfish Mockup Server
 (`python3 redfishMockupServer.py -S -D public-rackmount1`): session login
 (POST) and logout (DELETE), 32 requests, analysis as expected.
+
+## Real BMC captures (`captures/`)
+
+Each file is one JSON object `{"/redfish/v1/...": resource}` (bodies
+unmodified), because several Dell paths contain `:` and cannot be file names
+on Windows. `captures_test.go` (redfish) and `capture_test.go` (bmc) load
+them; the bmc tests serve them from the fake BMC.
+
+| File | Origin | Licence |
+|---|---|---|
+| `captures/dell.json` | cholcombe973/libredfish `tests/mockups/dell/` (commit c23eb274ae4f8bd25be96ebaf071619afcc9502b), https://github.com/cholcombe973/libredfish/tree/master/tests/mockups/dell — captured with the DMTF Redfish Mockup Creator from a Dell PowerEdge R750, iDRAC9 6.00.30.00 (2024-08-08). Subset: service root, Systems/Chassis/Managers and the resources the analysis reads (Processors, Memory, EthernetInterfaces, Storage/Drives/Volumes/Controllers, Thermal, Power, LogServices with their entries). | MIT |
+| `captures/hpe.json` | same repository, `tests/mockups/hpe/` — HPE ProLiant DL385 Gen10 Plus v2, iLO 5 2.72 (2024-08-15), with one failed NVMe SSD (Box 2:Bay 5) and the Smart Array tree in both Storage and Oem SmartStorage. Same subset. | MIT |
+| `captures/lenovo.json` | same repository, `tests/mockups/lenovo/` — Lenovo ThinkSystem SR670 V2, XClarity Controller 2.83 (2024-08-02). Same subset. | MIT |
+| `captures/supermicro.json` | same repository, `tests/mockups/supermicro/` — Supermicro SYS-821GE-TNHR (X13DEG-OAD), BMC 11.01.01 (2023-11-30): two log services both named "Log1" (maintenance and health), PSU input-lost SEL entries with their Deassert. Same subset. | MIT |
+| `captures/ilo4.json`, `captures/ilo4-degraded.json` | Plume-Labs/frame `internal/redfish/testdata/ilo4-real/` (commit 747c72a2689804bde8ad99325553a4eea5e153cd), https://github.com/Plume-Labs/frame/tree/main/internal/redfish/testdata/ilo4-real — HPE ProLiant ML350 Gen9, iLO 4 2.77, captured 2026-09-10/11 (see its PROVENANCE.md). `ilo4.json` = the `_running` state; `ilo4-degraded.json` = the `_degraded` state (server off, failed Smart Storage Battery) with the SmartStorage tree and `_poweroff` power. The IML collection page 1 (`..._iml_entries.json`, whose @odata.id is `Entries/?page=1`) is stored at `.../IML/Entries`, pages 2 and 6 at `?page=2` / `?page=6` (pages 3-5 were not captured). Files are keyed by their own @odata.id without the trailing slash. | MIT |
+
+`captures/hpe.json` and the iLO 4 files contain `"Password": "password"`
+inside `Oem.Hp(e).LoginHint`: a literal template published by iLO, not a
+credential.

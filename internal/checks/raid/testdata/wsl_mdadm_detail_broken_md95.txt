@@ -1,0 +1,28 @@
+/dev/md95:
+           Version : 1.2
+     Creation Time : Fri Oct  2 16:20:57 2026
+        Raid Level : raid1
+        Array Size : 142336 (139.00 MiB 145.75 MB)
+     Used Dev Size : 142336 (139.00 MiB 145.75 MB)
+      Raid Devices : 2
+     Total Devices : 2
+       Persistence : Superblock is persistent
+
+       Update Time : Fri Oct  2 16:20:57 2026
+             State : clean, degraded 
+    Active Devices : 1
+   Working Devices : 2
+    Failed Devices : 0
+     Spare Devices : 1
+
+Consistency Policy : resync
+
+              Name : DESKTOP-ARP8AJ1:95  (local to host DESKTOP-ARP8AJ1)
+              UUID : 6f21dcb7:a02303db:0e3a8f04:95a79d5e
+            Events : 8
+
+    Number   Major   Minor   RaidDevice State
+       0     259        6        0      active sync   /dev/loop0p1
+       -       0        0        1      removed
+
+       2     259       10        -      spare   /dev/loop2p1

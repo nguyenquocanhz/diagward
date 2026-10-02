@@ -1,8 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"golang.org/x/term"
 )
@@ -32,8 +35,32 @@ func terminalWidth(f any) int {
 	return 100
 }
 
+// readPasswordStdin reads the BMC password without echo. term.ReadPassword
+// turns echo off and restores it on return, but Ctrl+C at the prompt kills
+// the process before that (ISIG stays on), leaving the user's shell with
+// echo off. So the terminal state is saved first and restored on
+// SIGINT/SIGTERM before exiting with the usual 130.
 func readPasswordStdin() (string, error) {
-	b, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fd := int(os.Stdin.Fd())
+	if st, err := term.GetState(fd); err == nil {
+		sig := make(chan os.Signal, 1)
+		signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+		done := make(chan struct{})
+		defer func() {
+			signal.Stop(sig)
+			close(done)
+		}()
+		go func() {
+			select {
+			case <-sig:
+				_ = term.Restore(fd, st)
+				fmt.Fprintln(os.Stderr)
+				os.Exit(130)
+			case <-done:
+			}
+		}()
+	}
+	b, err := term.ReadPassword(fd)
 	return string(b), err
 }
 

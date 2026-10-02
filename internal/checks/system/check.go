@@ -189,12 +189,15 @@ func identityCoverage(b *collect.Bundle, env model.Env, id Identity, res *model.
 			c.Reason = model.T("The serial number (service tag) needs root to read.", "Cần quyền root mới đọc được số serial (service tag).")
 			c.Fix = hint.RunAsRoot(env)
 		case dmi != nil && dmi.Missing != "":
-			c.Reason, c.Fix = hint.Missing("dmidecode"), hint.Install(env, "dmidecode")
+			c.Reason = model.T("dmidecode is not installed: the serial number (service tag) and chassis details come from SMBIOS.",
+				"Chưa cài dmidecode: số serial (service tag) và thông tin chassis lấy từ SMBIOS.")
+			c.Fix, c.Cmd = hint.InstallFix(env, "dmidecode")
 		default:
 			c.Reason = model.T("dmidecode returned no SMBIOS data; identity comes from sysfs only.", "dmidecode không trả về dữ liệu SMBIOS; thông tin chỉ lấy từ sysfs.")
 		}
 	case dmi != nil && dmi.Missing != "":
-		c.State, c.Reason, c.Fix = model.CovSkipped, hint.Missing("dmidecode"), hint.Install(env, "dmidecode")
+		c.State, c.Reason = model.CovSkipped, hint.Missing("dmidecode")
+		c.Fix, c.Cmd = hint.InstallFix(env, "dmidecode")
 	case dmi != nil && dmi.Skipped == "not-root":
 		c.State, c.Reason, c.Fix = model.CovSkipped, hint.NeedRoot(env), hint.RunAsRoot(env)
 	case !env.Bare():
@@ -218,7 +221,7 @@ func identityTable(id Identity, h model.HostInfo, res *model.Result) {
 		mem = units.IEC(id.MemBytes)
 	}
 	if h.Uptime > 0 {
-		up = units.Duration(time.Duration(h.Uptime) * time.Second).EN
+		up = shortDuration(h.Uptime)
 	}
 	res.Tables = append(res.Tables, model.Table{
 		ID:    "system.identity",
@@ -279,10 +282,13 @@ func linuxLoad(b *collect.Bundle, id Identity) (*Load, bool) {
 	if !ok {
 		return nil, false
 	}
+	// The load average counts tasks on every online CPU, so compare it with
+	// the processors listed in /proc/cpuinfo (id.Threads; nproc only when
+	// cpuinfo has no count). nproc honours the collector's CPU affinity: in
+	// a container started with --cpuset-cpus=0-1 on a 64-core host (or on a
+	// host booted with isolcpus) it would make a normal load look like a
+	// 30x overload.
 	ld := &Load{Load1: l1, Load5: l5, Load15: l15, CPUs: id.Threads}
-	if n := atoi(b.Get("system.nproc").Text()); n > 0 {
-		ld.CPUs = n
-	}
 	ld.IOWaitPct, ld.StealPct, _, ld.ProcsBlocked = parseStat(b.Get("system.stat").Text())
 	ld.PSI = parsePSI(b.Get("system.pressure").Text())
 	return ld, true
@@ -467,12 +473,14 @@ func okLoad(ld *Load, res *model.Result) {
 		en = fmt.Sprintf("System load is normal (CPU %.0f%%, queue %.1f per CPU)", *ld.CPUPct, deref(ld.QueuePerCPU))
 		vi = fmt.Sprintf("Tải hệ thống bình thường (CPU %.0f%%, hàng đợi %.1f mỗi CPU)", *ld.CPUPct, deref(ld.QueuePerCPU))
 	} else {
-		en = fmt.Sprintf("System load is normal (load %.2f on %d CPUs)", ld.Load15, ld.CPUs)
-		vi = fmt.Sprintf("Tải hệ thống bình thường (load %.2f trên %d CPU)", ld.Load15, ld.CPUs)
+		en = fmt.Sprintf("System load is normal (load %.2f on %d CPUs", ld.Load15, ld.CPUs)
+		vi = fmt.Sprintf("Tải hệ thống bình thường (load %.2f trên %d CPU", ld.Load15, ld.CPUs)
 		if ld.IOWaitPct != nil {
 			en += fmt.Sprintf(", iowait %.1f%%", *ld.IOWaitPct)
 			vi += fmt.Sprintf(", iowait %.1f%%", *ld.IOWaitPct)
 		}
+		en += ")"
+		vi += ")"
 	}
 	res.Findings = append(res.Findings, model.Finding{
 		ID: "system.load_ok", Component: model.CompSystem, Severity: model.OK,
@@ -645,4 +653,23 @@ func firstLine(s string) string {
 		s = string(r[:200]) + "…"
 	}
 	return strings.TrimSpace(s)
+}
+
+// shortDuration formats an uptime for the identity table, whose cells are
+// shown as-is in both languages: "41d 6h", "5h 12m", "3m" rather than
+// English words.
+func shortDuration(sec float64) string {
+	d := time.Duration(sec) * time.Second
+	days := int64(d / (24 * time.Hour))
+	h := int64(d/time.Hour) % 24
+	m := int64(d/time.Minute) % 60
+	switch {
+	case days > 0:
+		return fmt.Sprintf("%dd %dh", days, h)
+	case h > 0:
+		return fmt.Sprintf("%dh %dm", h, m)
+	case m > 0:
+		return fmt.Sprintf("%dm", m)
+	}
+	return "<1m"
 }

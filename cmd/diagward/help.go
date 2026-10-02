@@ -34,11 +34,16 @@ func (a *app) printHelp(topic string) {
 	if a.lang == "vi" {
 		text = h[1]
 	}
-	text = strings.ReplaceAll(text, "{version}", version)
-	if topic != "" {
-		text += "\n" + pick(a.lang, outputHelp, topic)
+	text = strings.TrimRight(strings.ReplaceAll(text, "{version}", version), "\n") + "\n"
+	if out := pick(a.lang, outputHelp, topic); out != "" {
+		text += out
 	}
-	text += "\n" + exitHelp[a.langIdx()]
+	switch topic {
+	case "", "check", "analyze", "bmc":
+		text += exitHelp[a.langIdx()]
+	case "collect", "install-tools":
+		text += exitHelpSimple[a.langIdx()]
+	}
 	fmt.Fprint(a.stdout, strings.TrimLeft(text, "\n"))
 }
 
@@ -59,6 +64,17 @@ func pick(lang string, m map[string][2]string, topic string) string {
 	}
 	return h[0]
 }
+
+// exitHelpSimple is for the commands that give no verdict.
+var exitHelpSimple = [2]string{`
+Exit codes:
+  0  done
+  3  error: bad usage, collection or install failed, or a file could not be written
+`, `
+Mã thoát (exit code):
+  0  thành công
+  3  lỗi: sai cú pháp, thu thập hoặc cài đặt thất bại, hoặc không ghi được tệp
+`}
 
 var exitHelp = [2]string{`
 Exit codes:
@@ -141,7 +157,7 @@ BMC, card mạng và nhật ký hệ thống; giải thích từng lỗi, nói r
 và liệt kê serial linh kiện để làm bảo hành.
 
 Cách dùng:
-  diagward [check] [tuỳ chọn]          kiểm tra máy chủ này (mặc định)
+  diagward [check] [tùy chọn]          kiểm tra máy chủ này (mặc định)
   diagward collect [-o TỆP.dwb]        chỉ thu thập và lưu bundle để gửi bộ phận hỗ trợ
   diagward analyze TỆP.dwb             phân tích bundle đã lưu (chạy trên máy bất kỳ)
   diagward bmc ĐỊA_CHỈ --user TÀI_KHOẢN
@@ -172,10 +188,11 @@ Collection:
   --timeout SEC    per-command timeout in seconds (default 30)
   --bench DIR      opt-in disk speed test: writes and reads back a file in DIR
                    (deleted afterwards; adds disk load; Linux only)
-  --bench-size SZ  size of the test file, 16M to 64G (default 256M)
-  --memtest SZ     opt-in RAM test with memtester, e.g. 1G (takes minutes and
+  --bench-size SIZE
+                   size of the test file, 16M to 64G (default 256M)
+  --memtest SIZE   opt-in RAM test with memtester, e.g. 1G (takes minutes and
                    loads CPU and RAM; Linux only, needs root)
-`, `Cách dùng: diagward check [tuỳ chọn]
+`, `Cách dùng: diagward check [tùy chọn]
 
 Thu thập dữ liệu phần cứng của máy chủ này (chỉ đọc, không thay đổi gì),
 phân tích và in báo cáo. Gõ "diagward" không kèm lệnh cũng chạy lệnh này.
@@ -183,11 +200,13 @@ phân tích và in báo cáo. Gõ "diagward" không kèm lệnh cũng chạy l�
 Thu thập:
   --since N        đọc nhật ký bao nhiêu ngày gần nhất (N hoặc Nd, mặc định 7)
   --timeout GIÂY   thời gian chờ tối đa cho mỗi lệnh (mặc định 30 giây)
-  --bench THƯ_MỤC  đo tốc độ ổ (chỉ chạy khi bật): ghi rồi đọc lại một tệp
-                   trong THƯ_MỤC (xoá ngay sau đó; ổ sẽ tải nặng; chỉ Linux)
-  --bench-size SZ  dung lượng tệp đo, từ 16M đến 64G (mặc định 256M)
-  --memtest SZ     test RAM bằng memtester, ví dụ 1G (mất vài phút, CPU và RAM
-                   tải nặng; chỉ Linux, cần root)
+  --bench THƯ_MỤC  đo tốc độ ổ (chỉ chạy khi bạn yêu cầu): ghi rồi đọc lại một
+                   tệp trong THƯ_MỤC (xóa ngay sau đó; ổ sẽ tải nặng; chỉ Linux)
+  --bench-size DUNG_LƯỢNG
+                   dung lượng tệp đo, từ 16M đến 64G (mặc định 256M)
+  --memtest DUNG_LƯỢNG
+                   test RAM bằng memtester, ví dụ 1G (chỉ chạy khi bạn yêu cầu;
+                   mất vài phút, CPU và RAM tải nặng; chỉ Linux, cần root)
 `},
 
 	"collect": {`Usage: diagward collect [-o FILE.dwb] [--since N] [--timeout SEC] [-q]
@@ -218,7 +237,7 @@ tích ở máy bất kỳ bằng "diagward analyze TỆP.dwb".
 
 Analyses a bundle saved by "diagward collect", "diagward check --save" or
 "diagward bmc --save". Works on any computer (Linux, Windows, macOS).
-`, `Cách dùng: diagward analyze TỆP.dwb [tuỳ chọn]
+`, `Cách dùng: diagward analyze TỆP.dwb [tùy chọn]
 
 Phân tích bundle đã lưu bằng "diagward collect", "diagward check --save"
 hoặc "diagward bmc --save". Chạy được trên máy bất kỳ (Linux, Windows, macOS).
@@ -240,7 +259,7 @@ not boot.
 
 Password: set DIAGWARD_BMC_PASSWORD, or type it when asked (not echoed).
 For safety it is never accepted as a command-line flag.
-`, `Cách dùng: diagward bmc ĐỊA_CHỈ [--user TÀI_KHOẢN] [tuỳ chọn]
+`, `Cách dùng: diagward bmc ĐỊA_CHỈ [--user TÀI_KHOẢN] [tùy chọn]
 
 Đọc bộ điều khiển quản trị (BMC) của máy chủ qua mạng (Redfish qua HTTPS,
 hoặc IPMI over LAN bằng ipmitool): tình trạng, cảm biến, quạt, nguồn, nhật

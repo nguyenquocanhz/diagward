@@ -23,6 +23,16 @@ type srcMeta struct {
 	Volatile   bool            // journal seen and not persistent
 	TimedOut   bool            // a journalctl run hit the timeout (# rc=124)
 	Files      []string        // syslog files read
+	// Capped lists the blocks (not the "class=noise" ones) where the
+	// collector kept only the newest max= of total= lines.
+	Capped []capInfo
+}
+
+// capInfo is one log block the collector cut to its newest lines.
+type capInfo struct {
+	Src        string
+	Total, Max int
+	Oldest     time.Time // oldest line kept
 }
 
 var (
@@ -113,6 +123,19 @@ func parseLog(text string, now time.Time, meta *srcMeta) [][]logLine {
 	if meta.Sources == nil {
 		meta.Sources = map[string]bool{}
 	}
+	var capped *capInfo
+	closeCap := func() {
+		if capped == nil {
+			return
+		}
+		for _, l := range out {
+			if !l.T.IsZero() && (capped.Oldest.IsZero() || l.T.Before(capped.Oldest)) {
+				capped.Oldest = l.T
+			}
+		}
+		meta.Capped = append(meta.Capped, *capped)
+		capped = nil
+	}
 	for _, l := range lines {
 		if strings.TrimSpace(l) == "" {
 			continue
@@ -129,9 +152,13 @@ func parseLog(text string, now time.Time, meta *srcMeta) [][]logLine {
 				loc = parseTZ(tz)
 			}
 			if s, ok := kv["source"]; ok {
+				closeCap()
 				if len(out) > 0 {
 					sets = append(sets, out)
 					out = nil
+				}
+				if total, max := atoi64(kv["total"]), atoi64(kv["max"]); max > 0 && total > max && kv["class"] != "noise" {
+					capped = &capInfo{Src: srcFamily(s), Total: int(total), Max: int(max)}
 				}
 				src = s
 				ref = now
@@ -162,6 +189,7 @@ func parseLog(text string, now time.Time, meta *srcMeta) [][]logLine {
 			out = append(out, ll)
 		}
 	}
+	closeCap()
 	if len(out) > 0 {
 		sets = append(sets, out)
 	}

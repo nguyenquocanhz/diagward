@@ -98,8 +98,13 @@ func TestHealthyServer(t *testing.T) {
 	}
 }
 
+// cpuinfo1s is what /proc/cpuinfo shows when the second CPU of the
+// two-socket server is off: one physical package.
+const cpuinfo1s = "20\tprocessors\n20\tvendor_id=GenuineIntel\n20\tmodel name=Intel(R) Xeon(R) Silver 4214 CPU @ 2.20GHz\n20\tphysical id=0\n"
+
 func TestSocketDisabledByBIOS(t *testing.T) {
-	b := server(t, testkit.S("cpu.dmidecode", testkit.Read(t, "dmidecode_processor_r740_cpu2_disabled.txt")))
+	b := server(t, testkit.S("cpu.dmidecode", testkit.Read(t, "dmidecode_processor_r740_cpu2_disabled.txt")),
+		testkit.S("cpu.cpuinfo", cpuinfo1s))
 	res := run(t, b, testkit.Env(collect.OSLinux))
 	f := must(t, res, "cpu.socket_disabled", model.Crit)
 	if f.Target != "CPU2" || f.Part == nil || f.Part.Kind != "cpu" || f.Part.Location != "CPU2" {
@@ -110,6 +115,23 @@ func TestSocketDisabledByBIOS(t *testing.T) {
 	}
 	if !strings.Contains(f.Action.VI, "BMC") {
 		t.Fatal("action should point to the BMC log")
+	}
+}
+
+func TestStaleDisabledSocketStatus(t *testing.T) {
+	// The BIOS still says "Disabled By BIOS" but Linux runs both packages:
+	// the processor works, the SMBIOS table is out of date.
+	b := server(t, testkit.S("cpu.dmidecode", testkit.Read(t, "dmidecode_processor_r740_cpu2_disabled.txt")))
+	res := run(t, b, testkit.Env(collect.OSLinux))
+	if testkit.Find(res, "cpu.socket_disabled") != nil {
+		t.Fatalf("no Crit when the OS sees every socket: %v", testkit.IDs(res))
+	}
+	f := must(t, res, "cpu.socket_status_stale", model.Info)
+	if f.Target != "CPU2" || !strings.Contains(f.Detail.VI, "2 socket") {
+		t.Fatalf("%q %q", f.Target, f.Detail.VI)
+	}
+	if w := worst(res); w > model.Info {
+		t.Fatalf("worst %s", w)
 	}
 }
 
@@ -177,6 +199,23 @@ func TestOfflineCPU(t *testing.T) {
 	}
 }
 
+func TestHotplugSlotsAreNotOfflineCPUs(t *testing.T) {
+	// possible=0-127 but present=0-31: "offline" lists the empty hot-plug
+	// slots the ACPI tables announce, not CPUs that were turned off.
+	b := server(t, testkit.S("cpu.sysfs", testkit.Read(t, "sysfs_cpu_hotplug_slots.txt")))
+	res := run(t, b, testkit.Env(collect.OSLinux))
+	if f := testkit.Find(res, "cpu.cpus_offline"); f != nil {
+		t.Fatalf("false alarm: %s", f.Title.EN)
+	}
+	// One present CPU offline among the hot-plug slots: only it counts.
+	b = server(t, testkit.S("cpu.sysfs", "/sys/devices/system/cpu/online=0-6,8-31\n/sys/devices/system/cpu/offline=7,32-127\n/sys/devices/system/cpu/present=0-31\n/sys/devices/system/cpu/possible=0-127\n"))
+	res = run(t, b, testkit.Env(collect.OSLinux))
+	f := must(t, res, "cpu.cpus_offline", model.Warn)
+	if f.Target != "CPU 7" || !strings.Contains(f.Title.EN, "1 of 32") || !strings.Contains(f.Detail.VI, "CPU 7 đang offline") {
+		t.Fatalf("%q %q %q", f.Target, f.Title.EN, f.Detail.VI)
+	}
+}
+
 func TestLscpuOnlyWithoutSysfs(t *testing.T) {
 	b := testkit.Bundle(collect.OSLinux, ident("100"),
 		testkit.S("cpu.lscpu", testkit.Read(t, "lscpu_text_centos7_offline.txt")),
@@ -225,6 +264,22 @@ func TestThrottle(t *testing.T) {
 	b = server(t, testkit.S("cpu.throttle", testkit.Read(t, "throttle_sysfs_counts_only.txt")))
 	res = run(t, b, testkit.Env(collect.OSLinux))
 	must(t, res, "cpu.throttle", model.Warn)
+}
+
+func TestBriefThrottleIsInfo(t *testing.T) {
+	// A couple of short episodes in 10 days (boot, turbo peaks): normal.
+	b := server(t, testkit.S("cpu.throttle", testkit.Read(t, "throttle_sysfs_boot_blip.txt")))
+	res := run(t, b, testkit.Env(collect.OSLinux))
+	f := must(t, res, "cpu.throttle", model.Info)
+	if !strings.Contains(f.Title.EN, "briefly") || f.Action.VI == "" {
+		t.Fatalf("%q", f.Title.EN)
+	}
+	if w := worst(res); w > model.Info {
+		t.Fatalf("worst %s: %v", w, testkit.IDs(res))
+	}
+	// Ten minutes throttled in total is Warn even with few episodes.
+	b = server(t, testkit.S("cpu.throttle", "/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_count=12\n/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_total_time_ms=600000\n/sys/devices/system/cpu/cpu0/thermal_throttle/core_throttle_count=0\n/sys/devices/system/cpu/cpu0/topology/physical_package_id=0\n"))
+	must(t, run(t, b, testkit.Env(collect.OSLinux)), "cpu.throttle", model.Warn)
 }
 
 func TestThrottleUnavailable(t *testing.T) {
@@ -371,7 +426,7 @@ func TestMcelogCorrectedThermal(t *testing.T) {
 	if f.Target != "socket 1" || !strings.Contains(f.Evidence[0], "Large number of corrected cache errors") {
 		t.Fatalf("target %q evidence %v", f.Target, f.Evidence)
 	}
-	must(t, res, "cpu.throttle", model.Warn)
+	must(t, res, "cpu.throttle", model.Info) // one thermal event: brief
 	covState(t, res, "cpu.throttle", model.CovPartial)
 }
 
@@ -402,6 +457,48 @@ func TestLoggerStopped(t *testing.T) {
 	res := run(t, b, testkit.Env(collect.OSLinux))
 	must(t, res, "cpu.mce_logger_stopped", model.Info)
 	covState(t, res, "cpu.mce", model.CovPartial)
+}
+
+func TestRasdaemonNeverRan(t *testing.T) {
+	// Real ras-mc-ctl 0.8.4 output when /var/lib/rasdaemon/ras-mc_event.db
+	// has no tables: rasdaemon was installed but never started.
+	b := server(t,
+		testkit.S("cpu.services", "rasdaemon.installed=1\nrasdaemon.active=inactive\nrasdaemon.enabled=disabled\nrasdaemon.running=0\nmcelog.installed=0\n"),
+		testkit.RC("cpu.ras_summary", 2, "", testkit.Read(t, "ras_summary_nodb_ubuntu_0.8.4.err")),
+		testkit.RC("cpu.ras_errors", 255, "", testkit.Read(t, "ras_errors_nodb_ubuntu_0.8.4.err")))
+	res := run(t, b, testkit.Env(collect.OSLinux))
+	c := covState(t, res, "cpu.mce", model.CovSkipped)
+	if c.Cmd != "systemctl enable --now rasdaemon" || strings.Contains(c.Reason.EN, "DBD") {
+		t.Fatalf("cmd %q reason %q", c.Cmd, c.Reason.EN)
+	}
+	must(t, res, "cpu.mce_logger_stopped", model.Info)
+	if testkit.Find(res, "cpu.mce_ok") != nil {
+		t.Fatal("no history: must not claim no errors")
+	}
+	// New collector: the database file is absent, ras-mc-ctl was not run.
+	b = server(t,
+		testkit.S("cpu.services", "rasdaemon.installed=1\nrasdaemon.active=inactive\nrasdaemon.running=0\n"),
+		testkit.Missing("cpu.ras_summary", "/var/lib/rasdaemon/ras-mc_event.db"),
+		testkit.Missing("cpu.ras_errors", "/var/lib/rasdaemon/ras-mc_event.db"))
+	env := testkit.Env(collect.OSLinux)
+	env.Root = false
+	c = covState(t, run(t, b, env), "cpu.mce", model.CovSkipped)
+	if c.Cmd != "sudo systemctl enable --now rasdaemon" {
+		t.Fatalf("cmd %q", c.Cmd)
+	}
+}
+
+func TestCoverageCommands(t *testing.T) {
+	b := server(t, testkit.S("cpu.services", "rasdaemon.installed=0\nmcelog.installed=0\n"),
+		testkit.Missing("cpu.ras_status", "ras-mc-ctl"), testkit.Missing("cpu.ras_summary", "ras-mc-ctl"), testkit.Missing("cpu.ras_errors", "ras-mc-ctl"),
+		testkit.Missing("cpu.dmidecode", "dmidecode"))
+	res := run(t, b, testkit.Env(collect.OSLinux))
+	if c := covState(t, res, "cpu.mce", model.CovSkipped); c.Cmd != "dnf install -y rasdaemon && systemctl enable --now rasdaemon" || strings.Contains(c.Fix.EN, "dnf") {
+		t.Fatalf("mce cmd %q fix %q", c.Cmd, c.Fix.EN)
+	}
+	if c := covState(t, res, "cpu.inventory", model.CovPartial); c.Cmd != "dnf install -y dmidecode" {
+		t.Fatalf("inventory cmd %q", c.Cmd)
+	}
 }
 
 func TestNotRoot(t *testing.T) {

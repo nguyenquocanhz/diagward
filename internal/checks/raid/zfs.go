@@ -45,7 +45,7 @@ type ZPool struct {
 	lines []string
 }
 
-var zKeyRe = regexp.MustCompile(`^\s*(pool|id|state|status|action|see|scan|scrub|config|errors|remove|checkpoint|resilver):\s?(.*)$`)
+var zKeyRe = regexp.MustCompile(`^\s*(pool|id|state|status|action|see|scan|scrub|config|errors|remove|checkpoint|resilver|expand|errata):\s?(.*)$`)
 
 // parseZpoolStatus parses `zpool status [-P]`.
 func parseZpoolStatus(s string) []*ZPool {
@@ -221,7 +221,27 @@ func zCount(s string) float64 {
 
 func (v ZVdev) errors() float64 { return zCount(v.Read) + zCount(v.Write) + zCount(v.Cksum) }
 
-var zGroupSuffix = regexp.MustCompile(`-\d+$`)
+var (
+	zGroupSuffix = regexp.MustCompile(`-\d+$`)
+	zResilverRe  = regexp.MustCompile(`^resilver(?: \([^)]*\))? in progress`)
+)
+
+// wasPath returns the old device path ZFS prints for a vdev it can no
+// longer open ("5332611342296232703  UNAVAIL ... was /dev/disk/by-id/...").
+func (v ZVdev) wasPath() string {
+	if p, ok := strings.CutPrefix(v.Note, "was "); ok {
+		return strings.TrimSpace(p)
+	}
+	return ""
+}
+
+// label names a vdev for findings, with its old path when it has one.
+func (v ZVdev) label() string {
+	if w := v.wasPath(); w != "" {
+		return v.Name + " (was " + w + ")"
+	}
+	return v.Name
+}
 
 var (
 	zScanDoneRe = regexp.MustCompile(`(scrub repaired|resilvered) (\S+) in .* with (\d+) errors on (.+)$`)
@@ -257,7 +277,8 @@ func (c *checker) checkZFS() {
 		return
 	}
 	if st.Missing != "" {
-		c.cover("raid.zfs", zfsName, model.CovSkipped, hint.Missing("zpool"), hint.Install(c.env, "zpool"))
+		fix, cmd := hint.InstallFix(c.env, "zpool")
+		c.cover("raid.zfs", zfsName, model.CovSkipped, hint.Missing("zpool"), fix, cmd)
 		return
 	}
 	if st.Skipped != "" {
@@ -323,6 +344,9 @@ func (c *checker) checkZFS() {
 }
 
 func (c *checker) zPart(p *ZPool, v ZVdev) *model.Part {
+	if w := v.wasPath(); w != "" {
+		return c.ids.diskPart(w, fmt.Sprintf("%s (pool %s)", w, p.Name))
+	}
 	return c.ids.diskPart(v.Name, fmt.Sprintf("%s (pool %s)", v.Name, p.Name))
 }
 
@@ -330,8 +354,11 @@ func (c *checker) analyzeZPool(p *ZPool) model.Severity {
 	sev := model.OK
 	evid := p.lines
 	scan := strings.ToLower(p.Scan)
-	resilvering := strings.Contains(scan, "resilver in progress")
-	scrubbing := strings.Contains(scan, "scrub in progress")
+	// dRAID sequential rebuilds print "resilver (draid1:4d:11c:1s-0) in
+	// progress" (OpenZFS dRAID howto).
+	first, _, _ := strings.Cut(scan, "\n")
+	resilvering := zResilverRe.MatchString(first)
+	scrubbing := strings.Contains(first, "scrub in progress")
 	progress := ""
 	if resilvering || scrubbing {
 		progress = strings.SplitN(p.Scan, " ", 2)[0]
@@ -416,7 +443,7 @@ func (c *checker) analyzeZPool(p *ZPool) model.Severity {
 			leafErrs = true
 			c.add(model.Finding{
 				ID: "raid.zfs_" + idSuffix, Severity: s, Target: p.Name + "/" + v.Name,
-				Title: model.Tf("ZFS device %s in pool %s is %s", "Ổ %s trong ZFS pool %s ở trạng thái %s", v.Name, p.Name, v.State),
+				Title: model.Tf("ZFS device %s in pool %s is %s", "Ổ %s trong ZFS pool %s ở trạng thái %s", v.label(), p.Name, v.State),
 				Detail: model.Tf("State %s %s (read/write/checksum errors: %s/%s/%s). FAULTED/DEGRADED: ZFS stopped trusting it because of errors; UNAVAIL/REMOVED: it cannot be opened or was unplugged.",
 					"Trạng thái %s %s (lỗi đọc/ghi/checksum: %s/%s/%s). FAULTED/DEGRADED: ZFS ngừng tin ổ này vì quá nhiều lỗi; UNAVAIL/REMOVED: không mở được ổ hoặc ổ đã bị rút.", v.State, v.Note, v.Read, v.Write, v.Cksum),
 				Action: model.Text{
@@ -431,7 +458,7 @@ func (c *checker) analyzeZPool(p *ZPool) model.Severity {
 			leafErrs = true
 			c.add(model.Finding{
 				ID: "raid.zfs_device_offline", Severity: model.Warn, Target: p.Name + "/" + v.Name,
-				Title:  model.Tf("ZFS device %s in pool %s is OFFLINE", "Ổ %s trong ZFS pool %s đang OFFLINE", v.Name, p.Name),
+				Title:  model.Tf("ZFS device %s in pool %s is OFFLINE", "Ổ %s trong ZFS pool %s đang OFFLINE", v.label(), p.Name),
 				Detail: model.T("The device was taken offline (usually by an administrator).", "Ổ đã bị đưa về offline (thường do quản trị viên)."),
 				Action: model.Tf("If the maintenance is over: zpool online %s %s; otherwise replace it.", "Nếu đã bảo trì xong: zpool online %s %s; nếu không thì thay ổ.", p.Name, v.Name),
 				Part:   part,

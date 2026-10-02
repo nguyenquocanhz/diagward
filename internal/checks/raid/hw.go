@@ -22,6 +22,7 @@ const (
 	stMissing      = "missing"      // drive missing from its array
 	stPredictive   = "predictive"   // drive predicts its own failure
 	stUnknown      = "unknown"
+	stVerify       = "needs-verify" // redundancy data inconsistent, needs verify-with-fix (Adaptec "Impacted")
 )
 
 // HWVolume is a logical/virtual drive of a hardware RAID controller.
@@ -36,6 +37,9 @@ type HWVolume struct {
 	Group    string   `json:"group,omitempty"`
 	Members  []string `json:"members,omitempty"`
 	Missing  int      `json:"missingMembers,omitempty"`
+	// Errors is the controller's own report of unreadable data on the
+	// volume (ssacli "Unrecoverable Media Errors", arcconf "Failed stripes").
+	Errors string `json:"errors,omitempty"`
 }
 
 // HWDrive is a physical drive behind a hardware RAID controller.
@@ -142,7 +146,12 @@ func batteryClass(s string) string {
 	switch {
 	case l == "", l == "-", l == "na", l == "n/a", strings.Contains(l, "not installed"), strings.Contains(l, "not present"), strings.Contains(l, "absent"):
 		return ""
-	case strings.Contains(l, "optimal"), l == "ok":
+	case strings.Contains(l, "non operational"), strings.Contains(l, "non-operational"), strings.Contains(l, "nonoperational"):
+		return stFailed
+	case strings.Contains(l, "optimal"), l == "ok", l == "operational":
+		// Older MegaCli and some Exadata images print "Battery State:
+		// Operational" for a healthy BBU (Oracle Exadata BBU maintenance
+		// docs); "Non Operational" is the failed state.
 		return stOK
 	case strings.Contains(l, "learn"), strings.Contains(l, "charg"):
 		return stBusy
@@ -189,8 +198,8 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 			Title: model.Tf("RAID controller %s reports status %q", "Card RAID %s báo trạng thái %q", label, ct.Status),
 			Detail: model.T("The controller does not report itself as optimal. The cause is usually listed below (degraded virtual drive, failed disk, battery/cache problem, foreign configuration).",
 				"Controller không ở trạng thái tối ưu. Nguyên nhân thường nằm ở các mục bên dưới (virtual drive degraded, ổ hỏng, pin/cache lỗi, cấu hình foreign)."),
-			Action: model.T("Fix the issues reported for its drives and battery. If nothing else is reported, check the controller event log (storcli /c0 show events / ssacli ctrl all diag) and its firmware.",
-				"Xử lý các lỗi ổ cứng và pin được báo kèm. Nếu không có lỗi nào khác, xem nhật ký sự kiện của controller (storcli /c0 show events / ssacli ctrl all diag) và kiểm tra firmware."),
+			Action: model.Tf("Fix the issues reported for its drives and battery. If nothing else is reported, read the controller event log (%s), check the BMC (iDRAC/iLO) log and update the controller firmware.",
+				"Xử lý các lỗi ổ cứng và pin được báo kèm. Nếu không có lỗi nào khác, xem nhật ký sự kiện của controller (%s), nhật ký BMC (iDRAC/iLO) và cập nhật firmware controller.", eventLogCmd(ct)),
 			Evidence: ev(evid),
 			Part:     &model.Part{Kind: "controller", Model: ct.Model, Serial: ct.Serial, Firmware: ct.Firmware, Location: label},
 		})
@@ -319,6 +328,19 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 			volFlagged = true
 			vs = model.Warn
 			c.add(c.hwRebuildFinding(ct, v, vt))
+		case stVerify:
+			volFlagged = true
+			vs = model.Warn
+			id := strings.TrimPrefix(v.ID, "LD ")
+			c.add(model.Finding{
+				ID: "raid.hw_vd_needs_verify", Severity: model.Warn, Target: vt,
+				Title: model.Tf("RAID volume %s is %q: its redundancy data needs a verify with fix", "Volume RAID %s ở trạng thái %q: dữ liệu dự phòng cần verify và sửa", vt, v.State),
+				Detail: model.T("The controller does not trust the parity/mirror data of this volume (initialisation interrupted or an unclean event). The data is readable, but a disk failure now may not be recoverable.",
+					"Controller không còn tin dữ liệu parity/mirror của volume này (initialize bị gián đoạn hoặc sự cố đột ngột). Dữ liệu vẫn đọc được, nhưng nếu hỏng ổ lúc này có thể không khôi phục được."),
+				Action: model.Tf("Make sure the backup is current, then run a verify with fix: arcconf task start %s logicaldrive %s verify_fix (it runs in the background; the volume returns to Optimal when done).",
+					"Kiểm tra bản sao lưu còn mới, rồi chạy verify kèm sửa: arcconf task start %s logicaldrive %s verify_fix (chạy nền; volume trở về Optimal khi xong).", ct.ID, id),
+				Evidence: ev(evid),
+			})
 		case stBusy:
 			vs = model.Info
 			c.add(model.Finding{
@@ -336,8 +358,23 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 				Evidence: ev(evid),
 			})
 		}
+		// Blocks the controller could not reconstruct (HPE "Unrecoverable
+		// Media Errors", Adaptec "Failed stripes"): files on them are
+		// damaged, but the volume as a whole still works, so Warn.
+		if v.Errors != "" && v.Class != stFailed {
+			vs = model.Worst(vs, model.Warn)
+			c.add(model.Finding{
+				ID: "raid.hw_vd_media_errors", Severity: model.Warn, Target: vt,
+				Title: model.Tf("RAID volume %s has unreadable blocks (%s)", "Volume RAID %s có khối dữ liệu không đọc được (%s)", vt, v.Errors),
+				Detail: model.T("The controller found stripes it could not rebuild from redundancy (usually a second disk error during a rebuild). The data in those blocks is lost; the rest of the volume is readable.",
+					"Controller phát hiện các stripe không dựng lại được từ dữ liệu dự phòng (thường do ổ thứ hai lỗi đọc trong lúc rebuild). Dữ liệu trong các khối đó đã mất; phần còn lại của volume vẫn đọc được."),
+				Action: model.T("Make sure the backup is current. Run a consistency check / surface scan from the vendor tool, find the affected files (filesystem check, application errors) and restore them from backup. Replace any disk that reports media errors.",
+					"Kiểm tra bản sao lưu còn mới. Chạy consistency check / surface scan bằng công cụ của hãng, tìm file bị ảnh hưởng (kiểm tra filesystem, lỗi ứng dụng) và khôi phục chúng từ bản sao lưu. Thay ổ nào báo lỗi media."),
+				Evidence: ev(evid),
+			})
+		}
 		sev = model.Worst(sev, vs)
-		c.arrayRow(vs, vt+nameSuffix(v.Name), strings.TrimSpace(v.Level+" ("+ct.Tool+")"), v.Size, v.State, strings.Join(v.Members, " "), v.Progress)
+		c.arrayRow(vs, vt+nameSuffix(v.Name), strings.TrimSpace(v.Level+" ("+ct.Tool+")"), v.Size, v.State, strings.Join(v.Members, " "), joinOr(uniq([]string{v.Progress, v.Errors}), ""))
 	}
 
 	var spares, unconf []string
@@ -372,8 +409,10 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 			c.add(model.Finding{
 				ID: "raid.hw_pd_predictive", Severity: model.Crit, Target: label + " " + where,
 				Title: model.Tf("Disk %s on %s predicts its own failure (S.M.A.R.T. alert)", "Ổ %s trên %s báo sắp hỏng (cảnh báo S.M.A.R.T.)", where, label),
-				Detail: model.Tf("State %q, predictive failure count %d, S.M.A.R.T. alert %v. The drive firmware has crossed a failure threshold; such drives often fail within days or weeks.",
-					"Trạng thái %q, số lần predictive failure %d, cảnh báo S.M.A.R.T. %v. Firmware của ổ đã vượt ngưỡng hỏng; ổ như vậy thường hỏng hẳn trong vài ngày tới vài tuần.", d.State, max(d.PredFail, 0), d.SmartAlert),
+				Detail: model.Text{
+					EN: fmt.Sprintf("State %q, predictive failure count %d, S.M.A.R.T. alert: %s. The drive firmware has crossed a failure threshold; such drives often fail within days or weeks.", d.State, max(d.PredFail, 0), yesNo(d.SmartAlert, "yes", "no")),
+					VI: fmt.Sprintf("Trạng thái %q, số lần predictive failure %d, cảnh báo S.M.A.R.T.: %s. Firmware của ổ đã vượt ngưỡng hỏng; ổ như vậy thường hỏng hẳn trong vài ngày tới vài tuần.", d.State, max(d.PredFail, 0), yesNo(d.SmartAlert, "có", "không")),
+				},
 				Action: model.Text{
 					EN: fmt.Sprintf("Back up, then replace disk%s soon (open a warranty case: predictive failure qualifies). With a hot spare, the controller can copy to it first (storcli: /cX/eY/sZ set offline only after the spare is ready).", pen),
 					VI: fmt.Sprintf("Sao lưu rồi sớm thay ổ%s (mở case bảo hành: predictive failure được hãng chấp nhận). Nếu có ổ hot spare, controller có thể chép sang trước.", pvi),
@@ -425,8 +464,9 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 			ds = model.Worst(ds, model.Warn)
 			c.add(model.Finding{
 				ID: "raid.hw_pd_smart_warnings", Severity: model.Warn, Target: label + " " + where,
-				Title:  model.Tf("Disk %s on %s has %d S.M.A.R.T. warnings", "Ổ %s trên %s có %d cảnh báo S.M.A.R.T.", where, label, d.SmartWarn),
-				Detail: model.T("The controller counted S.M.A.R.T. warnings for this disk (check_adaptec_raid treats any as a warning).", "Controller ghi nhận cảnh báo S.M.A.R.T. cho ổ này."),
+				Title: model.Tf("Disk %s on %s has %d S.M.A.R.T. warnings", "Ổ %s trên %s có %d cảnh báo S.M.A.R.T.", where, label, d.SmartWarn),
+				// thomas-krenn/check_adaptec_raid treats any count as a warning.
+				Detail: model.T("The controller counted S.M.A.R.T. warnings for this disk: its own health monitoring sees attributes getting worse.", "Controller ghi nhận cảnh báo S.M.A.R.T. cho ổ này: cơ chế tự giám sát của ổ thấy các chỉ số đang xấu đi."),
 				Action: model.Text{EN: "Check the disk's S.M.A.R.T. details and plan a replacement" + pen + ".", VI: "Kiểm tra chi tiết S.M.A.R.T. của ổ và lên kế hoạch thay" + pvi + "."},
 				Part:   part,
 			})
@@ -743,4 +783,27 @@ func cacheNote(cache string, bad, vi bool) string {
 		return " Trạng thái cache hiện tại: " + cache + "."
 	}
 	return " Current cache status: " + cache + "."
+}
+
+func yesNo(b bool, yes, no string) string {
+	if b {
+		return yes
+	}
+	return no
+}
+
+// eventLogCmd is the read-only command that shows a controller's event log.
+func eventLogCmd(ct *Controller) string {
+	id := strings.TrimPrefix(strings.TrimPrefix(ct.ID, "Slot "), "Controller ")
+	switch ct.Tool {
+	case "storcli", "perccli":
+		return ct.Tool + " /c" + id + " show events"
+	case "megacli":
+		return "MegaCli -AdpEventLog -GetLatest 200 -f events.log -a" + id
+	case "ssacli":
+		return "ssacli ctrl slot=" + id + " show detail; ssacli ctrl slot=" + id + " diag file=/tmp/ssa-diag.zip"
+	case "arcconf":
+		return "arcconf GETLOGS " + id + " EVENT tabular"
+	}
+	return ct.Tool
 }

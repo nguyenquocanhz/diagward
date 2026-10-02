@@ -141,7 +141,7 @@ func TestDmidecodeMissing(t *testing.T) {
 	res := Check(b, testkit.Env(collect.OSLinux))
 	testkit.Validate(t, res)
 	c := testkit.Cov(res, "system.identity")
-	if c == nil || c.State != model.CovSkipped || !strings.Contains(c.Fix.EN, "dnf install -y dmidecode") {
+	if c == nil || c.State != model.CovSkipped || c.Cmd != "dnf install -y dmidecode" || strings.Contains(c.Fix.EN, "dnf") {
 		t.Errorf("coverage %+v", c)
 	}
 }

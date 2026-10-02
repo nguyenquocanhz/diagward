@@ -21,6 +21,7 @@ type Facts struct {
 	Drives       []Drive       `json:"drives,omitempty"`
 	Volumes      []Volume      `json:"volumes,omitempty"`
 	Controllers  []Controller  `json:"controllers,omitempty"`
+	Batteries    []Battery     `json:"batteries,omitempty"`
 	DIMMs        []DIMM        `json:"dimms,omitempty"`
 	CPUs         []CPU         `json:"cpus,omitempty"`
 	NICs         []NIC         `json:"nics,omitempty"`
@@ -150,6 +151,7 @@ type Drive struct {
 type Volume struct {
 	ID            string         `json:"id"`
 	members       []string       // normalised @odata.id of member drives
+	uid           string         // durable identifier, to drop HPE SmartStorage duplicates
 	Name          string         `json:"name,omitempty"`
 	RAID          string         `json:"raid,omitempty"`
 	CapacityBytes uint64         `json:"capacityBytes,omitempty"`
@@ -168,6 +170,19 @@ type Controller struct {
 	Firmware string `json:"firmware,omitempty"`
 	Status   Status `json:"status"`
 	Cache    Status `json:"cache"`
+}
+
+// Battery is an HPE Smart Storage Battery (it backs the Smart Array write
+// cache); iLO reports it only in its Oem block.
+type Battery struct {
+	Name      string         `json:"name"`
+	Model     string         `json:"model,omitempty"`
+	Spare     string         `json:"sparePart,omitempty"`
+	Serial    string         `json:"serial,omitempty"`
+	Firmware  string         `json:"firmware,omitempty"`
+	Condition string         `json:"condition,omitempty"` // iLO 4: Ok, Failed, ...
+	Status    Status         `json:"status"`
+	Severity  model.Severity `json:"severity"`
 }
 
 // DIMM is one memory module.
@@ -281,7 +296,9 @@ func (w *walker) system(s map[string]any) {
 	w.rollups = append(w.rollups, rollup{"system " + sys.ID, first(sys.Status.HealthRollup, sys.Status.Health)})
 
 	sysA := w.area("system")
-	if coll := w.s.read(sysA, link(s, "Processors")); coll != nil {
+	// iLO 4 links Processors only under "links", Memory only under
+	// Oem.Hp.links (its "Processors" and "Memory" are summary objects).
+	if coll := w.s.read(sysA, first(link(s, "Processors"), link(s, "links", "Processors"))); coll != nil {
 		for _, p := range w.s.members(sysA, coll) {
 			st := statusOf(p)
 			if t := strings.ToLower(str(p, "ProcessorType")); t != "" && t != "cpu" {
@@ -294,7 +311,7 @@ func (w *walker) system(s map[string]any) {
 			w.f.CPUs = append(w.f.CPUs, c)
 		}
 	}
-	if coll := w.s.read(sysA, link(s, "EthernetInterfaces")); coll != nil {
+	if coll := w.s.read(sysA, first(link(s, "EthernetInterfaces"), link(s, "links", "EthernetInterfaces"))); coll != nil {
 		for _, e := range w.s.members(sysA, coll) {
 			n := NIC{Name: first(str(e, "Name"), str(e, "Id")), MAC: first(str(e, "MACAddress"), str(e, "PermanentMACAddress")), LinkStatus: str(e, "LinkStatus"), Status: statusOf(e)}
 			if v := num(e, "SpeedMbps"); v != nil {
@@ -305,7 +322,7 @@ func (w *walker) system(s map[string]any) {
 	}
 
 	memA := w.area("memory")
-	if coll := w.s.read(memA, link(s, "Memory")); coll != nil {
+	if coll := w.s.read(memA, first(link(s, "Memory"), link(s, "Oem", "Hp", "links", "Memory"))); coll != nil {
 		for _, m := range w.s.members(memA, coll) {
 			w.dimm(m)
 		}
@@ -318,7 +335,7 @@ func (w *walker) system(s map[string]any) {
 			w.storage(st)
 		}
 	}
-	if ss := w.s.read(stA, link(s, "Oem", "Hpe", "Links", "SmartStorage")); ss != nil {
+	if ss := w.s.read(stA, first(link(s, "Oem", "Hpe", "Links", "SmartStorage"), link(s, "Oem", "Hp", "links", "SmartStorage"))); ss != nil {
 		w.smartStorage(ss)
 	}
 	simple := w.s.read(stA, link(s, "SimpleStorage"))
@@ -342,26 +359,66 @@ func (w *walker) system(s map[string]any) {
 		_ = w.s.members(stA, simple) // still account for the reads
 	}
 	w.logServices(link(s, "LogServices"))
+	w.batteries(objs(hpOem(s), "Battery")) // iLO 4
+}
+
+// batteries reads HPE Smart Storage Batteries: iLO 4 lists them in the
+// system's Oem.Hp.Battery (Present, Condition), iLO 5/6 in the chassis'
+// Oem.Hpe.SmartStorageBattery (Status). Both carry model, spare part number
+// and serial.
+func (w *walker) batteries(list []map[string]any) {
+	for _, b := range list {
+		if strings.EqualFold(str(b, "Present"), "No") {
+			continue
+		}
+		bat := Battery{
+			Name:      first(str(b, "ProductName"), "Smart Storage Battery "+str(b, "Index")),
+			Model:     str(b, "Model"),
+			Spare:     first(str(b, "Spare"), str(b, "SparePartNumber")),
+			Serial:    str(b, "SerialNumber"),
+			Firmware:  str(b, "FirmwareVersion"),
+			Condition: str(b, "Condition"),
+			Status:    statusOf(b),
+		}
+		if bat.Status.Absent() {
+			continue
+		}
+		dup := false
+		for _, o := range w.f.Batteries {
+			dup = dup || (bat.Serial != "" && o.Serial == bat.Serial)
+		}
+		if !dup {
+			w.f.Batteries = append(w.f.Batteries, bat)
+		}
+	}
 }
 
 func (w *walker) dimm(m map[string]any) {
 	d := DIMM{
-		Slot:         first(str(m, "DeviceLocator"), str(m, "Location", "PartLocation", "ServiceLabel"), str(m, "Name"), str(m, "Id")),
+		Slot:         first(str(m, "DeviceLocator"), str(m, "Location", "PartLocation", "ServiceLabel"), str(m, "SocketLocator"), str(m, "Name"), str(m, "Id")),
 		Manufacturer: str(m, "Manufacturer"),
 		PartNumber:   str(m, "PartNumber"),
 		Serial:       str(m, "SerialNumber"),
-		Type:         first(str(m, "MemoryDeviceType"), str(m, "MemoryType")),
+		Type:         first(str(m, "MemoryDeviceType"), str(m, "MemoryType"), str(m, "DIMMType")),
 		Status:       statusOf(m),
 	}
 	if v := num(m, "CapacityMiB"); v != nil && *v > 0 {
+		d.CapacityMiB = *v
+	} else if v := num(m, "SizeMB"); v != nil && *v > 0 { // iLO 4 HpMemory schema
 		d.CapacityMiB = *v
 	}
 	if v := num(m, "OperatingSpeedMhz"); v != nil && *v > 0 {
 		d.SpeedMHz = *v
 	}
 	// HPE lists every slot; empty ones are Absent or have no capacity.
-	if hs := strings.ToLower(str(m, "Oem", "Hpe", "DIMMStatus")); hs == "notpresent" {
+	// DIMMStatus (Oem.Hpe on iLO 5, top level on the HpMemory schema of
+	// iLO 4, which has no Status at all) also tells a failed module.
+	hs := strings.ToLower(first(str(hpOem(m), "DIMMStatus"), str(m, "DIMMStatus")))
+	if hs == "notpresent" {
 		d.Status.State = "Absent"
+	}
+	if d.Status.Health == "" {
+		d.Status.Health = dimmStatusHealth(hs)
 	}
 	if d.Status.Absent() || (d.CapacityMiB == 0 && d.Status.Health == "" && d.Serial == "") {
 		return
@@ -369,43 +426,115 @@ func (w *walker) dimm(m map[string]any) {
 	w.f.DIMMs = append(w.f.DIMMs, d)
 }
 
+// dimmStatusHealth maps HPE's DIMMStatus (HpeMemory / HpMemory schemas) to
+// a Redfish health when the BMC gives none: a module mapped out after
+// errors is Critical; degraded, unsupported, mismatched, misconfigured or
+// expected-but-missing modules are Warning; the rest say nothing.
+func dimmStatusHealth(s string) string {
+	switch s {
+	case "goodinuse", "goodpartiallyinuse", "presentspare", "presentunused", "addedbutunused", "upgradedbutunused":
+		return "OK"
+	case "mapouterror":
+		return "Critical"
+	case "degraded", "doesnotmatch", "notsupported", "configurationerror", "expectedbutmissing", "mapoutconfiguration":
+		return "Warning"
+	}
+	return ""
+}
+
 func (w *walker) storage(st map[string]any) {
 	stA := w.area("storage")
 	for _, c := range objs(st, "StorageControllers") {
-		w.f.Controllers = append(w.f.Controllers, controllerOf(c))
+		w.addController(controllerOf(c))
 	}
 	if coll := w.s.read(stA, link(st, "Controllers")); coll != nil && len(objs(st, "StorageControllers")) == 0 {
 		for _, c := range w.s.members(stA, coll) {
-			w.f.Controllers = append(w.f.Controllers, controllerOf(c))
+			w.addController(controllerOf(c))
 		}
 	}
 	for _, ref := range links(st, "Drives") {
 		if d := w.s.read(stA, ref); d != nil {
-			w.f.Drives = append(w.f.Drives, driveOf(d))
+			w.addDrive(driveOf(d))
 		}
 	}
 	if coll := w.s.read(stA, link(st, "Volumes")); coll != nil {
 		for _, v := range w.s.members(stA, coll) {
-			w.f.Volumes = append(w.f.Volumes, volumeOf(v))
+			// Dell lists every non-RAID drive as a "RawDevice" volume: it
+			// is a drive, already judged as one, not a RAID volume.
+			if strings.EqualFold(str(v, "VolumeType"), "RawDevice") {
+				continue
+			}
+			w.addVolume(volumeOf(v))
 		}
 	}
+}
+
+// addDrive adds a drive unless the same drive (same serial number) was
+// already read: HPE iLO 5/6 show Smart Array drives both in the standard
+// Storage tree and in the older Oem SmartStorage tree.
+func (w *walker) addDrive(d Drive) {
+	if d.Serial != "" {
+		for _, o := range w.f.Drives {
+			if strings.EqualFold(o.Serial, d.Serial) {
+				return
+			}
+		}
+	}
+	w.f.Drives = append(w.f.Drives, d)
+}
+
+func (w *walker) addVolume(v Volume) {
+	if v.uid != "" {
+		for _, o := range w.f.Volumes {
+			if o.uid == v.uid {
+				return
+			}
+		}
+	}
+	w.f.Volumes = append(w.f.Volumes, v)
+}
+
+func (w *walker) addController(c Controller) {
+	if c.Serial != "" {
+		for _, o := range w.f.Controllers {
+			if strings.EqualFold(o.Serial, c.Serial) {
+				return
+			}
+		}
+	}
+	w.f.Controllers = append(w.f.Controllers, c)
+}
+
+// normID reduces a durable name ("600508B1-001C-2F66-07D3-27AE65E786C6",
+// "600508B1001C2F6607D327AE65E786C6") to lower-case hex digits.
+func normID(s string) string {
+	var b strings.Builder
+	for _, r := range strings.ToLower(s) {
+		if (r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') {
+			b.WriteRune(r)
+		}
+	}
+	if b.Len() < 8 {
+		return ""
+	}
+	return b.String()
 }
 
 // smartStorage reads HPE's Oem SmartStorage tree (iLO 4/5).
 func (w *walker) smartStorage(ss map[string]any) {
 	stA := w.area("storage")
-	coll := w.s.read(stA, link(ss, "Links", "ArrayControllers"))
+	coll := w.s.read(stA, first(link(ss, "Links", "ArrayControllers"), link(ss, "links", "ArrayControllers")))
 	for _, ac := range w.s.members(stA, coll) {
 		c := controllerOf(ac)
 		if cm := obj(ac, "CacheModuleStatus"); cm != nil {
 			c.Cache = Status{Health: str(cm, "Health")}
 		}
-		w.f.Controllers = append(w.f.Controllers, c)
-		for _, d := range w.s.members(stA, w.s.read(stA, link(ac, "Links", "PhysicalDrives"))) {
-			w.f.Drives = append(w.f.Drives, driveOf(d))
+		w.addController(c)
+		for _, d := range w.s.members(stA, w.s.read(stA, first(link(ac, "Links", "PhysicalDrives"), link(ac, "links", "PhysicalDrives")))) {
+			w.addDrive(driveOf(d))
 		}
-		for _, v := range w.s.members(stA, w.s.read(stA, link(ac, "Links", "LogicalDrives"))) {
-			w.f.Volumes = append(w.f.Volumes, volumeOf(v))
+		for _, v := range w.s.members(stA, w.s.read(stA, first(link(ac, "Links", "LogicalDrives"), link(ac, "links", "LogicalDrives")))) {
+			w.addVolume(volumeOf(v))
 		}
 	}
 }
@@ -475,6 +604,12 @@ func volumeOf(v map[string]any) Volume {
 	for _, l := range links(v, "Links", "Drives") {
 		vol.members = append(vol.members, normKey(l))
 	}
+	vol.uid = normID(str(v, "VolumeUniqueIdentifier")) // HPE SmartStorage
+	for _, id := range objs(v, "Identifiers") {
+		if vol.uid == "" {
+			vol.uid = normID(str(id, "DurableName"))
+		}
+	}
 	if r := str(v, "Raid"); vol.RAID == "" && r != "" { // HPE SmartStorage: "Raid": "1"
 		vol.RAID = "RAID" + r
 	}
@@ -527,6 +662,7 @@ func (w *walker) chassis(ch map[string]any) {
 		w.powerSubsystem(ch)
 	}
 	w.logServices(link(ch, "LogServices"))
+	w.batteries(objs(hpOem(ch), "SmartStorageBattery")) // iLO 5/6
 }
 
 func (w *walker) readTry(a *area, ref string) (map[string]any, outcome) {
@@ -563,9 +699,16 @@ func (w *walker) thermal(t map[string]any) {
 			Status:    statusOf(f),
 		}
 		if fan.Reading == nil {
-			fan.Reading = num(f, "ReadingRPM") // Thermal v1_0 (iLO 4)
+			fan.Reading = num(f, "ReadingRPM") // Thermal v1_0
 			if fan.Reading != nil {
 				fan.Units = "RPM"
+			}
+		}
+		if fan.Reading == nil {
+			// HPE iLO 4: "CurrentReading": 17, "Units": "Percent".
+			fan.Reading = num(f, "CurrentReading")
+			if u := str(f, "Units"); fan.Reading != nil && fan.Units == "" && u != "" {
+				fan.Units = u
 			}
 		}
 		if fan.Units == "" {
@@ -576,6 +719,15 @@ func (w *walker) thermal(t map[string]any) {
 	for _, r := range objs(t, "Redundancy") {
 		w.f.Redundancy = append(w.f.Redundancy, Redundancy{Kind: "fan", Name: str(r, "Name"), Mode: str(r, "Mode"), Status: statusOf(r)})
 	}
+}
+
+func firstNum(ps ...*float64) *float64 {
+	for _, p := range ps {
+		if p != nil {
+			return p
+		}
+	}
+	return nil
 }
 
 // minPtr returns the larger of two lower limits that are set (the one hit
@@ -720,22 +872,43 @@ func (w *walker) powerSubsystem(ch map[string]any) {
 	}
 }
 
-// Log services that hold no hardware events; must match the collector.
-var skipLogServices = []string{"dump", "crash", "postcode", "hostlogger", "journal", "audit", "debug", "diag", "fdr", "telemetry"}
+// Log services that hold no hardware events; must match the collector
+// (package bmc, skipLog). Matched against the service Id; skipNames also
+// against its Name, because Supermicro calls both of its logs "Log1" and only
+// the Name tells the maintenance (audit) log from the health event log.
+var (
+	skipLogServices = []string{"dump", "crash", "postcode", "hostlogger", "journal", "audit", "debug", "diag", "fdr", "telemetry", "maintenance"}
+	skipLogNames    = []string{"audit", "maintenance", "security log"}
+)
+
+// SkipLogService reports whether a LogService (by its Id and Name) holds no
+// hardware events: dumps, POST codes, the BMC's own journal, audit,
+// maintenance and security logs (HPE iLO "SL").
+func SkipLogService(id, name string) bool {
+	low := strings.ToLower(strings.TrimSpace(id))
+	if low == "sl" {
+		return true
+	}
+	for _, s := range skipLogServices {
+		if strings.Contains(low, s) {
+			return true
+		}
+	}
+	n := strings.ToLower(name)
+	for _, s := range skipLogNames {
+		if strings.Contains(n, s) {
+			return true
+		}
+	}
+	return false
+}
 
 func (w *walker) logServices(ref string) {
 	lgA := w.area("logs")
 	coll := w.s.read(lgA, ref)
 	for _, ls := range w.s.members(lgA, coll) {
 		id := first(str(ls, "Id"), path.Base(str(ls, "@odata.id")))
-		low := strings.ToLower(id)
-		skip := low == "sl"
-		for _, s := range skipLogServices {
-			if strings.Contains(low, s) {
-				skip = true
-			}
-		}
-		if skip || link(ls, "Entries") == "" {
+		if SkipLogService(id, str(ls, "Name")) || link(ls, "Entries") == "" {
 			continue
 		}
 		w.logs = append(w.logs, logService{id: id, name: first(str(ls, "Name"), id), entries: link(ls, "Entries")})
@@ -746,7 +919,7 @@ func (w *walker) logServices(ref string) {
 // every one "HpeServerPowerSupply"; its bay number tells them apart.
 func psuName(s map[string]any) string {
 	name := first(str(s, "Name"), str(s, "MemberId"))
-	if bay := str(s, "Oem", "Hpe", "BayNumber"); bay != "" && (name == "" || strings.HasPrefix(name, "HpeServer")) {
+	if bay := str(hpOem(s), "BayNumber"); bay != "" && (name == "" || strings.HasPrefix(name, "HpeServer") || strings.HasPrefix(name, "HpServer")) {
 		return "Power Supply Bay " + bay
 	}
 	return name
@@ -755,7 +928,7 @@ func psuName(s map[string]any) string {
 // genericName drops HPE's schema-type names ("HpeSmartStorageDiskDrive"),
 // which name every instance the same.
 func genericName(n string) string {
-	if strings.HasPrefix(n, "HpeSmartStorage") || strings.HasPrefix(n, "HpeServer") {
+	if strings.HasPrefix(n, "HpeSmartStorage") || strings.HasPrefix(n, "HpeServer") || strings.HasPrefix(n, "HpSmartStorage") || strings.HasPrefix(n, "HpServer") {
 		return ""
 	}
 	return n

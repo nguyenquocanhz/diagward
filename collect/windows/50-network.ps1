@@ -43,6 +43,15 @@ if (DW-Has 'Get-NetAdapter') {
       }
     }
   }
+  # Adapters bound to a Hyper-V external switch ("Hyper-V Extensible Virtual
+  # Switch" protocol, component vms_pp). Unlike Get-VMSwitch this needs no
+  # elevation, so an uplink without an IP is still known to be in use.
+  if (DW-Has 'Get-NetAdapterBinding') {
+    DW-Json 'network.win_vmswitch_bound' {
+      Get-NetAdapterBinding -ComponentID vms_pp -ErrorAction SilentlyContinue | Where-Object { $_.Enabled } |
+        Select-Object Name, InterfaceDescription
+    }
+  }
 } else {
   DW-Missing 'network.win_adapter' 'Get-NetAdapter'
 }

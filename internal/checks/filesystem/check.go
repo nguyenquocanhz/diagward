@@ -35,11 +35,23 @@ type FS struct {
 	ErrorsCount uint64   `json:"errorsCount,omitempty"`
 	State       string   `json:"state,omitempty"` // ext superblock state / Windows health
 	Dirty       bool     `json:"dirty,omitempty"`
+	// Pool is the ZFS pool of a dataset ("rpool" for rpool/ROOT/pve-1).
+	Pool string `json:"pool,omitempty"`
+	// SystemPartition marks Windows EFI / System Reserved / Recovery
+	// volumes: they are small and nearly full by design, so they get no
+	// space alarm.
+	SystemPartition bool `json:"systemPartition,omitempty"`
+	// Boot is the Windows volume the OS runs from.
+	Boot bool `json:"boot,omitempty"`
+
+	byPool    bool // space judged at pool level (ZFS), not per dataset
+	poolKnown bool // zpool list has this dataset's pool
 }
 
 // Facts is the typed data of the filesystem domain.
 type Facts struct {
-	Filesystems []FS `json:"filesystems"`
+	Filesystems []FS         `json:"filesystems"`
+	ZPools      []ZPoolSpace `json:"zpools,omitempty"`
 }
 
 // Check analyzes the bundle for this domain.
@@ -189,9 +201,10 @@ func checkLinux(b *collect.Bundle, env model.Env, res *model.Result) {
 		fss = append(fss, fs)
 	}
 
-	spaceCoverage(b, dfSec, rows, res)
+	pools := zfsPools(b, fss)
+	spaceCoverage(b, dfSec, rows, fss, res)
 	status := map[string]model.Severity{}
-	spaceFindings(fss, status, res, env)
+	spaceFindings(fss, pools, status, res, env)
 
 	// Health: read-only remounts, ext4 errors, superblock state, fstab.
 	healthCov := model.Coverage{ID: "filesystem.health", Component: model.CompFilesystem,
@@ -200,7 +213,7 @@ func checkLinux(b *collect.Bundle, env model.Env, res *model.Result) {
 		healthCov.State = model.CovFailed
 		healthCov.Reason = model.T("/proc/mounts could not be read.", "Không đọc được /proc/mounts.")
 		res.Coverage = append(res.Coverage, healthCov)
-		finishTable(fss, status, res)
+		finishTable(fss, pools, status, res)
 		return
 	}
 	healthCov.State = model.CovRan
@@ -211,7 +224,8 @@ func checkLinux(b *collect.Bundle, env model.Env, res *model.Result) {
 				model.T("Reading the ext superblock state (tune2fs -l) needs root.", "Cần quyền root để đọc trạng thái superblock ext (tune2fs -l)."), hint.RunAsRoot(env)
 		case t.Missing != "":
 			healthCov.State, healthCov.Reason, healthCov.Fix = model.CovPartial, hint.Missing("tune2fs"),
-				model.T("Install e2fsprogs and run Diagward again.", "Cài gói e2fsprogs rồi chạy lại Diagward.")
+				model.T("Install e2fsprogs, then run Diagward again.", "Cài gói e2fsprogs rồi chạy lại Diagward.")
+			healthCov.Cmd = hint.InstallCommand(env, "e2fsprogs")
 		}
 	}
 	res.Coverage = append(res.Coverage, healthCov)
@@ -223,23 +237,25 @@ func checkLinux(b *collect.Bundle, env model.Env, res *model.Result) {
 		problems += fstabFindings(b, mounts, res)
 	}
 	if problems == 0 {
-		n := 0
+		// Count filesystems, not mount points: bind mounts and read-only
+		// second views (WSL's /mnt/wslg/distro) are the same filesystem.
+		devs := map[string]bool{}
 		for _, m := range mounts {
 			if roOnErrorTypes[m.Type] {
-				n++
+				devs[m.Device] = true
 			}
 		}
-		if n > 0 {
+		if n := len(devs); n > 0 {
 			res.Findings = append(res.Findings, model.Finding{
 				ID: "filesystem.health_ok", Component: model.CompFilesystem, Severity: model.OK,
-				Title: model.Tf("Filesystems are mounted normally; no filesystem errors recorded (%d mounts checked)", "Các phân vùng được mount bình thường; không ghi nhận lỗi hệ thống tệp (đã kiểm tra %d điểm mount)", n),
+				Title: model.Tf("%d filesystem(s) mounted normally, no filesystem errors recorded", "%d hệ thống tệp được mount bình thường, không ghi nhận lỗi", n),
 			})
 		}
 	}
-	finishTable(fss, status, res)
+	finishTable(fss, pools, status, res)
 }
 
-func spaceCoverage(b *collect.Bundle, df *collect.Section, rows []dfRow, res *model.Result) {
+func spaceCoverage(b *collect.Bundle, df *collect.Section, rows []dfRow, fss []FS, res *model.Result) {
 	c := model.Coverage{ID: "filesystem.space", Component: model.CompFilesystem,
 		Name: model.T("Free space and inodes", "Dung lượng trống và inode")}
 	switch {
@@ -248,6 +264,11 @@ func spaceCoverage(b *collect.Bundle, df *collect.Section, rows []dfRow, res *mo
 	case df.Timeout:
 		c.State = model.CovFailed
 		c.Reason = model.T("df timed out — usually a hung network mount (NFS/CIFS) or a disk that stopped answering.", "df bị quá thời gian — thường do mount mạng (NFS/CIFS) bị treo hoặc ổ đĩa không phản hồi.")
+	case len(rows) == 0 && strings.Contains(df.Err, "no file systems processed"):
+		// GNU df found nothing after excluding pseudo and network
+		// filesystems: a container on overlay, or a diskless/NFS-root host.
+		c.State, c.Reason = model.CovSkipped, model.T("No local disk filesystem is mounted (only overlay, tmpfs or network filesystems).",
+			"Không có phân vùng đĩa cục bộ nào được mount (chỉ có overlay, tmpfs hoặc hệ thống tệp mạng).")
 	case len(rows) == 0:
 		c.State = model.CovFailed
 		c.Reason = model.T("df output could not be read.", "Không đọc được kết quả df.")
@@ -259,14 +280,28 @@ func spaceCoverage(b *collect.Bundle, df *collect.Section, rows []dfRow, res *mo
 	default:
 		c.State = model.CovRan
 	}
+	if c.State == model.CovRan {
+		for _, fs := range fss {
+			if fs.Type == "zfs" && !fs.poolKnown {
+				c.State = model.CovPartial
+				c.Reason = model.T("ZFS pool capacity (zpool list) was not available; df alone shows ZFS pools emptier than they are.",
+					"Không có dung lượng pool ZFS (zpool list); chỉ dựa vào df sẽ thấy pool ZFS trống hơn thực tế.")
+				break
+			}
+		}
+	}
 	res.Coverage = append(res.Coverage, c)
 }
 
-func spaceFindings(fss []FS, status map[string]model.Severity, res *model.Result, env model.Env) {
+func spaceFindings(fss []FS, pools []ZPoolSpace, status map[string]model.Severity, res *model.Result, env model.Env) {
 	worst := ""
 	worstPct := -1.0
-	bad := 0
+	bad, checked := 0, 0
 	for _, fs := range fss {
+		if fs.SystemPartition || fs.byPool {
+			continue
+		}
+		checked++
 		if fs.UsePct > worstPct {
 			worst, worstPct = fs.Mount, fs.UsePct
 		}
@@ -280,11 +315,9 @@ func spaceFindings(fss []FS, status map[string]model.Severity, res *model.Result
 			status[fs.Mount] = max(status[fs.Mount], sev)
 			res.Findings = append(res.Findings, model.Finding{
 				ID: "filesystem.space_low", Component: model.CompFilesystem, Severity: sev, Target: fs.Mount,
-				Title: model.Tf("Filesystem %s is %.0f%% full (%s free)", "Phân vùng %s đã đầy %.0f%% (còn trống %s)", fs.Mount, fs.UsePct, units.SI(fs.AvailBytes)),
-				Detail: spaceDetail(env, model.T("When a filesystem fills up, writes fail: databases stop or corrupt tables, logs are lost, services crash and updates break. ext4 keeps 5% for root, so normal services fail before df shows 100%.",
-					"Khi phân vùng đầy, mọi thao tác ghi sẽ lỗi: database dừng hoặc hỏng bảng, mất log, dịch vụ bị treo và cập nhật hệ thống thất bại. ext4 giữ lại 5% cho root nên dịch vụ thường đã lỗi trước khi df báo 100%.")),
-				Action: spaceAction(env, fs.Mount, model.Tf("Free space on %s: find big directories (du -xh --max-depth=2 %s | sort -h | tail), clean old logs (journalctl --vacuum-size=500M, logrotate), old backups and package caches (dnf clean all / apt-get clean). Check for deleted files still held open (lsof +L1). Extend the volume if it keeps growing.",
-					"Giải phóng dung lượng trên %s: tìm thư mục lớn (du -xh --max-depth=2 %s | sort -h | tail), dọn log cũ (journalctl --vacuum-size=500M, logrotate), bản backup cũ và cache gói (dnf clean all / apt-get clean). Kiểm tra file đã xoá nhưng vẫn bị giữ (lsof +L1). Mở rộng dung lượng nếu tiếp tục tăng.", fs.Mount, fs.Mount)),
+				Title:    spaceTitle(env, fs),
+				Detail:   spaceDetail(env, fs),
+				Action:   spaceAction(env, fs),
 				Evidence: ev,
 			})
 		}
@@ -300,17 +333,32 @@ func spaceFindings(fss []FS, status map[string]model.Severity, res *model.Result
 					Title: model.Tf("Filesystem %s has used %.0f%% of its inodes", "Phân vùng %s đã dùng %.0f%% số inode", fs.Mount, *fs.InodePct),
 					Detail: model.T("Each file needs an inode. When they run out, no new file can be created even if df shows free space (\"No space left on device\").",
 						"Mỗi file cần một inode. Khi hết inode sẽ không tạo được file mới dù df vẫn báo còn dung lượng (\"No space left on device\")."),
-					Action: model.Tf("Find directories with huge numbers of small files (du --inodes -x %s | sort -n | tail, or find %s -xdev -type d -size +1M): session files, mail queues, cache. Delete what is not needed.",
+					Action: model.Tf("Find the directories with huge numbers of small files (du --inodes -x %s | sort -n | tail, or find %s -xdev -type d -size +1M): session files, mail queues, caches. Delete what is not needed.",
 						"Tìm thư mục chứa rất nhiều file nhỏ (du --inodes -x %s | sort -n | tail, hoặc find %s -xdev -type d -size +1M): file session, hàng đợi mail, cache. Xoá những gì không cần.", fs.Mount, fs.Mount),
 					Evidence: []string{fmt.Sprintf("%s: inodes %.0f%% used, %s free", fs.Mount, *fs.InodePct, units.Thousands(fs.InodesFree))},
 				})
 			}
 		}
 	}
-	if bad == 0 && len(fss) > 0 {
+	for _, p := range pools {
+		checked++
+		if p.CapPct > worstPct {
+			worst, worstPct = "ZFS pool "+p.Name, p.CapPct
+		}
+		sev := zpoolSeverity(p)
+		if sev == model.OK {
+			continue
+		}
+		if sev >= model.Warn {
+			bad++
+		}
+		status["zpool:"+p.Name] = sev
+		res.Findings = append(res.Findings, zpoolFinding(p, sev))
+	}
+	if bad == 0 && checked > 0 {
 		res.Findings = append(res.Findings, model.Finding{
 			ID: "filesystem.space_ok", Component: model.CompFilesystem, Severity: model.OK,
-			Title: model.Tf("%d filesystem(s) have enough free space (fullest: %s at %.0f%%)", "%d phân vùng còn đủ dung lượng trống (đầy nhất: %s ở mức %.0f%%)", len(fss), worst, worstPct),
+			Title: model.Tf("%d filesystem(s) have enough free space (fullest: %s at %.0f%%)", "%d phân vùng còn đủ dung lượng trống (đầy nhất: %s ở mức %.0f%%)", checked, worst, worstPct),
 		})
 	}
 }
@@ -372,23 +420,23 @@ func readOnlyFindings(mounts []mount, fstab []fstabEntry, env model.Env, fss *[]
 		if sev == model.Crit {
 			n++
 			detail := model.Tf("%s (%s) is mounted read-only although it should be writable. The kernel does this when it detects filesystem corruption or the disk returns I/O errors, to protect the data. Every write to it now fails.",
-				"%s (%s) đang bị mount chỉ-đọc (read-only) dù lẽ ra phải ghi được. Kernel tự chuyển sang read-only khi phát hiện hệ thống tệp bị hỏng hoặc ổ đĩa trả về lỗi đọc/ghi, để bảo vệ dữ liệu. Mọi thao tác ghi vào đây đều thất bại.", p, m.Device)
+				"%s (%s) đang bị mount ở chế độ chỉ đọc (read-only) dù lẽ ra phải ghi được. Kernel tự chuyển sang read-only khi phát hiện hệ thống tệp bị hỏng hoặc ổ đĩa trả về lỗi đọc/ghi, để bảo vệ dữ liệu. Mọi thao tác ghi vào đây đều thất bại.", p, m.Device)
 			if why == "emergency_ro" {
 				detail.EN += " /proc/mounts shows emergency_ro: ext4 aborted after an error."
 				detail.VI += " /proc/mounts có cờ emergency_ro: ext4 đã dừng ghi sau khi gặp lỗi."
 			}
 			res.Findings = append(res.Findings, model.Finding{
 				ID: "filesystem.readonly", Component: model.CompFilesystem, Severity: model.Crit, Target: p,
-				Title:  model.Tf("Filesystem %s was remounted read-only after errors", "Phân vùng %s đã bị chuyển sang chỉ-đọc (read-only) do lỗi", p),
+				Title:  model.Tf("Filesystem %s was remounted read-only after errors", "Phân vùng %s đã bị chuyển sang chế độ chỉ đọc (read-only) do lỗi", p),
 				Detail: detail,
 				Action: model.Tf("Back up the data that is still readable now. Check the Disks and RAID sections and the kernel log (journalctl -k | grep -i -e 'I/O error' -e EXT4-fs -e XFS) to see whether the disk is failing. Then boot into rescue mode and run fsck on %s (xfs_repair for XFS); replace the disk first if it is failing. Do not just remount it read-write.",
-					"Sao lưu ngay dữ liệu còn đọc được. Xem mục Ổ cứng, RAID và log kernel (journalctl -k | grep -i -e 'I/O error' -e EXT4-fs -e XFS) để biết ổ có đang hỏng không. Sau đó khởi động vào chế độ rescue và chạy fsck cho %s (xfs_repair nếu là XFS); nếu ổ đang hỏng thì thay ổ trước. Không chỉ đơn giản remount lại read-write.", m.Device),
+					"Sao lưu ngay dữ liệu còn đọc được. Xem mục Ổ cứng, RAID và log kernel (journalctl -k | grep -i -e 'I/O error' -e EXT4-fs -e XFS) để biết ổ có đang hỏng không. Sau đó khởi động vào chế độ rescue và chạy fsck cho %s (xfs_repair nếu là XFS); nếu ổ đang hỏng thì thay ổ trước. Đừng chỉ remount lại read-write cho xong.", m.Device),
 				Evidence: ev,
 			})
 		} else {
 			res.Findings = append(res.Findings, model.Finding{
 				ID: "filesystem.mounted_ro", Component: model.CompFilesystem, Severity: model.Info, Target: p,
-				Title:    model.Tf("%s is mounted read-only", "%s đang được mount chỉ-đọc (read-only)", p),
+				Title:    model.Tf("%s is mounted read-only", "%s đang được mount ở chế độ chỉ đọc (read-only)", p),
 				Detail:   model.T("It is not in /etc/fstab and not a system path, so this may be intentional (backup or recovery mount).", "Điểm mount này không có trong /etc/fstab và không phải thư mục hệ thống, nên có thể là cố ý (mount để sao lưu hoặc cứu dữ liệu)."),
 				Action:   model.T("If it should be writable, check the kernel log for filesystem errors before remounting.", "Nếu cần ghi được, hãy kiểm tra log kernel xem có lỗi hệ thống tệp không trước khi remount."),
 				Evidence: ev,
@@ -552,15 +600,22 @@ func fstabFindings(b *collect.Bundle, mounts []mount, res *model.Result) int {
 		if !strings.HasPrefix(p, "/") || e.Type == "swap" || pseudoTypes[e.Type] && e.Type != "none" || e.Type == "none" && !e.has("bind") {
 			continue
 		}
-		if e.has("noauto") || e.has("nofail") || e.has("x-systemd.automount") || e.has("_netdev") && !networkTypes[e.Type] {
+		if e.has("noauto") || e.has("x-systemd.automount") || e.has("_netdev") && !networkTypes[e.Type] {
 			continue
 		}
 		if mounted[p] {
 			continue
 		}
 		network := networkTypes[e.Type] || strings.HasPrefix(e.Type, "fuse.") || strings.Contains(e.Spec, ":/") || strings.HasPrefix(e.Spec, "//")
+		// nofail only stops a missing device from blocking the boot (cloud
+		// guides add it to every data disk); the disk is still missing, but
+		// it may also be a backup disk that is unplugged on purpose: Info.
+		nofail := e.has("nofail")
+		if nofail && network {
+			continue
+		}
 		sev := model.Warn
-		if network {
+		if network || nofail {
 			sev = model.Info
 		}
 		if sev >= model.Warn {
@@ -579,13 +634,18 @@ func fstabFindings(b *collect.Bundle, mounts []mount, res *model.Result) int {
 			Action:   act,
 			Evidence: []string{"fstab: " + e.Line},
 		})
+		if nofail {
+			f := &res.Findings[len(res.Findings)-1]
+			f.Detail.EN += " The entry has nofail, so the boot continued without it."
+			f.Detail.VI += " Dòng này có tuỳ chọn nofail nên máy vẫn khởi động bình thường khi thiếu nó."
+		}
 	}
 	return n
 }
 
-func finishTable(fss []FS, status map[string]model.Severity, res *model.Result) {
-	res.Facts = &Facts{Filesystems: fss}
-	if len(fss) == 0 {
+func finishTable(fss []FS, pools []ZPoolSpace, status map[string]model.Severity, res *model.Result) {
+	res.Facts = &Facts{Filesystems: fss, ZPools: pools}
+	if len(fss) == 0 && len(pools) == 0 {
 		return
 	}
 	sort.SliceStable(fss, func(i, j int) bool { return fss[i].Mount < fss[j].Mount })
@@ -616,9 +676,22 @@ func finishTable(fss []FS, status map[string]model.Severity, res *model.Result) 
 		if fs.State != "" && !strings.EqualFold(fs.State, "clean") && !strings.EqualFold(fs.State, "healthy") {
 			mode += ", " + fs.State
 		}
+		used := fmt.Sprintf("%.0f%%", fs.UsePct)
+		if fs.byPool {
+			used += " (dataset)"
+		}
 		t.Rows = append(t.Rows, model.Row{Status: status[fs.Mount], Cells: []string{
-			fs.Mount, fs.Device, fs.Type, units.SI(fs.SizeBytes), units.SI(fs.AvailBytes), fmt.Sprintf("%.0f%%", fs.UsePct), ino, mode,
+			fs.Mount, fs.Device, fs.Type, units.SI(fs.SizeBytes), units.SI(fs.AvailBytes), used, ino, mode,
 		}})
+	}
+	for _, p := range pools {
+		t.Rows = append(t.Rows, model.Row{Status: status["zpool:"+p.Name], Cells: []string{
+			"(ZFS pool)", p.Name, "zpool", units.SI(p.SizeBytes), units.SI(p.FreeBytes), fmt.Sprintf("%.0f%%", p.CapPct), "", strings.ToLower(p.Health),
+		}})
+	}
+	if len(pools) > 0 {
+		t.Note = model.T("For a ZFS dataset df counts only the dataset's own data; the pool row shows how full the storage really is.",
+			"Với dataset ZFS, df chỉ tính dữ liệu của riêng dataset đó; dòng pool mới cho biết dung lượng thực sự đã dùng.")
 	}
 	res.Tables = append(res.Tables, t)
 }
@@ -634,19 +707,42 @@ func firstLine(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// spaceDetail and spaceAction pick the Windows wording on Windows.
-func spaceDetail(env model.Env, linux model.Text) model.Text {
+// spaceTitle, spaceDetail and spaceAction pick the Windows wording on
+// Windows. No template puts a colon right after the mount name: a drive
+// letter already ends in one ("C:").
+func spaceTitle(env model.Env, fs FS) model.Text {
 	if env.OS != collect.OSWindows {
-		return linux
+		return model.Tf("Filesystem %s is %.0f%% full (%s free)", "Phân vùng %s đã đầy %.0f%% (còn trống %s)", fs.Mount, fs.UsePct, units.SI(fs.AvailBytes))
 	}
-	return model.T("When a volume fills up, writes fail: databases (SQL Server, Exchange) stop, Windows Update and the page file fail, shadow copies (VSS) are deleted and services crash.",
-		"Khi volume đầy, mọi thao tác ghi sẽ lỗi: database (SQL Server, Exchange) dừng, Windows Update và page file bị lỗi, bản shadow copy (VSS) bị xoá và dịch vụ bị treo.")
+	if len(fs.Mount) == 2 && fs.Mount[1] == ':' {
+		return model.Tf("Drive %s is %.0f%% full (%s free)", "Ổ %s đã đầy %.0f%% (còn trống %s)", fs.Mount, fs.UsePct, units.SI(fs.AvailBytes))
+	}
+	return model.Tf("Volume %s is %.0f%% full (%s free)", "Volume %s đã đầy %.0f%% (còn trống %s)", fs.Mount, fs.UsePct, units.SI(fs.AvailBytes))
 }
 
-func spaceAction(env model.Env, mnt string, linux model.Text) model.Text {
+func spaceDetail(env model.Env, fs FS) model.Text {
 	if env.OS != collect.OSWindows {
-		return linux
+		return model.T("When a filesystem fills up, writes fail: databases stop or corrupt tables, logs are lost, services crash and updates break. ext4 keeps 5% for root, so normal services fail before df shows 100%.",
+			"Khi phân vùng đầy, mọi thao tác ghi sẽ lỗi: database dừng hoặc hỏng bảng, mất log, dịch vụ bị treo và cập nhật hệ thống thất bại. ext4 giữ lại 5% cho root nên dịch vụ thường đã lỗi trước khi df báo 100%.")
 	}
-	return model.Tf("Free space on %s: find big folders (TreeSize or WizTree on %s), run Disk Cleanup (cleanmgr) and Dism /Online /Cleanup-Image /StartComponentCleanup, remove old backups, logs (IIS, SQL) and user temp files. Extend the volume if it keeps growing.",
-		"Giải phóng dung lượng trên %s: tìm thư mục lớn (TreeSize hoặc WizTree trên %s), chạy Disk Cleanup (cleanmgr) và Dism /Online /Cleanup-Image /StartComponentCleanup, xoá backup cũ, log (IIS, SQL) và file tạm. Mở rộng volume nếu dung lượng tiếp tục tăng.", mnt, mnt)
+	if fs.Boot {
+		return model.T("When the system drive fills up, writes fail: Windows Update, the page file and event logs fail, services and databases (SQL Server, Exchange) stop, and shadow copies (VSS) are deleted.",
+			"Khi ổ hệ thống đầy, mọi thao tác ghi sẽ lỗi: Windows Update, page file và event log bị lỗi, dịch vụ và database (SQL Server, Exchange) dừng, bản shadow copy (VSS) bị xoá.")
+	}
+	return model.T("When a volume fills up, writes fail: databases (SQL Server, Exchange) stop, applications lose data and shadow copies (VSS) are deleted.",
+		"Khi volume đầy, mọi thao tác ghi sẽ lỗi: database (SQL Server, Exchange) dừng, ứng dụng mất dữ liệu và bản shadow copy (VSS) bị xoá.")
+}
+
+func spaceAction(env model.Env, fs FS) model.Text {
+	m := fs.Mount
+	if env.OS != collect.OSWindows {
+		return model.Tf("To free space on %s, find the big directories (du -xh --max-depth=2 %s | sort -h | tail), clean old logs (journalctl --vacuum-size=500M, logrotate), old backups and package caches (dnf clean all / apt-get clean), and look for deleted files still held open by a process (lsof +L1). Extend the volume if usage keeps growing.",
+			"Để giải phóng dung lượng trên %s, tìm thư mục lớn (du -xh --max-depth=2 %s | sort -h | tail), dọn log cũ (journalctl --vacuum-size=500M, logrotate), bản backup cũ và cache gói (dnf clean all / apt-get clean), kiểm tra file đã xoá nhưng tiến trình vẫn giữ mở (lsof +L1). Nếu dung lượng tiếp tục tăng, mở rộng volume.", m, m)
+	}
+	if fs.Boot {
+		return model.Tf("To free space on %s, find the big folders (TreeSize or WizTree), run Disk Cleanup (cleanmgr) and Dism /Online /Cleanup-Image /StartComponentCleanup, and remove old backups, logs (IIS, SQL) and temp files. Extend the volume if usage keeps growing.",
+			"Để giải phóng dung lượng trên %s, tìm thư mục lớn (TreeSize hoặc WizTree), chạy Disk Cleanup (cleanmgr) và Dism /Online /Cleanup-Image /StartComponentCleanup, xoá backup cũ, log (IIS, SQL) và file tạm. Nếu dung lượng tiếp tục tăng, mở rộng volume.", m)
+	}
+	return model.Tf("To free space on %s, find the big folders (TreeSize or WizTree), remove old backups, database dumps and logs, and check the shadow copy storage (vssadmin list shadowstorage). Extend the volume if usage keeps growing.",
+		"Để giải phóng dung lượng trên %s, tìm thư mục lớn (TreeSize hoặc WizTree), xoá backup cũ, file dump database và log, kiểm tra dung lượng shadow copy (vssadmin list shadowstorage). Nếu dung lượng tiếp tục tăng, mở rộng volume.", m)
 }

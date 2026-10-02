@@ -4,7 +4,7 @@
 # serves all. ipmi.win_devices tells the analysis whether a BMC exists.
 # Read-only commands only; the SEL is never cleared here.
 
-$IP_SECS = @('ipmi.mc', 'ipmi.chassis', 'ipmi.sel_info', 'ipmi.sdr', 'ipmi.sel', 'ipmi.fru', 'ipmi.lan', 'ipmi.power')
+$IP_SECS = @('ipmi.mc', 'ipmi.chassis', 'ipmi.sel_info', 'ipmi.sel_time', 'ipmi.sdr', 'ipmi.sel', 'ipmi.fru', 'ipmi.lan', 'ipmi.power')
 
 $IP_EXE = DW-FindExe 'ipmitool'
 if (-not $IP_EXE) {
@@ -15,8 +15,10 @@ if (-not $IP_EXE) {
   }
 }
 
+# The device name is localised on some Windows languages; the ACPI hardware
+# ID of an IPMI system interface (IPI0001) is not.
 DW-Json 'ipmi.win_devices' {
-  $pnp = @(Get-CimInstance -ClassName Win32_PnPEntity -Filter "Name LIKE '%IPMI%'" -ErrorAction SilentlyContinue |
+  $pnp = @(Get-CimInstance -ClassName Win32_PnPEntity -Filter "Name LIKE '%IPMI%' OR PNPDeviceID LIKE 'ACPI\\IPI0001%'" -ErrorAction SilentlyContinue |
       Select-Object -First 4 Name, Status, PNPDeviceID)
   $wmi = $null
   if ($DW_ADMIN) {
@@ -25,39 +27,15 @@ DW-Json 'ipmi.win_devices' {
   [pscustomobject]@{ pnp = $pnp; wmiIpmi = $wmi; ipmitool = $IP_EXE; admin = $DW_ADMIN }
 }
 
-# Ip-Run NAME ARGS MODE - like DW-Exe, but post-processes stdout before it is
-# emitted: 'sel' keeps the newest $DW_MAXLINES lines, 'lan' redacts the SNMP
-# community string (a credential that must not leave the server).
-function Ip-Run([string]$Name, [string[]]$ArgList, [string]$Mode) {
-  $sw = [Diagnostics.Stopwatch]::StartNew()
-  $psi = New-Object System.Diagnostics.ProcessStartInfo
-  $psi.FileName = $IP_EXE
-  $psi.Arguments = ($ArgList -join ' ')
-  $psi.UseShellExecute = $false
-  $psi.RedirectStandardOutput = $true
-  $psi.RedirectStandardError = $true
-  $psi.CreateNoWindow = $true
-  $flags = ''
-  $out = ''
-  $err = ''
-  try {
-    $p = [Diagnostics.Process]::Start($psi)
-    $ot = $p.StandardOutput.ReadToEndAsync()
-    $et = $p.StandardError.ReadToEndAsync()
-    if ($p.WaitForExit($DW_TIMEOUT_S * 1000)) {
-      $p.WaitForExit()
-      $rc = $p.ExitCode
-    } else {
-      try { $p.Kill() } catch {}
-      $rc = 124
-      $flags = 'timeout'
-    }
-    $out = $ot.Result
-    $err = $et.Result
-  } catch {
-    $rc = 1
-    $err = $_.ToString()
-  }
+# Ip-Run NAME ARGS [MODE] [TIMEOUT_S] - DW-Run, then post-process stdout
+# before it is emitted: 'sel' keeps the newest $DW_MAXLINES lines, 'lan'
+# redacts the SNMP community string (a credential that must not leave the
+# server). Returns the exit code.
+function Ip-Run([string]$Name, [string[]]$ArgList, [string]$Mode = '', [int]$TimeoutS = 0) {
+  $r = DW-Run $IP_EXE $ArgList '' $TimeoutS
+  if ($null -eq $r) { DW-Missing $Name 'ipmitool'; return 127 }
+  $out = $r.Out
+  $err = $r.Err
   if ($null -eq $out) { $out = '' }
   if ($Mode -eq 'sel') {
     $lines = @($out -split "`r?`n" | Where-Object { $_ -ne '' })
@@ -71,7 +49,8 @@ function Ip-Run([string]$Name, [string[]]$ArgList, [string]$Mode) {
   } elseif ($Mode -eq 'lan') {
     $out = $out -replace '(?m)^(SNMP Community String\s*:).*$', '$1 <redacted>'
   }
-  DW-Emit $Name $out $err $rc $sw.ElapsedMilliseconds $flags
+  DW-Emit $Name $out $err $r.Rc $r.Ms $r.Flags
+  return $r.Rc
 }
 
 if (-not $IP_EXE) {
@@ -79,29 +58,27 @@ if (-not $IP_EXE) {
 } elseif (-not $DW_ADMIN) {
   foreach ($s in $IP_SECS) { DW-Skip $s 'not-admin' }
 } else {
-  # Builds with the Microsoft driver interface list "ms" under Interfaces.
+  # Builds with the Microsoft driver interface list "ms" under Interfaces
+  # in their usage text (printed on stdout or stderr, exit code non-zero).
   $IP_IF = @()
-  try {
-    $help = (& $IP_EXE -h 2>&1 | Out-String)
-    if ($help -match '(?m)^\s+ms\s') { $IP_IF = @('-I', 'ms') }
-  } catch {}
+  $h = DW-Run $IP_EXE @('-h') '' 10
+  if ($h -and (($h.Out + "`n" + $h.Err) -match '(?m)^\s+ms\s')) { $IP_IF = @('-I', 'ms') }
 
-  $sw = [Diagnostics.Stopwatch]::StartNew()
-  DW-Exe 'ipmi.mc' $IP_EXE ($IP_IF + @('mc', 'info'))
-  if ($sw.ElapsedMilliseconds -ge ($DW_TIMEOUT_S * 1000)) {
+  $rc = Ip-Run 'ipmi.mc' ($IP_IF + @('mc', 'info'))
+  if ($rc -eq 124) {
     # A wedged BMC makes every command wait for the full timeout.
     foreach ($s in $IP_SECS) { if ($s -ne 'ipmi.mc') { DW-Skip $s 'bmc-timeout' } }
   } else {
-    DW-Exe 'ipmi.chassis' $IP_EXE ($IP_IF + @('chassis', 'status'))
-    DW-Exe 'ipmi.sel_info' $IP_EXE ($IP_IF + @('sel', 'info'))
-    # SDR, SEL and FRU walk many records: allow four times the timeout.
-    $ipSaved = $DW_TIMEOUT_S
-    $DW_TIMEOUT_S = $DW_TIMEOUT_S * 4
-    DW-Exe 'ipmi.sdr' $IP_EXE ($IP_IF + @('sdr', 'elist'))
-    Ip-Run 'ipmi.sel' ($IP_IF + @('sel', 'elist')) 'sel'
-    DW-Exe 'ipmi.fru' $IP_EXE ($IP_IF + @('fru', 'print'))
-    $DW_TIMEOUT_S = $ipSaved
-    Ip-Run 'ipmi.lan' ($IP_IF + @('lan', 'print')) 'lan'
-    DW-Exe 'ipmi.power' $IP_EXE ($IP_IF + @('dcmi', 'power', 'reading'))
+    [void](Ip-Run 'ipmi.chassis' ($IP_IF + @('chassis', 'status')))
+    [void](Ip-Run 'ipmi.sel_info' ($IP_IF + @('sel', 'info')))
+    [void](Ip-Run 'ipmi.sel_time' ($IP_IF + @('sel', 'time', 'get')))
+    # SDR, SEL and FRU walk many records: allow four times the timeout. On a
+    # timeout DW-Run kills ipmitool and keeps what it printed so far.
+    $ipLong = $DW_TIMEOUT_S * 4
+    [void](Ip-Run 'ipmi.sdr' ($IP_IF + @('sdr', 'elist')) '' $ipLong)
+    [void](Ip-Run 'ipmi.sel' ($IP_IF + @('sel', 'elist')) 'sel' $ipLong)
+    [void](Ip-Run 'ipmi.fru' ($IP_IF + @('fru', 'print')) '' $ipLong)
+    [void](Ip-Run 'ipmi.lan' ($IP_IF + @('lan', 'print')) 'lan')
+    [void](Ip-Run 'ipmi.power' ($IP_IF + @('dcmi', 'power', 'reading')))
   }
 }

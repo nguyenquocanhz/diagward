@@ -44,6 +44,7 @@ as published.
 | `text540_ata_pending_selftest.txt` | `smartctl -a` output (smartctl 5.40, Samsung HD502HI with 81 pending sectors) from the Thomas-Krenn wiki article "Analyzing a Faulty Hard Disk using Smartctl" — https://www.thomas-krenn.com/en/wiki/Analyzing_a_Faulty_Hard_Disk_using_Smartctl (HTML stripped; tabs in "General SMART Values" became spaces) | tool output quoted for interoperability testing |
 | `text75_msft_virtual_disk.txt` | Own capture, smartctl 7.5 in WSL2: `smartctl -x -n standby -d scsi /dev/sda` | own capture |
 | `text62_ata_failed.txt` | Synthesised in the exact smartctl 6.2 layout (CentOS 7) from ataprint.cpp format strings (`FAILED!`, `Drive failure expected in less than 24 hours. SAVE ALL DATA.`, `FAILING_NOW`, `In_the_past`, self-test and error-log lines); attribute set modelled on telegraf's `seagateSATAInfoData75` sample | synthesised |
+| `text_sandforce_kingston_sv300.txt` | Attribute table and identity lines copied from a real `smartctl` 6.x output of a KINGSTON SV300S37A60G (SandForce SF-2281, not in the drive database: 177/233 with flags 0x0000 and VALUE/WORST/THRESH 000, packed Power_On_Hours raw 166060615532548) posted at https://www.linux.org.ru/forum/linux-hardware/10049404 ; header and trailer lines laid out in the smartctl 6.2 format | tool output quoted for interoperability testing |
 | `text_standby.txt` | Synthesised from the same `Device is in STANDBY mode, exit(2)` message | synthesised |
 | `scan_megaraid_vd.txt` | Synthesised `smartctl --scan-open` text: lines in the format of the real samples above, plus a commented "open failed" line as printed by smartctl.cpp | synthesised |
 | `scan_wsl.txt` | Own capture, `smartctl --scan-open` in WSL2 | own capture |
@@ -71,3 +72,12 @@ as published.
 | `win_physical_numeric.json` | Synthesised with raw numeric enums (MediaType 3, BusType 11/15, HealthStatus 1, OperationalStatus [2, 53286]) as CIM returns them without the Storage module's type data; value maps from `Storage.types.ps1xml` on Windows 10 and https://learn.microsoft.com/en-us/windows-hardware/drivers/storage/msft-physicaldisk |
 | `win_reliability.json` | Synthesised from the documented MSFT_StorageReliabilityCounter properties — https://learn.microsoft.com/en-us/windows-hardware/drivers/storage/msft-storagereliabilitycounter (needs Administrator; could not be captured on the non-elevated dev machine) |
 | `win_predict.json` | Synthesised from the root\wmi MSStorageDriver_FailurePredictStatus properties (InstanceName = PNP device ID + "_0", Active, PredictFailure, Reason) |
+
+## Inline test data (`review_test.go`)
+
+| Test | Origin |
+|---|---|
+| `TestDellBOSSVolume` | Identity lines of a Dell BOSS-S1 volume (`Device Model: DELLBOSS VD`, `Firmware Version: MV.R00-0`, `SMART support is: Unavailable - device lacks SMART capability.`) quoted from https://forums.freebsd.org/threads/dell-boss-vd-raid1.73878/ ; lsblk JSON around it synthesised |
+| `TestBMCVirtualMediaIgnored` | iDRAC virtual devices `ID_VENDOR=iDRAC`, `ID_MODEL=LCDRIVE` / `Virtual_Floppy` as reported in Red Hat bugzilla 1111693 (https://bugzilla.redhat.com/show_bug.cgi?id=1111693); lsblk JSON and the "open failed: No medium found" scan lines synthesised in the formats above |
+| `TestWindowsNVMeMatchedByEUI64` | JSON keys `nvme_namespaces[0].eui64.{oui,ext_id}` from smartmontools `nvmeprint.cpp`; EUI-64 0026b7 3840825615 taken from the real Windows serial in `win_physical.json` |
+| `TestCSMISectionName` | `/dev/csmi0,1 -d ata` scan line synthesised from smartctl's Windows device naming (`/dev/csmi[0-9],N`, smartctl(8) "Windows" device list) |

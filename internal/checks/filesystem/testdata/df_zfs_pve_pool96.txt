@@ -1,0 +1,7 @@
+Filesystem          Type        1-blocks       Used  Available Capacity Mounted on
+rpool/ROOT/pve-1    zfs       6871947674 3543348019 3328599654      52% /
+rpool               zfs       1503238554     262144 1502976410       1% /rpool
+rpool/data          zfs       1503238554     262144 1502976410       1% /rpool/data
+rpool/ROOT          zfs       1503238554     262144 1502976410       1% /rpool/ROOT
+rpool/pve-container zfs       1503238554     262144 1502976410       1% /rpool/pve-container
+/dev/fuse           fuse       134217728      24576  134193152       1% /etc/pve

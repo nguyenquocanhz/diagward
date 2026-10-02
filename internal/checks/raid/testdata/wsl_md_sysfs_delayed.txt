@@ -1,0 +1,12 @@
+/sys/block/md95/md/array_state=clean
+/sys/block/md95/md/level=raid1
+/sys/block/md95/md/raid_disks=2
+/sys/block/md95/md/degraded=1
+/sys/block/md95/md/sync_action=recover
+/sys/block/md95/md/sync_completed=0 / 284672
+/sys/block/md96/md/array_state=clean
+/sys/block/md96/md/level=raid1
+/sys/block/md96/md/raid_disks=2
+/sys/block/md96/md/degraded=1
+/sys/block/md96/md/sync_action=recover
+/sys/block/md96/md/sync_completed=delayed

@@ -424,7 +424,9 @@ func TestStandby(t *testing.T) {
 		if res.Tables[0].Note.EN == "" || res.Tables[0].Rows[0].Cells[10] != "standby" {
 			t.Errorf("%s: table %+v", f, res.Tables[0])
 		}
-		covState(t, res, "disk.smart", model.CovRan)
+		if c := covState(t, res, "disk.smart", model.CovPartial); !strings.Contains(c.Reason.EN, "standby") || !strings.Contains(c.Reason.EN, "/dev/sdc") {
+			t.Errorf("%s: coverage %+v", f, c.Reason)
+		}
 	}
 }
 
@@ -458,8 +460,8 @@ func TestCoverageStates(t *testing.T) {
 	env := testkit.Env(collect.OSLinux)
 	res := check(t, linux(testkit.Missing("disk.smart_scan", "smartctl")), env)
 	c := covState(t, res, "disk.smart", model.CovSkipped)
-	if !strings.Contains(c.Fix.EN, "dnf install -y smartmontools") {
-		t.Errorf("fix: %s", c.Fix.EN)
+	if c.Cmd != "dnf install -y smartmontools" || !strings.Contains(c.Fix.EN, "smartmontools") {
+		t.Errorf("fix: %s, cmd %q", c.Fix.EN, c.Cmd)
 	}
 
 	env.Root = false

@@ -54,6 +54,14 @@ type smartJSON struct {
 	NvmePCIVendor     struct {
 		ID int `json:"id"`
 	} `json:"nvme_pci_vendor"`
+	// nvmeprint.cpp: jglb["nvme_namespaces"][0]["eui64"]{"oui","ext_id"}
+	// (smartctl >= 7.3); Windows often shows this EUI-64 as the serial.
+	NvmeNamespaces []struct {
+		EUI64 *struct {
+			OUI   uint64 `json:"oui"`
+			ExtID uint64 `json:"ext_id"`
+		} `json:"eui64"`
+	} `json:"nvme_namespaces"`
 	RotationRate *int `json:"rotation_rate"`
 	SataVersion  struct {
 		String string `json:"string"`
@@ -88,7 +96,7 @@ type smartJSON struct {
 			Thresh     *int   `json:"thresh"`
 			WhenFailed string `json:"when_failed"`
 			Flags      struct {
-				Value      int  `json:"value"`
+				Value      *int `json:"value"`
 				Prefailure bool `json:"prefailure"`
 			} `json:"flags"`
 			Raw struct {
@@ -225,6 +233,7 @@ type smartData struct {
 	RPM                                                   int // -1 unknown, 0 = solid state
 	Transport                                             string
 	PCIVendor                                             int
+	EUI64                                                 string // NVMe namespace 1 EUI-64, 16 upper-case hex digits
 
 	SmartAvailable *bool
 	SmartEnabled   *bool
@@ -266,6 +275,7 @@ type ataAttr struct {
 	Thresh     *int
 	WhenFailed string // "now", "past" or ""
 	Prefail    bool
+	Flags      int // attribute flag word, -1 when unknown
 	Raw        uint64
 	RawStr     string
 }
@@ -350,14 +360,24 @@ func decodeSmartJSON(out string) (*smartData, error) {
 	if j.PowerMode != nil && d.Standby == "" && d.Exit >= 0 && d.Exit&2 != 0 && isLowPower(j.PowerMode.Name) {
 		d.Standby = j.PowerMode.Name
 	}
+	for _, ns := range j.NvmeNamespaces {
+		if e := ns.EUI64; e != nil && (e.OUI != 0 || e.ExtID != 0) {
+			d.EUI64 = fmt.Sprintf("%06X%010X", e.OUI&0xffffff, e.ExtID&0xffffffffff)
+			break
+		}
+	}
 	for _, a := range j.AtaSmartAttributes.Table {
+		flags := -1
+		if a.Flags.Value != nil {
+			flags = *a.Flags.Value
+		}
 		d.Attrs = append(d.Attrs, ataAttr{
 			ID: a.ID, Name: a.Name, Value: a.Value, Worst: a.Worst, Thresh: a.Thresh,
-			WhenFailed: strings.ToLower(a.WhenFailed), Prefail: a.Flags.Prefailure,
+			WhenFailed: strings.ToLower(a.WhenFailed), Prefail: a.Flags.Prefailure, Flags: flags,
 			Raw: a.Raw.Value, RawStr: a.Raw.String,
 		})
 	}
-	d.POH = j.PowerOnTime.Hours
+	d.POH = plausibleHours(j.PowerOnTime.Hours)
 	d.Cycles = j.PowerCycleCount
 
 	t := j.Temperature
@@ -428,7 +448,7 @@ func decodeSmartJSON(out string) (*smartData, error) {
 			d.TempC = d.NVMe.Temperature
 		}
 		if d.POH == nil {
-			d.POH = d.NVMe.PowerOnHours
+			d.POH = plausibleHours(d.NVMe.PowerOnHours)
 		}
 		if d.NVMe.PercentageUsed != nil && d.Endurance == nil {
 			d.Endurance, d.EndurSrc = d.NVMe.PercentageUsed, "nvme percentage_used"
@@ -625,10 +645,30 @@ func (a *ataAttr) count() uint64 {
 	if a == nil {
 		return 0
 	}
+	if s := strings.TrimSpace(a.RawStr); strings.HasPrefix(s, "0x") || strings.HasPrefix(s, "0X") {
+		// "-v N,hex48" / "hex56" raw formats print the whole raw value in hex.
+		if n, err := strconv.ParseUint(strings.Fields(s)[0][2:], 16, 64); err == nil {
+			return n
+		}
+		return a.Raw
+	}
 	if n, ok := leadingUint(a.RawStr); ok {
 		return n
 	}
 	return a.Raw
+}
+
+// maxPlausibleHours: power-on hours above this (about 23 years) cannot be
+// real. Drives smartctl does not know (e.g. SandForce SSDs without a drive
+// database entry) report a packed raw value for attribute 9 such as
+// 166060615532548, which must not become "powered on for 247 years".
+const maxPlausibleHours = 200000
+
+func plausibleHours(p *uint64) *uint64 {
+	if p == nil || *p > maxPlausibleHours {
+		return nil
+	}
+	return p
 }
 
 // leadingUint parses the integer at the start of s ("12", "12 (…)", "0/1").

@@ -42,7 +42,7 @@ func checkWindows(b *collect.Bundle, env model.Env, res *model.Result) {
 	switch {
 	case sec == nil:
 	case !sec.Ran():
-		cov("cpu.inventory", nameInventory, model.CovSkipped, model.T("Not collected.", "Không thu thập."), model.Text{})
+		cov("cpu.inventory", nameInventory, model.CovSkipped, model.T("Not collected.", "Chưa thu thập dữ liệu này."), model.Text{})
 	case collect.DecodeJSON(sec.Out, &procs) != nil || (len(procs) == 0 && sec.Err != ""):
 		cov("cpu.inventory", nameInventory, model.CovFailed,
 			model.Tf("Win32_Processor could not be read: %s", "Không đọc được Win32_Processor: %s", firstNonEmpty(oneLine(sec.Err), "invalid output")), model.Text{})

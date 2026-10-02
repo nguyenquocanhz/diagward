@@ -129,8 +129,14 @@ func parseSsacli(config, status string) []*Controller {
 				stack = append(stack, ssaNode{indent: ind, kind: "array", array: m[1]})
 				continue
 			}
-			if lt := strings.ToLower(t); lt == "unassigned" || lt == "hba drives" || strings.HasPrefix(lt, "unassigned") {
+			if lt := strings.ToLower(t); lt == "unassigned" || strings.HasPrefix(lt, "unassigned") {
 				stack = append(stack, ssaNode{indent: ind, kind: "array", array: "-"})
+				continue
+			}
+			// HBA mode (Smart HBA, or a Smart Array switched to HBA mode): the
+			// disks are handed to the OS as they are, they are not "unused".
+			if lt := strings.ToLower(t); lt == "hba drives" {
+				stack = append(stack, ssaNode{indent: ind, kind: "array", array: "hba"})
 				continue
 			}
 			if m := ssaLDRe.FindStringSubmatch(t); m != nil {
@@ -222,8 +228,9 @@ func parseSsacli(config, status string) []*Controller {
 				case "Logical Drive Label":
 					top.vol.Name = v
 				case "Unrecoverable Media Errors":
-					if !strings.EqualFold(v, "None") {
-						top.vol.Progress = strings.TrimSpace(top.vol.Progress + " unrecoverable media errors: " + v)
+					if !strings.EqualFold(v, "None") && v != "" {
+						top.vol.Errors = "unrecoverable media errors: " + v
+						cur.evidence = append(cur.evidence, "logicaldrive "+top.vol.ID+" Unrecoverable Media Errors: "+v)
 					}
 				}
 			case top != nil && top.kind == "pd":
@@ -237,6 +244,8 @@ func parseSsacli(config, status string) []*Controller {
 						d.Group = "spare"
 					} else if strings.Contains(strings.ToLower(v), "unassigned") {
 						d.Group = "unassigned"
+					} else if strings.Contains(strings.ToLower(v), "hba mode") {
+						d.Group = "hba"
 					}
 				case "Serial Number":
 					d.Serial = v

@@ -1,0 +1,52 @@
+smartctl 6.2 2013-07-26 r3841 [x86_64-linux-3.12.6-1-ARCH] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+=== START OF INFORMATION SECTION ===
+Device Model:     KINGSTON SV300S37A60G
+Serial Number:    50026B723B0219F2
+LU WWN Device Id: 5 0026b7 23b0219f2
+Firmware Version: 505ABBF1
+User Capacity:    60 022 480 896 bytes [60,0 GB]
+Sector Size:      512 bytes logical/physical
+Device is:        Not in smartctl database [for details use: -P showall]
+ATA Version is:   8
+ATA Standard is:  ACS-2 revision 3
+Local Time is:    Tue Jan 14 00:25:20 2014 MSK
+SMART support is: Available - device has SMART capability.
+SMART support is: Enabled
+
+=== START OF READ SMART DATA SECTION ===
+SMART overall-health self-assessment test result: PASSED
+
+SMART Attributes Data Structure revision number: 10
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x000f   105   105   050    Pre-fail  Always       -       10075807
+  5 Reallocated_Sector_Ct   0x0033   100   100   003    Pre-fail  Always       -       0
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       166060615532548
+ 12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       2
+171 Unknown_Attribute       0x0032   000   000   000    Old_age   Always       -       0
+172 Unknown_Attribute       0x0032   000   000   000    Old_age   Always       -       0
+174 Unknown_Attribute       0x0030   000   000   000    Old_age   Offline      -       2
+177 Wear_Leveling_Count     0x0000   000   000   000    Old_age   Offline      -       1
+181 Program_Fail_Cnt_Total  0x0032   000   000   000    Old_age   Always       -       0
+182 Erase_Fail_Count_Total  0x0032   000   000   000    Old_age   Always       -       0
+187 Reported_Uncorrect      0x0032   100   100   000    Old_age   Always       -       0
+189 High_Fly_Writes         0x0000   039   063   000    Old_age   Offline      -       107378311207
+194 Temperature_Celsius     0x0022   039   063   000    Old_age   Always       -       39 (Min/Max 25/63)
+195 Hardware_ECC_Recovered  0x001c   120   120   000    Old_age   Offline      -       10075807
+196 Reallocated_Event_Count 0x0033   100   100   003    Pre-fail  Always       -       0
+201 Soft_Read_Error_Rate    0x001c   120   120   000    Old_age   Offline      -       10075807
+204 Soft_ECC_Correction     0x001c   120   120   000    Old_age   Offline      -       10075807
+230 Head_Amplitude          0x0013   100   100   000    Pre-fail  Always       -       100
+231 Temperature_Celsius     0x0013   100   100   010    Pre-fail  Always       -       0
+233 Media_Wearout_Indicator 0x0000   000   000   000    Old_age   Offline      -       9
+234 Unknown_Attribute       0x0032   000   000   000    Old_age   Always       -       8
+241 Total_LBAs_Written      0x0032   000   000   000    Old_age   Always       -       8
+242 Total_LBAs_Read         0x0032   000   000   000    Old_age   Always       -       4
+
+SMART Error Log Version: 1
+No Errors Logged
+
+SMART Self-test log structure revision number 1
+No self-tests have been logged.  [To run self-tests, use: smartctl -t]

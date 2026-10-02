@@ -65,6 +65,7 @@ func RunLocal(ctx context.Context, o Options, progress func(section string)) (*B
 		Options: o,
 	}
 	name, args := Command(osName)
+	name = resolveShell(name, os.Getenv)
 	b.Started = time.Now()
 	out, stderr, err := runScript(ctx, name, args, script, boundary, progress)
 	b.Finished = time.Now()
@@ -82,6 +83,25 @@ func RunLocal(ctx context.Context, o Options, progress func(section string)) (*B
 		return b, fmt.Errorf("collector stopped before the end (%d sections)%s", len(b.Sections), stderrTail(stderr))
 	}
 	return b, nil
+}
+
+// resolveShell finds the collector's interpreter. powershell.exe lives in
+// %SystemRoot%\System32\WindowsPowerShell\v1.0, which a trimmed PATH (a
+// service account, a scheduled task, some RMM agents) may lack; Windows
+// PowerShell 5.1 is always installed there on Server 2016 and later.
+func resolveShell(name string, getenv func(string) string) string {
+	if _, err := exec.LookPath(name); err == nil || name != "powershell.exe" {
+		return name
+	}
+	root := getenv("SystemRoot")
+	if root == "" {
+		root = `C:\Windows`
+	}
+	p := root + `\System32\WindowsPowerShell\v1.0\powershell.exe`
+	if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+		return p
+	}
+	return name
 }
 
 // runScript runs name/args with script on stdin. It returns stdout, the

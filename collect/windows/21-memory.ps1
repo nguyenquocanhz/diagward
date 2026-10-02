@@ -2,22 +2,22 @@
 # Windows Memory Diagnostic (mdsched.exe). Owner: cpu/memory domain.
 
 DW-Json 'memory.win_physical' {
-  Get-CimInstance Win32_PhysicalMemory -ErrorAction Stop | Select-Object BankLabel, DeviceLocator, Capacity, Speed,
-    ConfiguredClockSpeed, Manufacturer, PartNumber, SerialNumber, SMBIOSMemoryType, MemoryType, FormFactor,
+  Get-CimInstance Win32_PhysicalMemory -OperationTimeoutSec $DW_TIMEOUT_S -ErrorAction Stop | Select-Object BankLabel, DeviceLocator, Capacity, Speed,
+    ConfiguredClockSpeed, Manufacturer, PartNumber, SerialNumber, SMBIOSMemoryType, MemoryType, TypeDetail, FormFactor,
     DataWidth, TotalWidth
 }
 
 DW-Json 'memory.win_array' {
   # MemoryErrorCorrection: 3 None, 4 Parity, 5 Single-bit ECC, 6 Multi-bit ECC, 7 CRC.
-  Get-CimInstance Win32_PhysicalMemoryArray -ErrorAction Stop | Select-Object MemoryErrorCorrection, MemoryDevices,
+  Get-CimInstance Win32_PhysicalMemoryArray -OperationTimeoutSec $DW_TIMEOUT_S -ErrorAction Stop | Select-Object MemoryErrorCorrection, MemoryDevices,
     MaxCapacity, MaxCapacityEx, Use, Location
 }
 
 DW-Json 'memory.win_os' {
-  $os = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+  $os = Get-CimInstance Win32_OperatingSystem -OperationTimeoutSec $DW_TIMEOUT_S -ErrorAction Stop
   # Performance counters through CIM: the class names are not localised
   # (Get-Counter paths are, on non-English Windows).
-  $pm = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory -ErrorAction SilentlyContinue
+  $pm = Get-CimInstance Win32_PerfFormattedData_PerfOS_Memory -OperationTimeoutSec $DW_TIMEOUT_S -ErrorAction SilentlyContinue
   [pscustomobject]@{
     TotalVisibleMemorySize = $os.TotalVisibleMemorySize
     FreePhysicalMemory     = $os.FreePhysicalMemory
@@ -34,7 +34,7 @@ DW-Json 'memory.win_os' {
 }
 
 DW-Json 'memory.win_pagefile' {
-  Get-CimInstance Win32_PageFileUsage -ErrorAction Stop | Select-Object Name, AllocatedBaseSize, CurrentUsage, PeakUsage
+  Get-CimInstance Win32_PageFileUsage -OperationTimeoutSec $DW_TIMEOUT_S -ErrorAction Stop | Select-Object Name, AllocatedBaseSize, CurrentUsage, PeakUsage
 }
 
 DW-Json 'memory.win_memdiag' {
@@ -51,7 +51,8 @@ DW-Json 'memory.win_memdiag' {
         }
       }
   } catch {
-    if ($_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*') { throw }
+    # No events yet, or the provider is not registered (Server Core).
+    if ($_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*' -and $_.FullyQualifiedErrorId -notlike 'NoMatchingProvidersFound*') { throw }
   }
 }
 

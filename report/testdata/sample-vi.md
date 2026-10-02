@@ -2,7 +2,7 @@
 Dell Inc. PowerEdge R740 · Serial / service tag: `7XK9Q73` · AlmaLinux 9.4 (Seafoam Ocelot) · 2026-10-01 16:00:20 +07:00
 
 ### 🔴 CẦN XỬ LÝ NGAY
-4 lỗi nghiêm trọng · 3 cảnh báo · 1 lưu ý · đã kiểm tra 8/12 nhóm linh kiện
+4 lỗi nghiêm trọng · 3 cảnh báo · 1 lưu ý · đã kiểm tra 8/12 nhóm linh kiện (4 nhóm chỉ một phần)
 
 ### Vấn đề phát hiện (8)
 1. 🔴 **Ổ /dev/sda sắp hỏng: 24 sector không đọc được**
@@ -48,7 +48,7 @@ Dell Inc. PowerEdge R740 · Serial / service tag: `7XK9Q73` · AlmaLinux 9.4 (Se
 - 🟠 **Thanh RAM** Samsung M393A4K40CB2-CVF 32 GiB · Serial: `4C1A2B3D` · Vị trí: `CPU1 DIMM_A1`
   - Lý do: Thanh RAM DIMM_A1 có lỗi ECC đã sửa (152 lỗi trong 7 ngày)
 
-### Chưa kiểm tra được
+### Chưa kiểm tra đầy đủ
 - Thông tin FRU (kiểm tra bị lỗi): ipmitool fru bị quá thời gian: \<script>alert("x")\</script>" onmouseover="alert(1)" '>\<img src=x onerror=alert(2)>
 - Card RAID MegaRAID (kiểm tra một phần): Có card RAID nhưng storcli không đọc được pin.
 - Nhật ký lỗi NVMe (chưa kiểm tra): Chưa cài nvme.
@@ -58,7 +58,7 @@ Dell Inc. PowerEdge R740 · Serial / service tag: `7XK9Q73` · AlmaLinux 9.4 (Se
 - Danh sách thanh RAM, hwmon (chưa kiểm tra): Cần quyền root.
   - Chạy với quyền root: `sudo diagward`
 - lm-sensors (chưa kiểm tra): Chưa cài sensors.
-  - Cài đặt: `dnf install -y lm_sensors`
+  - Cài lm_sensors rồi chạy lại Diagward. `sudo dnf install -y lm_sensors`
 
 ### Ghi chú
 - Diagward chạy không có quyền root nên một số mục đã bị bỏ qua. Hãy chạy lại bằng sudo để có báo cáo đầy đủ.

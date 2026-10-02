@@ -110,50 +110,44 @@ if ($rdSc -or $rdPc -or $rdHp -or $rdAc -or $rdMc) {
     DW-Skip 'raid.hw' 'not-admin'
   } else {
     # The CLIs write log files (storcli.log, UcliEvt.log, MegaSAS.log) into
-    # the process working directory: point it at a temporary folder.
-    $rdOldCwd = [Environment]::CurrentDirectory
+    # their working directory: run them in a temporary folder.
     $rdTmp = Join-Path ([IO.Path]::GetTempPath()) ('diagward-raid-' + [guid]::NewGuid().ToString('N'))
     try {
       New-Item -ItemType Directory -Path $rdTmp -Force | Out-Null
-      [Environment]::CurrentDirectory = $rdTmp
       foreach ($fam in @(@('storcli', $rdSc), @('perccli', $rdPc))) {
         if (-not $fam[1]) { continue }
         $p = $fam[0]; $exe = $fam[1]
-        DW-Exe "raid.${p}_ctrl" $exe @('/call', 'show', 'all', 'J')
-        DW-Exe "raid.${p}_vd" $exe @('/call/vall', 'show', 'all', 'J')
-        DW-Exe "raid.${p}_pd" $exe @('/call/eall/sall', 'show', 'all', 'J')
-        DW-Exe "raid.${p}_rebuild" $exe @('/call/eall/sall', 'show', 'rebuild', 'J')
-        DW-Exe "raid.${p}_bbu" $exe @('/call/bbu', 'show', 'all', 'J')
-        DW-Exe "raid.${p}_cv" $exe @('/call/cv', 'show', 'all', 'J')
+        DW-Exe "raid.${p}_ctrl" $exe @('/call', 'show', 'all', 'J') $rdTmp
+        DW-Exe "raid.${p}_vd" $exe @('/call/vall', 'show', 'all', 'J') $rdTmp
+        DW-Exe "raid.${p}_pd" $exe @('/call/eall/sall', 'show', 'all', 'J') $rdTmp
+        DW-Exe "raid.${p}_rebuild" $exe @('/call/eall/sall', 'show', 'rebuild', 'J') $rdTmp
+        DW-Exe "raid.${p}_bbu" $exe @('/call/bbu', 'show', 'all', 'J') $rdTmp
+        DW-Exe "raid.${p}_cv" $exe @('/call/cv', 'show', 'all', 'J') $rdTmp
       }
       if ($rdHp) {
-        DW-Exe 'raid.ssacli_config' $rdHp @('ctrl', 'all', 'show', 'config', 'detail')
-        DW-Exe 'raid.ssacli_status' $rdHp @('ctrl', 'all', 'show', 'status')
+        DW-Exe 'raid.ssacli_config' $rdHp @('ctrl', 'all', 'show', 'config', 'detail') $rdTmp
+        DW-Exe 'raid.ssacli_status' $rdHp @('ctrl', 'all', 'show', 'status') $rdTmp
       }
       if ($rdAc) {
-        DW-Exe 'raid.arcconf_list' $rdAc @('LIST')
+        # One LIST run: emitted as is, and parsed for the controller count.
         $rdN = 0
-        try {
-          $psi = New-Object System.Diagnostics.ProcessStartInfo
-          $psi.FileName = $rdAc; $psi.Arguments = 'LIST'
-          $psi.UseShellExecute = $false; $psi.RedirectStandardOutput = $true; $psi.CreateNoWindow = $true
-          $proc = [Diagnostics.Process]::Start($psi)
-          $ot = $proc.StandardOutput.ReadToEndAsync()
-          if ($proc.WaitForExit($DW_TIMEOUT_S * 1000)) {
-            if ($ot.Result -match 'Controllers found:\s*(\d+)') { $rdN = [int]$Matches[1] }
-          } else { try { $proc.Kill() } catch {} }
-        } catch {}
+        $r = DW-Run $rdAc @('LIST') $rdTmp
+        if ($null -eq $r) {
+          DW-Missing 'raid.arcconf_list' 'arcconf'
+        } else {
+          DW-Emit 'raid.arcconf_list' $r.Out $r.Err $r.Rc $r.Ms $r.Flags
+          if ($r.Out -match 'Controllers found:\s*(\d+)') { $rdN = [int]$Matches[1] }
+        }
         for ($i = 1; $i -le [Math]::Min($rdN, 16); $i++) {
-          DW-Exe "raid.arcconf:$i" $rdAc @('GETCONFIG', "$i", 'AL')
+          DW-Exe "raid.arcconf:$i" $rdAc @('GETCONFIG', "$i", 'AL') $rdTmp
         }
       }
       if ($rdMc -and -not $rdSc -and -not $rdPc) {
-        DW-Exe 'raid.megacli_ld' $rdMc @('-LDInfo', '-Lall', '-aALL', '-NoLog')
-        DW-Exe 'raid.megacli_pd' $rdMc @('-PDList', '-aALL', '-NoLog')
-        DW-Exe 'raid.megacli_bbu' $rdMc @('-AdpBbuCmd', '-aALL', '-NoLog')
+        DW-Exe 'raid.megacli_ld' $rdMc @('-LDInfo', '-Lall', '-aALL', '-NoLog') $rdTmp
+        DW-Exe 'raid.megacli_pd' $rdMc @('-PDList', '-aALL', '-NoLog') $rdTmp
+        DW-Exe 'raid.megacli_bbu' $rdMc @('-AdpBbuCmd', '-aALL', '-NoLog') $rdTmp
       }
     } finally {
-      [Environment]::CurrentDirectory = $rdOldCwd
       Remove-Item -LiteralPath $rdTmp -Recurse -Force -ErrorAction SilentlyContinue
     }
   }

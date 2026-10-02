@@ -96,6 +96,11 @@ var junkValues = map[string]bool{
 	"serial": true, "serial number": true, "--": true, "-": true, ".": true,
 	"not settable": true, "invalid": true, "empty": true, "type1productconfigid": true,
 	"type1family": true, "type2 - board serial number": true, "chassis manufacture": true,
+	// more placeholders seen in AMI/Insyde/Phoenix firmware defaults
+	"to be filled by o.e.m": true, "not present": true, "notspecified": true, "unknow": true,
+	"no asset tag": true, "no asset information": true, "asset tag": true, "asset-1234567890": true,
+	"systemserialnumber": true, "base board product name": true, "chassis version": true,
+	"123456789012": true, "01234567890": true, "0123456789abcdef": true, "default_string": true,
 }
 
 // clean trims a DMI/CIM value and returns "" for placeholders.

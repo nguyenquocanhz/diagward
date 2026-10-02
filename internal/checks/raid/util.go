@@ -266,12 +266,14 @@ func partText(p *model.Part) (en, vi string) {
 	return " (" + strings.Join(e, ", ") + ")", " (" + strings.Join(v, ", ") + ")"
 }
 
-// installPkg is hint.Install for a package hint does not know.
-func installPkg(env model.Env, pkg string) model.Text {
+// installPkg is hint.InstallFix for a package hint does not know: the Fix
+// text and the install command for Coverage.Cmd ("" when the package
+// manager is unknown).
+func installPkg(env model.Env, pkg string) (model.Text, string) {
 	if cmd := hint.InstallCommand(env, pkg); cmd != "" {
-		return model.Tf("Install it: %s", "Cài đặt: %s", cmd)
+		return model.Tf("Install %s, then run Diagward again.", "Cài %s rồi chạy lại Diagward.", pkg), cmd
 	}
-	return model.Tf("Install the %s package and run Diagward again.", "Cài gói %s rồi chạy lại Diagward.", pkg)
+	return model.Tf("Install the %s package and run Diagward again.", "Cài gói %s rồi chạy lại Diagward.", pkg), ""
 }
 
 func sortedKeys[V any](m map[string]V) []string {

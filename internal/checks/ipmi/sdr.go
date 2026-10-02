@@ -37,6 +37,11 @@ func (s *Sensor) Readable() bool { return s.Status != "ns" }
 var sdrNumRe = regexp.MustCompile(`^[0-9A-Fa-f]{2}h$`)
 var analogRe = regexp.MustCompile(`^(-?[0-9]+(?:\.[0-9]+)?)\s+([A-Za-z][A-Za-z %/]*?)\s*(?:,\s*(.*))?$`)
 
+// locatorRe matches the device locator records `sdr elist` prints among
+// the sensors (ipmitool lib/ipmi_sdr.c: "Dynamic MC @ 20h", "Logical FRU
+// @02h", "Generic Device @20:00.0", "Event-Only"): not sensors.
+var locatorRe = regexp.MustCompile(`^(?:(?:Static|Dynamic) MC @ [0-9A-Fa-f]{2}h|(?:Logical|Physical)? ?FRU @[0-9A-Fa-f]{2}h|Generic Device @.*|Event-Only)$`)
+
 // parseSDR parses `ipmitool sdr elist`. Lines that are not five
 // pipe-separated columns (e.g. "Unable to send command: Invalid argument",
 // which ipmitool interleaves on some BMCs) are skipped.
@@ -50,7 +55,7 @@ func parseSDR(out string) []*Sensor {
 		for i := range f {
 			f[i] = strings.TrimSpace(f[i])
 		}
-		if f[0] == "" || !sdrNumRe.MatchString(f[1]) {
+		if f[0] == "" || !sdrNumRe.MatchString(f[1]) || locatorRe.MatchString(f[4]) {
 			continue
 		}
 		s := &Sensor{Name: f[0], Number: f[1], Status: strings.ToLower(f[2]), Entity: f[3], Reading: f[4], line: strings.TrimRight(line, " ")}

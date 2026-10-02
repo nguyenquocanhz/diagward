@@ -76,10 +76,11 @@ sh): no `local`, no arrays, no `[[ ]]`, no `$'..'`, no `echo -e`, no
 | `dw_has CMD` | is a command installed |
 | `dw_run NAME CMD ARGS...` | run one command under the timeout; records `missing=CMD` if absent |
 | `dw_sh NAME 'SNIPPET'` | run a self-contained sh snippet (pipes, loops) under the timeout; helpers are **not** available inside, `DW_*` vars are |
-| `dw_fn NAME FUNC ARGS...` | run a shell function of yours in a subshell (no overall timeout: prefix risky commands with `$DW_TO`) |
+| `dw_fn NAME FUNC ARGS...` | run a shell function of yours in a subshell (no overall timeout: prefix risky commands with `$DW_TO`; a 124/137 return is flagged `timeout`) |
+| `dw_run_t SECS NAME CMD ARGS...` | `dw_run` with its own timeout (long tests such as memtester) |
 | `dw_file NAME PATH` | capture a small file |
 | `dw_sysfs NAME GLOB...` | dump `path=value` (first line) for every readable file matching the globs |
-| `dw_missing NAME WHAT` / `dw_skip NAME REASON` | record a tool that is absent / a check deliberately skipped (`not-root`, `virtual`, `container`, `disabled`, `not-applicable`) |
+| `dw_missing NAME WHAT` / `dw_skip NAME REASON` | record a tool that is absent / a check deliberately skipped (`not-root`, `virtual`, `container`, `disabled`, `not-applicable`, `bmc-timeout`, `low-memory`; one word, the Go side explains it) |
 | `$DW_TO` | `timeout -k 5 $DW_TIMEOUT` (or empty) |
 | `$DW_ROOT` | 1 when running as root |
 | `$DW_VM`, `$DW_CONTAINER` | systemd-detect-virt results ("" on bare metal / not a container; `wsl` counts as a container) |
@@ -99,7 +100,8 @@ treat their absence as a problem.
 |---|---|
 | `DW-Json NAME { block } [depth]` | emit the block's objects as a JSON **array** (select properties first!) |
 | `DW-Text NAME { block }` | emit as text |
-| `DW-Exe NAME EXE @(args)` | run an external program (PATH or common vendor dirs) under the timeout; `missing=EXE` if absent |
+| `DW-Exe NAME EXE @(args) [workdir]` | run an external program (PATH or common vendor dirs) under the timeout and emit it; `missing=EXE` if absent |
+| `DW-Run EXE @(args) [workdir] [timeout]` | run it and **return** `@{Out;Err;Rc;Ms;Flags;Path}` (or `$null` if absent) for post-processing, then `DW-Emit` yourself |
 | `DW-Missing NAME WHAT` / `DW-Skip NAME REASON` | as on Linux (`not-admin`, `virtual`, ...) |
 | `DW-FindExe NAME`, `DW-Has NAME` | lookups |
 | `$DW_ADMIN` | running elevated |
@@ -136,7 +138,15 @@ func Check(b *collect.Bundle, env model.Env) model.Result
   `hint.NeedRoot(env)` / `hint.RunAsRoot(env)`; VM/container →
   `hint.Virtual(env)`), or `failed` (ran but output unusable — include the
   stderr in Reason).
+* When a coverage entry has one command that enables the check, put it in
+  `Coverage.Cmd` (copy-paste ready) and keep `Fix` to the explanation;
+  `hint.InstallFix(env, tool)` returns both. Name real CLI flags in texts:
+  `diagward check --bench /var/tmp` (`--bench-size 1G`), `diagward check
+  --memtest 2G`, `diagward bmc <address>`, `sudo diagward install-tools`.
 * Put typed data in `Result.Facts` (exported structs with JSON tags).
+  Domains may read another domain's *sections* and import its exported
+  helper packages (e.g. memory imports `internal/checks/cpu/ras`), but must
+  not duplicate another domain's finding for the same fact.
 * Tables show inventory with a status per row (disks with key S.M.A.R.T.
   values, DIMMs with ECC counts, sensors with thresholds).
 
@@ -179,6 +189,21 @@ machine-translation tone. Example:
 * EN: "Disk /dev/sda is failing: 24 sectors could not be read"
 * VI: "Ổ /dev/sda sắp hỏng: 24 sector không đọc được"
 * Action VI: "Sao lưu dữ liệu ngay. Thay ổ /dev/sda (serial ZA1234). Nếu ổ nằm trong RAID, kiểm tra RAID đã rebuild xong trước khi rút ổ."
+
+## Cross-domain rules
+
+* The **logs** domain reports what the kernel log / event log says; the
+  component domains report what their own counters say (EDAC, S.M.A.R.T.,
+  mdstat, SEL). Both may appear: they are different evidence. A log finding
+  about a disk names the device (`Part{Kind:"disk", Location:"/dev/sda"}`);
+  `diag` then fills in model and serial from the disk domain's inventory.
+* Temperatures of disks belong to the disk domain; the sensors domain shows
+  nvme/drivetemp hwmon chips in its table but does not raise findings for
+  them.
+* On Linux ≥ 6.6 an ext4 error leaves the mount flags alone and
+  /proc/mounts shows `emergency_ro` or `shutdown`; treat these like `ro`.
+* `ComponentSummary.Partial` is set by `diag` when a component was checked
+  but some of its checks were skipped/partial/failed.
 
 ## Tests
 

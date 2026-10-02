@@ -72,7 +72,7 @@ func TestLaptopHealthy(t *testing.T) {
 		t.Fatalf("temperature coverage %+v", c)
 	}
 	// laptops have no fan readings: partial with the sensors-detect advice
-	if c := testkit.Cov(res, "sensors.fans"); c == nil || c.State != model.CovPartial || !strings.Contains(c.Fix.EN, "sensors-detect") {
+	if c := testkit.Cov(res, "sensors.fans"); c == nil || c.State != model.CovPartial || !strings.Contains(c.Cmd, "sensors-detect") {
 		t.Fatalf("fans coverage %+v", c)
 	}
 	// coretemp cores are folded into one row
@@ -220,9 +220,9 @@ func TestServerFaults(t *testing.T) {
 	}
 }
 
-// hwmon only (no lm-sensors installed): NVMe over its critical limit and a
-// latched coretemp critical alarm; thermal zones are merged without
-// duplicating acpitz.
+// hwmon only (no lm-sensors installed): NVMe over its critical limit (the
+// disk domain's finding, not ours) and a latched coretemp critical alarm;
+// thermal zones are merged without duplicating acpitz.
 func TestHwmonOnlyFaults(t *testing.T) {
 	b := linux(
 		testkit.Missing("sensors.lmsensors_json", "sensors"),
@@ -230,12 +230,8 @@ func TestHwmonOnlyFaults(t *testing.T) {
 		testkit.S("sensors.thermal", testkit.Read(t, "thermal_zones.txt")),
 	)
 	res := run(t, b, testkit.Env(collect.OSLinux))
-	f := testkit.Find(res, "sensors.temp_critical")
-	if f == nil || f.Severity != model.Crit || !strings.Contains(f.Target, "nvme") {
-		t.Fatalf("nvme critical: %v", testkit.IDs(res))
-	}
-	if !strings.Contains(f.Action.EN, "drive") {
-		t.Errorf("disk action expected: %s", f.Action.EN)
+	if f := testkit.Find(res, "sensors.temp_critical"); f != nil {
+		t.Fatalf("drive temperature judged here: %v", testkit.IDs(res))
 	}
 	if f := testkit.Find(res, "sensors.temp_crit_alarm"); f == nil || f.Severity != model.Warn {
 		t.Errorf("coretemp crit_alarm: %v", testkit.IDs(res))
@@ -253,7 +249,7 @@ func TestHwmonOnlyFaults(t *testing.T) {
 	if acpitz != 5 { // the 5 hwmon acpitz inputs, no extra thermal zone copy
 		t.Errorf("acpitz rows = %d", acpitz)
 	}
-	if zones != 2 { // x86_pkg_temp and pch_cannonlake
+	if zones != 1 { // pch_cannonlake; x86_pkg_temp duplicates coretemp
 		t.Errorf("thermal zones = %d", zones)
 	}
 }
@@ -277,7 +273,7 @@ func TestNoSensorsBareMetal(t *testing.T) {
 	if c == nil || c.State != model.CovPartial {
 		t.Fatalf("coverage %+v", c)
 	}
-	if !strings.Contains(c.Fix.EN, "dnf install -y lm_sensors") || !strings.Contains(c.Fix.EN, "sensors-detect --auto") || !strings.Contains(c.Fix.EN, "ipmitool") {
+	if c.Cmd != "dnf install -y lm_sensors" || !strings.Contains(c.Fix.EN, "sensors-detect --auto") || !strings.Contains(c.Fix.EN, "ipmitool") {
 		t.Errorf("fix text: %s", c.Fix.EN)
 	}
 	if !strings.Contains(c.Reason.VI, "lm-sensors") {
@@ -290,7 +286,7 @@ func TestNoSensorsBareMetal(t *testing.T) {
 	env := testkit.Env(collect.OSLinux)
 	env.Distro, env.Like, env.PM, env.Root = "ubuntu", "debian", "apt", false
 	res = run(t, b, env)
-	if c := testkit.Cov(res, "sensors.temperature"); !strings.Contains(c.Fix.EN, "sudo apt-get install -y --no-install-recommends lm-sensors") || !strings.Contains(c.Fix.EN, "sudo sensors-detect") {
+	if c := testkit.Cov(res, "sensors.temperature"); c.Cmd != "sudo apt-get install -y --no-install-recommends lm-sensors" || !strings.Contains(c.Fix.EN, "sudo sensors-detect") {
 		t.Errorf("debian fix: %s", c.Fix.EN)
 	}
 }

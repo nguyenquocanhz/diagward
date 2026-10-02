@@ -271,23 +271,51 @@ func objs(m map[string]any, keys ...string) []map[string]any {
 	return out
 }
 
-func link(m map[string]any, keys ...string) string { return str(obj(m, keys...), "@odata.id") }
+// link returns the @odata.id at keys, or the pre-1.0 "href" HPE iLO 4 uses
+// for some links.
+func link(m map[string]any, keys ...string) string {
+	o := obj(m, keys...)
+	return first(str(o, "@odata.id"), str(o, "href"))
+}
+
+// hpOem is the HPE vendor block: Oem.Hpe (iLO 5/6) or Oem.Hp (iLO 4).
+func hpOem(m map[string]any) map[string]any {
+	if o := obj(m, "Oem", "Hpe"); o != nil {
+		return o
+	}
+	return obj(m, "Oem", "Hp")
+}
 
 func links(m map[string]any, keys ...string) []string {
 	var out []string
 	for _, o := range objs(m, keys...) {
-		if id := str(o, "@odata.id"); id != "" {
+		if id := first(str(o, "@odata.id"), str(o, "href")); id != "" {
 			out = append(out, id)
 		}
 	}
 	return out
 }
 
+// nextLink is the next page of a collection, as the collector followed it:
+// Members@odata.nextLink, or HPE iLO 4's "links": {"NextPage": {"page": N}}
+// read as "?page=N".
 func nextLink(coll map[string]any) string {
 	if n := str(coll, "Members@odata.nextLink"); n != "" {
 		return n
 	}
-	return str(coll, "@odata.nextLink")
+	if n := str(coll, "@odata.nextLink"); n != "" {
+		return n
+	}
+	if p := num(coll, "links", "NextPage", "page"); p != nil && *p > 1 && *p < 1e6 {
+		base := first(str(coll, "links", "self", "href"), str(coll, "@odata.id"))
+		if i := strings.IndexByte(base, '?'); i >= 0 {
+			base = base[:i]
+		}
+		if base != "" {
+			return base + "?page=" + strconv.Itoa(int(*p))
+		}
+	}
+	return ""
 }
 
 // Status is the common Redfish Status object.

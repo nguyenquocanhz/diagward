@@ -22,6 +22,7 @@ type winDIMM struct {
 	PartNumber           string  `json:"PartNumber"`
 	SerialNumber         string  `json:"SerialNumber"`
 	SMBIOSMemoryType     int     `json:"SMBIOSMemoryType"`
+	TypeDetail           int     `json:"TypeDetail"` // bit 0x1000 = non-volatile
 	FormFactor           int     `json:"FormFactor"`
 	DataWidth            int     `json:"DataWidth"`
 	TotalWidth           int     `json:"TotalWidth"`
@@ -109,6 +110,14 @@ func (s *state) windows() {
 		if dd.Bank == dd.Locator {
 			dd.Bank = ""
 		}
+		// Win32_PhysicalMemory.TypeDetail 4096 (0x1000) = "Nonvolatile"
+		// (Microsoft docs): persistent memory (NVDIMM, Optane PMem), whose
+		// capacity is not RAM the OS counts.
+		if d.TypeDetail&0x1000 != 0 {
+			dd.PMem, dd.Type = true, "PMem"
+		} else {
+			dd.VolatileBytes = dd.SizeBytes
+		}
 		s.dimms = append(s.dimms, dd)
 	}
 	for _, a := range wa {
@@ -147,8 +156,8 @@ func (s *state) windows() {
 	}
 	s.inventoryFindings(visible, "TotalVisibleMemorySize")
 
-	ecc, eccType := s.eccState()
-	s.facts.ECC, s.facts.ECCType = ecc, eccType
+	ecc, eccText, eccShort := s.eccState()
+	s.facts.ECC, s.facts.ECCType, s.eccShort = ecc, eccText.EN, eccShort
 	if ps != nil {
 		if ecc == "none" {
 			s.cov("memory.ecc", nameECC, model.CovSkipped,
@@ -156,9 +165,8 @@ func (s *state) windows() {
 			if !s.virtual && len(s.dimms) > 0 {
 				s.add(model.Finding{
 					ID: "memory.no_ecc", Severity: model.Info,
-					Title: model.T("The RAM has no ECC", "RAM không có ECC"),
-					Detail: model.Tf("%s. Without ECC, a flipped bit is neither corrected nor reported: it silently corrupts data or crashes programs. Servers should use ECC memory.",
-						"%s. Không có ECC thì bit bị lỗi không được sửa cũng không được báo: dữ liệu hỏng âm thầm hoặc chương trình bị crash. Máy chủ nên dùng RAM ECC.", eccType),
+					Title:  model.T("The RAM has no ECC", "RAM không có ECC"),
+					Detail: noECCDetail(eccText),
 					Action: model.T("For a production server, use ECC DIMMs on a board/CPU that supports ECC. Until then, run the Windows Memory Diagnostic (mdsched.exe) when you suspect RAM problems.",
 						"Với máy chủ chạy thật, dùng RAM ECC trên bo mạch/CPU hỗ trợ ECC. Trong lúc chưa thay, chạy Windows Memory Diagnostic (mdsched.exe) khi nghi ngờ lỗi RAM."),
 				})
@@ -253,9 +261,10 @@ func (s *state) memdiag(diag []winMemDiag, sec *collect.Section) {
 		if sec != nil && sec.Err != "" && len(diag) == 0 {
 			reason = model.Tf("The System log could not be read: %s", "Không đọc được System log: %s", oneLine(sec.Err))
 		}
-		s.cov("memory.memtest", nameMemtest, model.CovSkipped, reason,
-			model.T("Run the Windows Memory Diagnostic in a maintenance window: mdsched.exe, choose \"Restart now and check for problems\" (the server reboots and is offline during the test). Then run Diagward again to read the result.",
-				"Chạy Windows Memory Diagnostic trong giờ bảo trì: mdsched.exe, chọn \"Restart now and check for problems\" (máy sẽ khởi động lại và không phục vụ trong lúc test). Sau đó chạy lại Diagward để đọc kết quả."))
+		s.covCmd("memory.memtest", nameMemtest, model.CovSkipped, reason,
+			model.T("Run the Windows Memory Diagnostic (mdsched.exe) in a maintenance window and choose \"Restart now and check for problems\" (the server reboots and is offline during the test). Then run Diagward again to read the result.",
+				"Chạy Windows Memory Diagnostic (mdsched.exe) trong giờ bảo trì, chọn \"Restart now and check for problems\" (máy sẽ khởi động lại và không phục vụ trong lúc test). Sau đó chạy lại Diagward để đọc kết quả."),
+			"mdsched.exe")
 		return
 	}
 	s.cov("memory.memtest", nameMemtest, model.CovRan, model.Text{}, model.Text{})

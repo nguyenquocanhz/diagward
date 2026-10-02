@@ -3,10 +3,10 @@
 # SEL is never cleared here.
 #
 # The section names below are shared with the out-of-band BMC collector, so
-# keep them exactly: ipmi.sdr ipmi.sel_info ipmi.sel ipmi.chassis ipmi.mc
+# keep them exactly: ipmi.sdr ipmi.sel_info ipmi.sel_time ipmi.sel ipmi.chassis ipmi.mc
 # ipmi.fru ipmi.lan ipmi.power. ipmi.devices is Linux only.
 
-_ip_secs="ipmi.mc ipmi.chassis ipmi.sel_info ipmi.sdr ipmi.sel ipmi.fru ipmi.lan ipmi.power"
+_ip_secs="ipmi.mc ipmi.chassis ipmi.sel_info ipmi.sel_time ipmi.sdr ipmi.sel ipmi.fru ipmi.lan ipmi.power"
 
 _ip_node=""
 for _ip_d in /dev/ipmi0 /dev/ipmi/0 /dev/ipmidev/0; do
@@ -69,26 +69,35 @@ else
 		if [ "$_ip_rc" = 124 ] || [ "$_ip_rc" = 137 ]; then
 			# A wedged BMC makes every command wait for the full timeout;
 			# do not spend minutes on it.
-			for _ip_s in ipmi.chassis ipmi.sel_info ipmi.sdr ipmi.sel ipmi.fru ipmi.lan ipmi.power; do
-				dw_skip "$_ip_s" bmc-timeout
+			for _ip_s in $_ip_secs; do
+				[ "$_ip_s" = ipmi.mc ] || dw_skip "$_ip_s" bmc-timeout
 			done
 		else
 			dw_run ipmi.chassis ipmitool chassis status
 			dw_run ipmi.sel_info ipmitool sel info
+			# The BMC clock: SEL time stamps come from it, so the analysis
+			# can tell a wrong clock from old events.
+			dw_run ipmi.sel_time ipmitool sel time get
 			# SDR, SEL and FRU walk many records one by one: on a busy BMC
 			# they can take minutes, so give them four times the timeout.
 			_ip_to=$DW_TO
+			_IP_SELTO=""
 			if [ -n "$DW_TO" ]; then
 				_ip_lt=$((DW_TIMEOUT * 4))
+				# ipmitool inside the SEL snippet stops 10 s before the
+				# snippet is killed, so the entries read so far are kept.
+				_ip_in=$((_ip_lt - 10))
+				[ "$_ip_in" -lt 5 ] && _ip_in=$_ip_lt
 				case "$DW_TO" in
-				*-k*) DW_TO="timeout -k 5 $_ip_lt" ;;
-				*) DW_TO="timeout $_ip_lt" ;;
+				*-k*) DW_TO="timeout -k 5 $_ip_lt"; _IP_SELTO="timeout -k 5 $_ip_in" ;;
+				*) DW_TO="timeout $_ip_lt"; _IP_SELTO="timeout $_ip_in" ;;
 				esac
 			fi
+			export _IP_SELTO
 			dw_run ipmi.sdr ipmitool sdr elist
 			# Keep the newest $DW_MAXLINES entries (the SEL lists oldest first).
 			dw_sh ipmi.sel '
-				ipmitool sel elist >"$DW_T/ipmi_sel"
+				$_IP_SELTO ipmitool sel elist >"$DW_T/ipmi_sel"
 				rc=$?
 				n=$(wc -l <"$DW_T/ipmi_sel")
 				if [ "$n" -gt "$DW_MAXLINES" ]; then

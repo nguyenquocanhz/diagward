@@ -60,10 +60,14 @@ func (c *checker) add(f model.Finding) {
 	c.res.Findings = append(c.res.Findings, f)
 }
 
-func (c *checker) cover(id string, name model.Text, state string, reason, fix model.Text) {
-	c.res.Coverage = append(c.res.Coverage, model.Coverage{
-		ID: id, Component: model.CompRAID, Name: name, State: state, Reason: reason, Fix: fix,
-	})
+// cover records a coverage entry; cmd (optional) is the one copy-paste
+// command that enables the check (Coverage.Cmd), which fix must not repeat.
+func (c *checker) cover(id string, name model.Text, state string, reason, fix model.Text, cmd ...string) {
+	cv := model.Coverage{ID: id, Component: model.CompRAID, Name: name, State: state, Reason: reason, Fix: fix}
+	if len(cmd) > 0 {
+		cv.Cmd = cmd[0]
+	}
+	c.res.Coverage = append(c.res.Coverage, cv)
 }
 
 func (c *checker) arrayRow(sev model.Severity, name, typ, size, state, members, progress string) {

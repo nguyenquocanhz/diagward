@@ -24,7 +24,11 @@ type spec struct {
 	// event). Below it the group gets Below (OK = listed in the table only).
 	Min   int
 	Below model.Severity
-	// CritAt raises the severity to Crit from this weighted count (0 = never).
+	// CritAt raises the severity to Crit from this weighted count (0 = never),
+	// but only while the last event is less than 72 hours old: a storm that
+	// stopped days ago (an unplugged USB disk, a reseated cable, a SAN path
+	// that failed over) is history and stays at Sev. Rules whose single
+	// event already means "failing now" use Sev: model.Crit instead.
 	CritAt int
 	// Decay lowers Warn to Info when nothing happened in the last 72 hours:
 	// a transient that stopped (a cable that was reseated, a load spike).
@@ -55,8 +59,19 @@ type group struct {
 	capped  bool     // severity is limited to capSev (e.g. a smartd warning that later cleared)
 	capSev  model.Severity
 	note    model.Text // extra detail appended to the finding
+	actNote model.Text // extra action appended to the finding's action
 	part    *model.Part
 	comp    string // overrides spec.Comp when set
+}
+
+// limit caps the group's severity at sev (keeping a lower existing cap) and
+// adds note to its detail and act to its action.
+func (g *group) limit(sev model.Severity, note, act model.Text) {
+	if !g.capped || sev < g.capSev {
+		g.capped, g.capSev = true, sev
+	}
+	g.note = joinText(g.note, note)
+	g.actNote = joinText(g.actNote, act)
 }
 
 func (g *group) weighted() int { return g.count + 2*g.recent }
@@ -116,10 +131,10 @@ func (g *group) severity(now time.Time) model.Severity {
 	if sp.Min > 1 && w < sp.Min {
 		sev = sp.Below
 	}
-	if sp.CritAt > 0 && w >= sp.CritAt {
+	recent := !g.last.IsZero() && !now.IsZero() && now.Sub(g.last) <= decayWindow
+	if sp.CritAt > 0 && w >= sp.CritAt && (recent || g.last.IsZero() || now.IsZero()) {
 		sev = model.Crit
 	}
-	recent := !g.last.IsZero() && !now.IsZero() && now.Sub(g.last) <= decayWindow
 	if sp.CritRecent && recent {
 		sev = model.Crit
 	}
@@ -194,14 +209,35 @@ func fmtTime(t time.Time) string {
 }
 
 func fill(t model.Text, g *group) model.Text {
-	r := strings.NewReplacer(
-		"{t}", g.target,
-		"{n}", fmt.Sprint(g.count),
-		"{first}", fmtTime(g.first),
-		"{last}", fmtTime(g.last),
-		"{r}", fmt.Sprint(g.recent),
-	)
-	return model.Text{EN: r.Replace(t.EN), VI: r.Replace(t.VI)}
+	tgt := model.Text{EN: g.target, VI: g.target}
+	if p, ok := placeholderTarget(g); ok {
+		tgt = p
+	}
+	rep := func(s, target string) string {
+		return strings.NewReplacer(
+			"{t}", target,
+			"{n}", fmt.Sprint(g.count),
+			"{first}", fmtTime(g.first),
+			"{last}", fmtTime(g.last),
+			"{r}", fmt.Sprint(g.recent),
+		).Replace(s)
+	}
+	return model.Text{EN: rep(t.EN, tgt.EN), VI: rep(t.VI, tgt.VI)}
+}
+
+// placeholderTarget is how texts name a target the log did not name: the
+// group keys on a placeholder ("memory", "PCIe", "disk") but "Corrected
+// memory errors: memory" or "Disk disk" must not reach the report.
+func placeholderTarget(g *group) (model.Text, bool) {
+	switch {
+	case g.target == "memory" && (g.spec == spMemCE || g.spec == spMemUE):
+		return model.T("DIMM not named in the log", "thanh RAM không rõ vị trí"), true
+	case g.target == "PCIe" && (g.spec == spPCIeCorr || g.spec == spPCIeNonFatal || g.spec == spPCIeFatal):
+		return model.T("(not named in the log)", "(log không ghi rõ)"), true
+	case (g.target == "disk" || g.target == "volume") && strings.HasPrefix(g.spec.ID, "win_"), g.target == "":
+		return model.T("(unknown)", "(không rõ)"), true
+	}
+	return model.Text{}, false
 }
 
 // seenText is the standard "how often, when" sentence of a group.
@@ -309,8 +345,8 @@ func buildFindings(groups []*group, now time.Time, vmNote model.Text) ([]model.F
 			Evidence:  units.Evidence(sampleLines(g.samples), 10),
 			Part:      g.part,
 		}
-		if s.sev >= model.Warn || !g.spec.Action.IsZero() {
-			f.Action = joinText(fill(g.spec.Action, g), vmNote)
+		if s.sev >= model.Warn || !g.spec.Action.IsZero() || !g.actNote.IsZero() {
+			f.Action = joinText(g.actNote, fill(g.spec.Action, g), vmNote)
 		}
 		findings = append(findings, f)
 	}

@@ -25,7 +25,7 @@ func (a *app) cmdInstall(args []string) int {
 		return exitOK
 	}
 	if err == nil && len(pos) > 0 {
-		err = fmt.Errorf("unexpected argument %q", pos[0])
+		err = unexpectedArg(pos[0])
 	}
 	if err != nil {
 		return a.flagError("install-tools", err)
@@ -84,6 +84,11 @@ func (a *app) cmdInstall(args []string) int {
 			return exitOK
 		}
 		err := plan.Run(ctx, sys, func(s install.Step, err error) {
+			if len(s.Fallback) > 0 {
+				fmt.Fprintf(a.stderr, a.t("Warning: %s failed (%v); installing the packages one by one.\n",
+					"Cảnh báo: %s lỗi (%v); sẽ cài từng gói một.\n"), s.String(), err)
+				return
+			}
 			fmt.Fprintf(a.stderr, a.t("Warning: %s failed (%v); continuing.\n", "Cảnh báo: %s lỗi (%v); vẫn tiếp tục.\n"), s.String(), err)
 		})
 		if err != nil {
@@ -92,6 +97,7 @@ func (a *app) cmdInstall(args []string) int {
 		}
 	}
 	after := install.Detect(ctx, sys, install.Options{Memtester: memtester})
+	code := exitOK
 	if !plan.Empty() {
 		var still []string
 		for _, t := range after.Missing() {
@@ -99,11 +105,14 @@ func (a *app) cmdInstall(args []string) int {
 		}
 		if len(still) > 0 {
 			fmt.Fprintf(a.stdout, "\n%s %s\n", a.t("Still missing:", "Vẫn còn thiếu:"), strings.Join(still, ", "))
+			if h := install.MissingHint(after, after.Missing()); !h.IsZero() {
+				fmt.Fprintf(a.stdout, "  %s\n", a.tx(h))
+			}
+			code = exitError
 		} else {
 			fmt.Fprintf(a.stdout, "\n%s\n", a.t("Installed.", "Đã cài xong."))
 		}
 	}
-	code := exitOK
 	for _, f := range install.FollowUps(ctx, sys, before, after) {
 		fmt.Fprintf(a.stdout, "\n%s\n  %s\n", a.tx(f.Title), f.Display())
 		if !after.Env.Root {
@@ -133,9 +142,12 @@ func flagSuffix(memtester bool) string {
 }
 
 func (a *app) printProbe(p install.Probe) {
-	distro := p.Env.Distro
-	if p.Env.DistroVer != "" {
-		distro += " " + p.Env.DistroVer
+	distro := p.OSName
+	if distro == "" {
+		distro = p.Env.Distro
+		if p.Env.DistroVer != "" {
+			distro += " " + p.Env.DistroVer
+		}
 	}
 	if distro == "" {
 		distro = "?"

@@ -112,7 +112,7 @@ func storcliVDClass(s string) string {
 		return stOK
 	case "pdgd", "dgrd", "degraded", "partially degraded":
 		return stDegraded
-	case "ofln", "offline", "failed":
+	case "ofln", "offln", "offline", "failed":
 		return stFailed
 	case "rec", "rbld":
 		return stRebuilding

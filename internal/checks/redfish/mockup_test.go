@@ -123,11 +123,14 @@ func (m mockup) bundle(extra ...*collect.Section) *collect.Bundle {
 		}
 		body, _ := json.Marshal(o)
 		b.Add(&collect.Section{Name: SectionPrefix + k, RC: 200, Out: string(body)})
-		walkLinks(o, func(ref string) {
+		follow := func(ref string) {
 			if nk := normKey(ref); nk != "" && strings.HasPrefix(nk, "/redfish/v1") && !seen[nk] {
 				queue = append(queue, nk)
 			}
-		})
+		}
+		walkLinks(o, follow)
+		follow(nextLink(o)) // also iLO 4's links.NextPage
+
 	}
 	for _, s := range extra {
 		b.Add(s)
@@ -139,7 +142,7 @@ func walkLinks(v any, fn func(string)) {
 	switch x := v.(type) {
 	case map[string]any:
 		for k, c := range x {
-			if s, ok := c.(string); ok && (k == "@odata.id" || strings.HasSuffix(k, "nextLink")) {
+			if s, ok := c.(string); ok && (k == "@odata.id" || k == "href" || strings.HasSuffix(k, "nextLink")) {
 				if !strings.Contains(s, "#") {
 					fn(s)
 				}

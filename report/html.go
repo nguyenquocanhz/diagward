@@ -67,11 +67,12 @@ type hView struct {
 }
 
 type hComp struct {
-	Name   model.Text
-	Class  string
-	Mark   string
-	Status model.Text
-	Anchor string
+	Name    model.Text
+	Class   string
+	Mark    string
+	Status  model.Text
+	Anchor  string
+	Partial bool // checked, but some of its checks were not (ComponentSummary.Partial)
 }
 
 type hFinding struct {
@@ -188,7 +189,7 @@ func buildView(r *model.Report, o Options) hView {
 		v.Identity = append(v.Identity, kv{bi(x.Key), bi(x.Val)})
 	}
 	sev := headlineSeverity(r)
-	checked := sev != model.Info
+	checked := !nothingChecked(r)
 	v.Class, v.Mark = sevClass(sev, checked), htmlMark(sev, checked)
 	v.Headline, v.Sub = bi(Headline(r)), bi(subline(r))
 	v.Collected = fmtTime(r.Collected)
@@ -246,26 +247,33 @@ func buildView(r *model.Report, o Options) hView {
 	}
 	for _, s := range summaryOf(r) {
 		c := hComp{
-			Name:  bi(compName(s)),
-			Class: sevClass(s.Severity, s.Checked),
-			Mark:  htmlMark(s.Severity, s.Checked),
+			Name:    bi(compName(s)),
+			Class:   sevClass(s.Severity, s.Checked),
+			Mark:    htmlMark(s.Severity, s.Checked),
+			Partial: s.Checked && s.Partial,
+		}
+		if isPartial(s) {
+			c.Class, c.Mark = "part", "◐"
 		}
 		switch {
 		case !s.Checked:
 			c.Status = bi(StateText(model.CovSkipped))
 		case s.Crit > 0 && s.Warn > 0:
-			c.Status = model.Tf("%d critical, %d warning(s)", "%d nghiêm trọng, %d cảnh báo", s.Crit, s.Warn)
+			c.Status = model.T(fmt.Sprintf("%d critical, %s", s.Crit, plural(s.Warn, "warning", "warnings")), fmt.Sprintf("%d nghiêm trọng, %d cảnh báo", s.Crit, s.Warn))
 		case s.Crit > 0:
 			c.Status = model.Tf("%d critical", "%d nghiêm trọng", s.Crit)
 		case s.Warn > 0:
-			c.Status = model.Tf("%d warning(s)", "%d cảnh báo", s.Warn)
+			c.Status = model.T(plural(s.Warn, "warning", "warnings"), fmt.Sprintf("%d cảnh báo", s.Warn))
 		case s.Info > 0:
-			c.Status = model.Tf("OK · %d note(s)", "Ổn · %d lưu ý", s.Info)
+			c.Status = model.T("OK · "+plural(s.Info, "note", "notes"), fmt.Sprintf("Ổn · %d lưu ý", s.Info))
 		default:
 			c.Status = bi(SeverityText(model.OK))
 		}
 		if s.Checked && s.Severity > model.OK {
 			c.Anchor = firstByComp[s.Component]
+		}
+		if c.Anchor == "" && c.Partial && len(r.Coverage) > 0 {
+			c.Anchor = "coverage" // what was not checked, and how to enable it
 		}
 		v.Components = append(v.Components, c)
 	}
@@ -352,11 +360,14 @@ func buildView(r *model.Report, o Options) hView {
 			Names:  model.Text{EN: clean(g.names("en"), false), VI: clean(g.names("vi"), false)},
 			Reason: bi(g.Reason),
 		}
-		if !g.Fix.IsZero() {
-			f := bi(g.Fix)
+		if cmd := clean(strings.TrimSpace(g.Cmd), false); !g.Fix.IsZero() || cmd != "" {
+			f := g.Fix
+			if !f.IsZero() {
+				f = bi(f)
+			}
 			it.HasFix = true
-			it.FixVI.Prose, it.FixVI.Cmd = splitFix(f.VI)
-			it.FixEN.Prose, it.FixEN.Cmd = splitFix(f.EN)
+			it.FixVI.Prose, it.FixVI.Cmd = fixParts(f.VI, cmd)
+			it.FixEN.Prose, it.FixEN.Cmd = fixParts(f.EN, cmd)
 		}
 		cur.Items = append(cur.Items, it)
 	}

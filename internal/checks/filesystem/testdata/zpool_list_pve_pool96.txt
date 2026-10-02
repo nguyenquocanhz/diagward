@@ -1,0 +1,1 @@
+rpool	7.25T	7.02T	239G	ONLINE	82%	96%

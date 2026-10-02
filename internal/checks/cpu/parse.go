@@ -138,6 +138,54 @@ func cpuList(s string) int {
 	return n
 }
 
+// cpuIDs expands a kernel CPU list ("0-3,8") into sorted CPU numbers. ok
+// is false for garbage or lists too large to expand (more than 65536 CPUs).
+func cpuIDs(s string) (ids []int, ok bool) {
+	n := cpuList(s)
+	if n < 0 || n > 1<<16 {
+		return nil, false
+	}
+	seen := map[int]bool{}
+	for _, part := range strings.Split(strings.TrimSpace(s), ",") {
+		part = strings.TrimSpace(part)
+		if part == "" {
+			continue
+		}
+		a, b, rng := strings.Cut(part, "-")
+		x, _ := strconv.Atoi(a)
+		y := x
+		if rng {
+			y, _ = strconv.Atoi(b)
+		}
+		for i := x; i <= y; i++ {
+			if !seen[i] {
+				seen[i] = true
+				ids = append(ids, i)
+			}
+		}
+	}
+	sort.Ints(ids)
+	return ids, true
+}
+
+// formatCPUs writes sorted CPU numbers back as a kernel CPU list.
+func formatCPUs(ids []int) string {
+	var parts []string
+	for i := 0; i < len(ids); {
+		j := i
+		for j+1 < len(ids) && ids[j+1] == ids[j]+1 {
+			j++
+		}
+		if j == i {
+			parts = append(parts, strconv.Itoa(ids[i]))
+		} else {
+			parts = append(parts, strconv.Itoa(ids[i])+"-"+strconv.Itoa(ids[j]))
+		}
+		i = j + 1
+	}
+	return strings.Join(parts, ",")
+}
+
 // sysfsBase maps the base names of a dw_sysfs dump ("online", "offline",
 // "control" for smt/control) to their values.
 func sysfsBase(sec *collect.Section) map[string]string {

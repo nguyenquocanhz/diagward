@@ -65,3 +65,15 @@ marked as such in the test names where it matters.
 | `byid_sdb_sdc.txt` | Synthesised `raid.byid` lines following udev's persistent-storage naming (ata-MODEL_SERIAL, scsi-SATA_, nvme-eui, wwn-). |
 | `win_controllers_local.json`, `win_pools_local.json` | Real. Captured with the collector's PowerShell on the Windows 10 dev machine (not elevated; Intel RST controller, primordial pool only). |
 | `win_controllers_perc.json`, `win_pools_*.json`, `win_vdisks_*.json`, `win_pdisks_degraded.json`, `win_jobs_repair.json` | Synthesised in the collector's JSON shape; enum names/values from the Windows Storage Management API docs (MSFT_VirtualDisk, MSFT_PhysicalDisk: https://learn.microsoft.com/en-us/windows-hardware/drivers/storage/msft-virtualdisk). Unverified against a real degraded Storage Spaces pool. |
+
+## Added by the second review (2026-10-02)
+
+| File | Origin |
+|---|---|
+| `wsl_mdstat_delayed.txt`, `wsl_md_sysfs_delayed.txt`, `wsl_mdadm_detail_delayed_md95.txt`, `wsl_mdadm_detail_delayed_md96.txt` | Real. WSL2 (kernel 6.18 WSL2, mdadm from Ubuntu 26.04): two RAID1 arrays on partitions of the same three loop devices (fresh `mknod` nodes, since WSL has no udev); one member of each failed and removed, a new partition added to both with `speed_limit_max=1000`: md95 shows `recovery = 3.2%`, md96 `resync=DELAYED` with sysfs `sync_action=recover`, `sync_completed=delayed` and mdadm "clean, degraded, resyncing (DELAYED)" / "spare rebuilding". |
+| `wsl_mdstat_broken.txt`, `wsl_md_sysfs_broken.txt`, `wsl_mdadm_detail_broken_md95.txt` | Real. Same setup on stale partition nodes: the kernel set MD_BROKEN and `/proc/mdstat` prints `broken (auto-read-only) raid1 ... (S)` (array_state `read-auto`, mdadm "clean, degraded" with an idle spare). |
+| `zpool_status_draid_resilver.txt` | Real (documentation sample). OpenZFS "dRAID Howto", https://openzfs.github.io/openzfs-docs/Basic%20Concepts/Pool%20Structure/dRAID%20Howto.html — sequential resilver onto the distributed spare ("scan: resilver (draid1:4d:11c:1s-0) in progress", `spare-6`, spare INUSE). Indentation as rendered by the docs (spaces). |
+| `zpool_status_was_path.txt` | Real. openzfs/zfs issue #4299, https://github.com/openzfs/zfs/issues/4299 (raidz1 resilver, `replacing-0` with a GUID "UNAVAIL ... was /dev/disk/by-id/ata-...-part1", logs mirror, cache, permanent errors). Leading whitespace of the header/config lines restored to zpool-status's layout (the issue page lost it). |
+| `ssacli-H240ar-hba.txt` | Real. Proxmox forum thread 118035 "Low disk subsystem performance", https://forum.proxmox.com/threads/low-disk-subsystem-performance.118035/ (`ssacli ctrl all show config`, Smart HBA H240ar, "HBA Drives"). |
+
+Inline test inputs derived from existing fixtures: MegaCli "Battery State: Operational" / "Non Operational" (values from Oracle Exadata BBU docs and karellen.blogspot.com 2012 MegaSAS 9260 output), ssacli "Unrecoverable Media Errors: Detected" (field name real, value guessed), arcconf "Failed stripes : Yes" and "Impacted" (Microchip: needs Verify with Fix), Storage Spaces enum names without spaces.

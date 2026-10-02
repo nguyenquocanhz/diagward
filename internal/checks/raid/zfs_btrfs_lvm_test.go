@@ -108,8 +108,8 @@ func TestZFSNoPoolsAndMissing(t *testing.T) {
 	}
 	res = run(t, collect.OSLinux, testkit.Missing("raid.zpool_status", "zpool"))
 	c := cov(t, res, "raid.zfs", model.CovSkipped)
-	if !strings.Contains(c.Fix.EN, "dnf install -y zfs") {
-		t.Errorf("fix: %q", c.Fix.EN)
+	if c.Cmd != "dnf install -y zfs" || c.Fix.IsZero() {
+		t.Errorf("fix: %q cmd: %q", c.Fix.EN, c.Cmd)
 	}
 	res = run(t, collect.OSLinux, testkit.RC("raid.zpool_status", 1, "", "internal error: something broke"))
 	cov(t, res, "raid.zfs", model.CovFailed)

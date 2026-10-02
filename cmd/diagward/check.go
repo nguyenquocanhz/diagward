@@ -42,7 +42,7 @@ func (a *app) parseCheck(args []string) (*checkOpts, error) {
 		return nil, err
 	}
 	if len(pos) > 0 {
-		return nil, fmt.Errorf("unexpected argument %q", pos[0])
+		return nil, unexpectedArg(pos[0])
 	}
 	return o, o.validate()
 }
@@ -56,7 +56,8 @@ func (o *checkOpts) validate() error {
 			return err
 		}
 		if o.col.benchDir == "" {
-			return errors.New("--bench-size needs --bench DIR")
+			return ue("--bench-size needs --bench DIR (e.g. --bench /var/tmp --bench-size 1G)",
+				"--bench-size cần đi kèm --bench THƯ_MỤC (ví dụ --bench /var/tmp --bench-size 1G)")
 		}
 	}
 	if o.col.memtest != "" {
@@ -66,10 +67,10 @@ func (o *checkOpts) validate() error {
 		}
 		o.col.memtest = v
 	}
-	if o.col.timeout != 0 && (o.col.timeout < 5 || o.col.timeout > 3600) {
-		return fmt.Errorf("--timeout %d: use 5 to 3600 seconds (per command)", o.col.timeout)
+	if err := fileArg("--bench", o.col.benchDir); err != nil {
+		return err
 	}
-	return nil
+	return checkTimeout(o.col.timeout)
 }
 
 // options converts the flags to collector options.
@@ -127,8 +128,8 @@ func (a *app) cmdCheck(args []string, doubleClick bool) int {
 		}
 	}
 	rep := diag.Analyze(b)
-	rc := a.emit(rep, &o.out, saved)
-	if doubleClick && o.out.html != "" && o.out.html != "-" {
+	rc := a.emit(rep, &o.out, saved, cerr != nil || incomplete(b))
+	if doubleClick && rc == exitOK && o.out.html != "" && o.out.html != "-" {
 		if err := a.openBrowser(o.out.html); err != nil {
 			fmt.Fprintf(diagOut, a.t("Open the report yourself: %s\n", "Hãy tự mở báo cáo: %s\n"), o.out.html)
 		}
@@ -162,7 +163,7 @@ func (a *app) checkTestFlags(o *checkOpts, w io.Writer) bool {
 			}
 			if !o.out.quiet {
 				fmt.Fprintf(w, a.t("Disk speed test: writes and reads back a %d MiB file in %s (deleted afterwards). It adds disk load; you asked for it with --bench.\n",
-					"Đo tốc độ ổ: ghi rồi đọc lại một tệp %d MiB trong %s (xoá ngay sau đó). Ổ sẽ tải nặng trong lúc đo; chỉ chạy vì bạn đã bật --bench.\n"), mb, c.benchDir)
+					"Đo tốc độ ổ: ghi rồi đọc lại một tệp %d MiB trong %s (xóa ngay sau đó). Ổ sẽ tải nặng trong lúc đo; chỉ chạy vì bạn đã bật --bench.\n"), mb, c.benchDir)
 			}
 		}
 	}
@@ -239,14 +240,17 @@ func (a *app) cmdCollect(args []string) int {
 		if out == "" && strings.HasSuffix(strings.ToLower(pos[0]), ".dwb") && len(pos) == 1 {
 			out = pos[0]
 		} else {
-			err = fmt.Errorf("unexpected argument %q", pos[0])
+			err = unexpectedArg(pos[0])
 		}
 	}
-	if err == nil && col.timeout != 0 && (col.timeout < 5 || col.timeout > 3600) {
-		err = fmt.Errorf("--timeout %d: use 5 to 3600 seconds (per command)", col.timeout)
+	if err == nil {
+		err = checkTimeout(col.timeout)
 	}
-	if err == nil && out == "-" {
-		err = errors.New("-o needs a file name")
+	if err == nil && strings.HasPrefix(out, "-") {
+		err = ue("-o needs a file name, e.g. -o srv01.dwb", "-o cần tên tệp, ví dụ -o srv01.dwb")
+	}
+	if err == nil && out != "" {
+		err = outDirOK("-o", out)
 	}
 	if err != nil {
 		return a.flagError("collect", err)
@@ -262,9 +266,19 @@ func (a *app) cmdCollect(args []string) int {
 	if out == "" {
 		out = defaultName(b.Host, b.Finished, ".dwb")
 	}
+	saveFailed := false
 	if err := saveBundle(out, b); err != nil {
+		// Do not throw away minutes of collection because the current
+		// directory is read-only (non-root in / or /root): fall back to
+		// the temp directory.
 		a.errorf(a.t("cannot save the bundle: %v", "không lưu được tệp bundle: %v"), err)
-		return exitError
+		alt := filepath.Join(os.TempDir(), filepath.Base(defaultName(b.Host, b.Finished, ".dwb")))
+		if alt == out || saveBundle(alt, b) != nil {
+			return exitError
+		}
+		out = alt
+		fmt.Fprintln(a.stderr, a.t("Saved in the temp directory instead.", "Đã lưu vào thư mục tạm thay thế."))
+		saveFailed = true
 	}
 	abs, _ := filepath.Abs(out)
 	if abs == "" {
@@ -276,15 +290,33 @@ func (a *app) cmdCollect(args []string) int {
 	if quiet {
 		fmt.Fprintln(a.stdout, abs)
 	} else {
-		fmt.Fprintf(a.stdout, a.t("Saved: %s (%d sections)\n", "Đã lưu: %s (%d mục)\n"), abs, len(b.Sections))
+		if incomplete(b) {
+			fmt.Fprintf(a.stdout, a.t("Saved (incomplete, collection did not finish): %s (%d sections)\n",
+				"Đã lưu (chưa đầy đủ, thu thập chưa xong): %s (%d mục)\n"), abs, len(b.Sections))
+		} else {
+			fmt.Fprintf(a.stdout, a.t("Saved: %s (%d sections)\n", "Đã lưu: %s (%d mục)\n"), abs, len(b.Sections))
+		}
 		fmt.Fprintln(a.stdout, a.t("Send this file to your support team. To analyse it on any computer:",
 			"Gửi tệp này cho bộ phận hỗ trợ. Để phân tích trên máy bất kỳ:"))
 		fmt.Fprintf(a.stdout, "  diagward analyze %s\n", quoteArg(filepath.Base(abs)))
 	}
-	if cerr != nil {
+	if cerr != nil || saveFailed {
 		return exitError
 	}
 	return exitOK
+}
+
+// outDirOK checks before a long collection that an output file can be
+// created where asked (the directory exists), so the run is not wasted.
+func outDirOK(flagName, path string) error {
+	if path == "" || path == "-" {
+		return nil
+	}
+	dir := filepath.Dir(path)
+	if fi, err := os.Stat(dir); err != nil || !fi.IsDir() {
+		return ue("%s %s: folder %s does not exist", "%s %s: không có thư mục %s", flagName, path, dir)
+	}
+	return nil
 }
 
 func (a *app) cmdAnalyze(args []string) int {
@@ -299,9 +331,9 @@ func (a *app) cmdAnalyze(args []string) int {
 	if err == nil {
 		switch {
 		case len(pos) == 0:
-			err = errors.New(a.t("which bundle? Usage: diagward analyze FILE.dwb", "phân tích tệp nào? Cách dùng: diagward analyze TỆP.dwb"))
+			err = ue("which bundle? Usage: diagward analyze FILE.dwb", "phân tích tệp nào? Cách dùng: diagward analyze TỆP.dwb")
 		case len(pos) > 1:
-			err = fmt.Errorf("unexpected argument %q", pos[1])
+			err = unexpectedArg(pos[1])
 		default:
 			err = o.validate()
 		}
@@ -315,15 +347,21 @@ func (a *app) cmdAnalyze(args []string) int {
 		return exitError
 	}
 	rep := diag.Analyze(b)
-	if rc := a.emit(rep, &o, ""); rc != exitOK {
+	inc := incomplete(b)
+	if rc := a.emit(rep, &o, "", inc); rc != exitOK {
 		return rc
+	}
+	if inc {
+		// Same as "check" after an interrupted collection: the verdict
+		// covers only part of the machine.
+		return exitError
 	}
 	return exitFor(rep.Verdict)
 }
 
 // emit renders the report: text (or the quiet one-liner) and the requested
 // files. It returns exitError when a file could not be written.
-func (a *app) emit(rep *model.Report, o *outOpts, saved string) int {
+func (a *app) emit(rep *model.Report, o *outOpts, saved string, incomplete bool) int {
 	textW := a.stdout
 	if o.stdoutTaken() {
 		textW = a.stderr
@@ -334,9 +372,12 @@ func (a *app) emit(rep *model.Report, o *outOpts, saved string) int {
 		ASCII:   o.ascii || !a.con.utf8,
 		Width:   a.termWidth(textW),
 		Verbose: o.verbose,
+		// The footer's "add --html ..." hints are noise when files were
+		// asked for: the user already knows the output options.
+		NoHints: o.html != "" || o.md != "" || o.json != "" || saved != "",
 	}
 	if o.quiet {
-		fmt.Fprintln(textW, quietLine(rep, a.lang))
+		fmt.Fprintln(textW, quietLine(rep, a.lang, incomplete))
 	} else if err := report.Text(textW, rep, ropts); err != nil {
 		a.errorf("%v", err)
 	}
@@ -401,7 +442,7 @@ func (a *app) useColor(w io.Writer, noColor bool) bool {
 }
 
 // quietLine is the one-line verdict for cron and monitoring.
-func quietLine(rep *model.Report, lang string) string {
+func quietLine(rep *model.Report, lang string, incomplete bool) string {
 	c := report.CountFindings(rep)
 	head := report.Headline(rep).In(lang)
 	host := rep.Host.Hostname
@@ -409,10 +450,18 @@ func quietLine(rep *model.Report, lang string) string {
 		host = "-"
 	}
 	var b strings.Builder
-	if strings.HasPrefix(lang, "vi") {
+	vi := strings.HasPrefix(lang, "vi")
+	if vi {
 		fmt.Fprintf(&b, "%s: %s (%d lỗi nghiêm trọng, %d cảnh báo)", host, head, c.Crit, c.Warn)
 	} else {
 		fmt.Fprintf(&b, "%s: %s (%d critical, %d warnings)", host, head, c.Crit, c.Warn)
+	}
+	if incomplete {
+		if vi {
+			b.WriteString(" [thu thập chưa xong, kết quả chưa đầy đủ]")
+		} else {
+			b.WriteString(" [collection incomplete, partial result]")
+		}
 	}
 	for _, f := range rep.Findings {
 		if f.Severity >= model.Warn {
@@ -422,6 +471,12 @@ func quietLine(rep *model.Report, lang string) string {
 		}
 	}
 	return b.String()
+}
+
+// incomplete reports whether a local collection stopped before its last
+// section (Ctrl+C, collector crash). BMC bundles have no meta.done.
+func incomplete(b *collect.Bundle) bool {
+	return b != nil && b.OS != collect.OSBMC && b.Get("meta.done") == nil
 }
 
 func writeFile(path string, render func(io.Writer) error) error {

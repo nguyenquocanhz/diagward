@@ -33,6 +33,9 @@ type Options struct {
 	ASCII   bool   // Text: no box drawing or symbols outside ASCII
 	Width   int    // terminal width for Text (0 = 100)
 	Verbose bool   // Text/Markdown: include tables, evidence and full coverage
+	// NoHints drops the Text footer's "how to get more" hints (--html,
+	// --lang, -v): the CLI sets it when it already wrote the files.
+	NoHints bool
 }
 
 func (o Options) lang() string {
@@ -75,14 +78,34 @@ func Headline(r *model.Report) model.Text {
 	if r == nil || (r.Verdict < model.Warn && checkedCount(r) == 0) {
 		return noData
 	}
+	if r.Verdict < model.Warn && guestOnly(r) {
+		// The disks, RAM, fans and PSUs belong to the host: "no hardware
+		// problems" would reassure about hardware nobody looked at.
+		if r.Env.Container {
+			return model.T("NO PROBLEMS FOUND IN THIS CONTAINER", "KHÔNG PHÁT HIỆN LỖI TRONG CONTAINER NÀY")
+		}
+		return model.T("NO PROBLEMS FOUND IN THIS VIRTUAL MACHINE", "KHÔNG PHÁT HIỆN LỖI TRONG MÁY ẢO NÀY")
+	}
 	return VerdictText(r.Verdict)
 }
 
+// guestOnly reports whether the report comes from inside a VM or container,
+// where the physical hardware cannot be checked.
+func guestOnly(r *model.Report) bool {
+	return r != nil && r.Env.OS != "" && r.Env.OS != "bmc" && !r.Env.Bare()
+}
+
+// nothingChecked reports whether the banner should say "not enough data".
+func nothingChecked(r *model.Report) bool {
+	return r == nil || (r.Verdict < model.Warn && checkedCount(r) == 0)
+}
+
 // headlineSeverity is the severity the banner is drawn with: a report where
-// nothing was checked is shown as Info, not as a reassuring green, and a
-// report with only notes is green.
+// nothing was checked, or a healthy VM/container (whose hardware belongs to
+// the host), is shown as Info, not as a reassuring green; a report with only
+// notes is green.
 func headlineSeverity(r *model.Report) model.Severity {
-	if r.Verdict < model.Warn && checkedCount(r) == 0 {
+	if r.Verdict < model.Warn && (checkedCount(r) == 0 || guestOnly(r)) {
 		return model.Info
 	}
 	if r.Verdict < model.Warn {
@@ -135,11 +158,26 @@ func subline(r *model.Report) model.Text {
 		en = append(en, plural(c.Info, "note", "notes"))
 		vi = append(vi, fmt.Sprintf("%d lưu ý", c.Info))
 	}
-	n, total := checkedCount(r), len(summaryOf(r))
-	en = append(en, fmt.Sprintf("%d of %d components checked", n, total))
-	vi = append(vi, fmt.Sprintf("đã kiểm tra %d/%d nhóm linh kiện", n, total))
-	if r != nil && r.Env.OS != "" && r.Env.OS != "bmc" && !r.Env.Bare() {
-		// "No problems found" on a VM says nothing about the physical host.
+	n, total, part := checkedCount(r), len(summaryOf(r)), partialCount(r)
+	switch {
+	case part > 0 && part == n:
+		en = append(en, fmt.Sprintf("%d of %d components checked, all of them only partly", n, total))
+		vi = append(vi, fmt.Sprintf("đã kiểm tra %d/%d nhóm linh kiện, tất cả chỉ một phần", n, total))
+	case part > 0:
+		en = append(en, fmt.Sprintf("%d of %d components checked (%d only partly)", n, total, part))
+		vi = append(vi, fmt.Sprintf("đã kiểm tra %d/%d nhóm linh kiện (%d nhóm chỉ một phần)", n, total, part))
+	default:
+		en = append(en, fmt.Sprintf("%d of %d components checked", n, total))
+		vi = append(vi, fmt.Sprintf("đã kiểm tra %d/%d nhóm linh kiện", n, total))
+	}
+	switch {
+	case !guestOnly(r):
+	case r.Env.Container:
+		// "No problems found" in a container or VM says nothing about the
+		// physical host.
+		en = append(en, "container: the physical hardware was not checked")
+		vi = append(vi, "container: phần cứng vật lý chưa được kiểm tra")
+	default:
 		en = append(en, "virtual machine: the physical hardware was not checked")
 		vi = append(vi, "máy ảo: phần cứng vật lý chưa được kiểm tra")
 	}
@@ -174,6 +212,25 @@ func checkedCount(r *model.Report) int {
 		}
 	}
 	return n
+}
+
+// partialCount is the number of checked components that were only partly
+// checked (ComponentSummary.Partial, set by diag).
+func partialCount(r *model.Report) int {
+	n := 0
+	for _, s := range summaryOf(r) {
+		if s.Checked && s.Partial {
+			n++
+		}
+	}
+	return n
+}
+
+// isPartial reports whether a component tile/cell should be drawn as
+// "partly checked": it was checked, some checks were not, and nothing worse
+// than a note was found (a warning or critical mark matters more).
+func isPartial(s model.ComponentSummary) bool {
+	return s.Checked && s.Partial && s.Severity <= model.Info
 }
 
 func compName(s model.ComponentSummary) model.Text {
@@ -418,6 +475,18 @@ func splitFix(s string) (prose, cmd string) {
 	return s, ""
 }
 
+// fixParts returns what a coverage entry says to do: the explanation and the
+// command to copy. Coverage.Cmd wins when set (Fix is then all prose);
+// otherwise a command is looked for inside the Fix text (older collectors
+// and checks that put "Install it: dnf install -y x" in Fix).
+func fixParts(fix, cmd string) (prose, command string) {
+	fix = strings.TrimSpace(fix)
+	if cmd = strings.TrimSpace(cmd); cmd != "" {
+		return fix, cmd
+	}
+	return splitFix(fix)
+}
+
 // commandWords are the first words of the commands that hint and the checks
 // put in Fix texts.
 var commandWords = map[string]bool{
@@ -455,6 +524,7 @@ type covGroup struct {
 	Comps  []string
 	Reason model.Text
 	Fix    model.Text
+	Cmd    string
 }
 
 // coverageGroups groups r.Coverage, failed first, then partial, skipped and
@@ -492,7 +562,7 @@ func coverageGroups(r *model.Report, withRan bool) []covGroup {
 			continue
 		}
 		idx[key] = len(out)
-		out = append(out, covGroup{State: st, Names: []model.Text{name}, Comps: []string{c.Component}, Reason: c.Reason, Fix: c.Fix})
+		out = append(out, covGroup{State: st, Names: []model.Text{name}, Comps: []string{c.Component}, Reason: c.Reason, Fix: c.Fix, Cmd: c.Cmd})
 	}
 	sorted := make([]covGroup, 0, len(out))
 	for _, st := range []string{model.CovFailed, model.CovPartial, model.CovSkipped, model.CovRan} {
@@ -563,7 +633,7 @@ func virtualText(r *model.Report) model.Text {
 	case v != "":
 		return model.Tf("yes (%s)", "có (%s)", v)
 	}
-	return model.T("no (physical server)", "không (máy chủ vật lý)")
+	return model.T("no (physical machine)", "không (máy vật lý)")
 }
 
 // kv is one identity line.
@@ -615,6 +685,18 @@ func identity(r *model.Report, extra bool) []kv {
 	add("collected", same(fmtTime(r.Collected)))
 	add("duration", fmtSeconds(r.Seconds))
 	return out
+}
+
+// compMark is the status glyph of a component in the overview: its severity,
+// or "partly checked" when nothing worse than a note was found.
+func compMark(s model.ComponentSummary, ascii bool) string {
+	if isPartial(s) {
+		if ascii {
+			return "[PART]"
+		}
+		return "◐"
+	}
+	return sevMark(s.Severity, s.Checked, ascii)
 }
 
 // sevMark is the status glyph for a severity, or for an unchecked component.

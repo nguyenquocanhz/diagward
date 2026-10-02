@@ -19,6 +19,7 @@ type EventGroup struct {
 	First     *time.Time     `json:"first,omitempty"`
 	Last      *time.Time     `json:"last,omitempty"`
 	Repaired  bool           `json:"repaired,omitempty"`
+	Cleared   bool           `json:"cleared,omitempty"`     // a later SEL "Deassert" entry ended it
 	Unknown   bool           `json:"unknownTime,omitempty"` // BMC clock unset
 	Component string         `json:"component"`
 	Severity  model.Severity `json:"severity"`
@@ -35,6 +36,8 @@ type rawEntry struct {
 	t                           time.Time
 	hasTime                     bool
 	repaired                    bool
+	deassert                    bool // SEL EntryCode "Deassert": the condition ended
+	nonHW                       bool // audit, security, configuration: not a hardware event
 	count                       int
 }
 
@@ -50,6 +53,9 @@ func (w *walker) events(now time.Time, windowDays int) []EventGroup {
 	// The same event often sits in two logs (Dell: SEL and Lifecycle log)
 	// with the same time: count it once.
 	seenEvent := map[string]bool{}
+	// Latest "Deassert" per event kind: a sensor event (Supermicro, OpenBMC,
+	// Dell SEL) that was deasserted later has recovered.
+	cleared := map[string]time.Time{}
 	for _, ls := range w.logs {
 		key := normKey(ls.entries)
 		if key == "" || seenLog[key] {
@@ -64,13 +70,19 @@ func (w *walker) events(now time.Time, windowDays int) []EventGroup {
 				}
 				seenEntry[e.id] = true
 			}
-			if e.sev != "critical" && e.sev != "warning" {
+			gk := e.msgID + "|" + e.msg
+			if e.deassert {
+				if e.hasTime && e.t.After(cleared[gk]) {
+					cleared[gk] = e.t
+				}
+				continue
+			}
+			if e.nonHW || (e.sev != "critical" && e.sev != "warning") {
 				continue
 			}
 			if e.hasTime && e.t.Before(cutoff) {
 				continue
 			}
-			gk := e.msgID + "|" + e.msg
 			if e.hasTime {
 				ek := gk + "|" + e.t.UTC().Format(time.RFC3339)
 				if seenEvent[ek] {
@@ -110,8 +122,11 @@ func (w *walker) events(now time.Time, windowDays int) []EventGroup {
 	for _, k := range order {
 		g := groups[k]
 		crit := g.Raw == "Critical"
+		if c, ok := cleared[k]; ok && g.Last != nil && !c.Before(*g.Last) {
+			g.Cleared = true
+		}
 		switch {
-		case g.Repaired:
+		case g.Repaired, g.Cleared:
 			// HPE IML entries marked repaired by a technician.
 			g.Severity = model.Info
 		case g.Last != nil && !g.Last.Before(recent):
@@ -167,7 +182,11 @@ func (w *walker) entries(a *area, key string) []rawEntry {
 				pages = append(pages, n)
 			}
 		}
-		ms, _ := coll["Members"].([]any)
+		// iLO 4 lists only links in Members and the entries in Items.
+		ms, _ := coll["Items"].([]any)
+		if len(ms) == 0 {
+			ms, _ = coll["Members"].([]any)
+		}
 		for _, m := range ms {
 			mo, _ := m.(map[string]any)
 			if mo == nil {
@@ -185,15 +204,18 @@ func (w *walker) entries(a *area, key string) []rawEntry {
 }
 
 func entryOf(m map[string]any) rawEntry {
+	hp := hpOem(m)
 	e := rawEntry{
-		id:     first(str(m, "@odata.id"), str(m, "Id")),
-		msgID:  str(m, "MessageId"),
-		msg:    oneLine(first(str(m, "Message"), str(m, "Name"))),
-		sensor: str(m, "SensorType") + " " + str(m, "Oem", "Hpe", "ClassDescription"),
-		count:  1,
+		id:       first(str(m, "@odata.id"), str(m, "Id")),
+		msgID:    str(m, "MessageId"),
+		msg:      oneLine(first(str(m, "Message"), messageFromID(str(m, "MessageId")), str(m, "Name"))),
+		sensor:   str(m, "SensorType") + " " + str(m, "OemSensorType") + " " + str(hp, "ClassDescription"),
+		count:    1,
+		deassert: strings.EqualFold(str(m, "EntryCode"), "Deassert"),
+		nonHW:    nonHardware(m),
 	}
 	e.sev = strings.ToLower(first(str(m, "Severity"), str(m, "MessageSeverity")))
-	switch strings.ToLower(str(m, "Oem", "Hpe", "Severity")) {
+	switch strings.ToLower(str(hp, "Severity")) {
 	case "caution":
 		if e.sev != "critical" {
 			e.sev = "warning"
@@ -203,21 +225,22 @@ func entryOf(m map[string]any) rawEntry {
 	case "repaired":
 		e.repaired = true
 	}
-	if b := boolp(m, "Oem", "Hpe", "Repaired"); b != nil && *b {
+	if b := boolp(hp, "Repaired"); b != nil && *b {
 		e.repaired = true
 	}
 	// HPE IML/IEL entries have no MessageId; class and code identify the event.
 	if e.msgID == "" {
-		if cl, cd := str(m, "Oem", "Hpe", "Class"), str(m, "Oem", "Hpe", "Code"); cl != "" && cd != "" {
+		if cl, cd := str(hp, "Class"), str(hp, "Code"); cl != "" && cd != "" {
 			e.msgID = "HPE-" + cl + "-" + cd
 		}
 	}
-	if n := num(m, "Oem", "Hpe", "Count"); n != nil && *n > 1 && *n < 1e6 {
+	if n := num(hp, "Count"); n != nil && *n > 1 && *n < 1e6 {
 		e.count = int(*n)
 	}
-	// HPE keeps the first time in Created and the latest in Oem.Hpe.Updated.
-	for _, k := range [][]string{{"Oem", "Hpe", "Updated"}, {"Created"}, {"EventTimestamp"}} {
-		if t, ok := parseTime(str(m, k...)); ok {
+	// HPE keeps the first time in Created and the latest in Oem.Hpe.Updated
+	// (iLO 4: Oem.Hp.Updated, the only time on some POST entries).
+	for _, v := range []string{str(hp, "Updated"), str(m, "Created"), str(m, "EventTimestamp")} {
+		if t, ok := parseTime(v); ok {
 			e.t, e.hasTime = t, true
 			break
 		}
@@ -241,6 +264,81 @@ func parseTime(s string) (time.Time, bool) {
 		}
 	}
 	return time.Time{}, false
+}
+
+// messageFromID turns a registry MessageId into readable words when the
+// entry has no Message (HPE iLO 5 "Event" log: "iLOEvents.3.7.ServerResetDetected"
+// → "Server Reset Detected").
+func messageFromID(id string) string {
+	i := strings.LastIndexByte(id, '.')
+	if i < 0 {
+		return "" // not a registry id (Dell SEL "7e012790", Supermicro "0xA401FF")
+	}
+	id = id[i+1:]
+	if id == "" {
+		return ""
+	}
+	var b strings.Builder
+	rs := []rune(id)
+	for i, r := range rs {
+		if i > 0 && r >= 'A' && r <= 'Z' && rs[i-1] >= 'a' && rs[i-1] <= 'z' {
+			b.WriteByte(' ')
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// nonHardware recognises log entries about logins, accounts, security
+// settings, configuration jobs and firmware updates, which BMCs log at
+// Warning/Critical too (failed logins, "security state at risk", a failed
+// configuration job) but which say nothing about the hardware:
+//   - Dell Lifecycle log: Oem.Dell.Category Audit, Configuration, Updates,
+//     Work Notes (hardware events are "System Health" and "Storage");
+//   - HPE iLO 5/6: Oem.Hpe.Categories made only of Security, Administration,
+//     Maintenance (and Configuration), never Hardware/Power/...;
+//   - Supermicro maintenance log: Oem.Supermicro.Category Account, and
+//     root-of-trust / "First AC Power on" entries of its health log;
+//   - any entry whose OriginOfCondition is the account, session, security,
+//     certificate or update service.
+func nonHardware(m map[string]any) bool {
+	switch strings.ToLower(str(m, "Oem", "Dell", "Category")) {
+	case "audit", "configuration", "updates", "work notes":
+		return true
+	}
+	if strings.EqualFold(str(m, "Oem", "Supermicro", "Category"), "account") {
+		return true
+	}
+	// Supermicro X13/H13 health log: firmware root-of-trust state changes
+	// ("[ROT-0017] Security State of BMC JTAG Lockout changed to Unlock")
+	// and "[PWR-0020] First AC Power on", both logged as Warning.
+	switch strings.ToLower(str(m, "OemSensorType")) {
+	case "pfr (rot)", "ac power on":
+		return true
+	}
+	if cats, ok := dig(hpOem(m), "Categories").([]any); ok && len(cats) > 0 {
+		admin, other := false, false
+		for _, c := range cats {
+			s, _ := c.(string)
+			switch strings.ToLower(strings.TrimSpace(s)) {
+			case "security", "administration", "maintenance":
+				admin = true
+			case "configuration":
+			default:
+				other = true
+			}
+		}
+		if admin && !other {
+			return true
+		}
+	}
+	origin := strings.ToLower(link(m, "Links", "OriginOfCondition"))
+	for _, s := range []string{"/accountservice", "/sessionservice", "/securityservice", "/certificateservice", "/updateservice"} {
+		if strings.Contains(origin, s) {
+			return true
+		}
+	}
+	return false
 }
 
 func titleCase(s string) string {

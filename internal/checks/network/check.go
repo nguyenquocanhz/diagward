@@ -18,34 +18,42 @@ const domain = "network"
 
 // NIC is one physical network port.
 type NIC struct {
-	Name           string            `json:"name"`
-	Kind           string            `json:"kind,omitempty"` // phys, wireless
-	Description    string            `json:"description,omitempty"`
-	Master         string            `json:"master,omitempty"` // bond / bridge / team
-	BondSlave      bool              `json:"bondSlave,omitempty"`
-	Driver         string            `json:"driver,omitempty"`
-	DriverVersion  string            `json:"driverVersion,omitempty"`
-	Firmware       string            `json:"firmware,omitempty"`
-	BusInfo        string            `json:"busInfo,omitempty"`
-	MAC            string            `json:"mac,omitempty"`
-	OperState      string            `json:"operState,omitempty"`
-	Carrier        *bool             `json:"carrier,omitempty"`
-	AdminUp        *bool             `json:"adminUp,omitempty"`
-	Disabled       bool              `json:"disabled,omitempty"` // Windows: adapter disabled
-	SpeedMbps      int               `json:"speedMbps,omitempty"`
-	Duplex         string            `json:"duplex,omitempty"`
-	MTU            int               `json:"mtu,omitempty"`
-	AutoNeg        string            `json:"autoNeg,omitempty"`
-	ForcedSpeed    bool              `json:"forcedSpeed,omitempty"`
-	SupportedMax   int               `json:"supportedMaxMbps,omitempty"`
-	AdvertisedMax  int               `json:"advertisedMaxMbps,omitempty"`
-	PartnerMax     int               `json:"partnerMaxMbps,omitempty"`
-	CarrierChanges *uint64           `json:"carrierChanges,omitempty"`
-	IPs            []string          `json:"ips,omitempty"`
-	CarriesIP      bool              `json:"carriesIp,omitempty"` // in use: an IP on it or above it, or a bridge with guests
-	UsedBy         string            `json:"usedBy,omitempty"`
-	Stats          map[string]uint64 `json:"stats,omitempty"`
+	Name           string   `json:"name"`
+	Kind           string   `json:"kind,omitempty"` // phys, wireless
+	Description    string   `json:"description,omitempty"`
+	Master         string   `json:"master,omitempty"` // bond / bridge / team
+	BondSlave      bool     `json:"bondSlave,omitempty"`
+	Driver         string   `json:"driver,omitempty"`
+	DriverVersion  string   `json:"driverVersion,omitempty"`
+	Firmware       string   `json:"firmware,omitempty"`
+	BusInfo        string   `json:"busInfo,omitempty"`
+	MAC            string   `json:"mac,omitempty"`
+	OperState      string   `json:"operState,omitempty"`
+	Carrier        *bool    `json:"carrier,omitempty"`
+	AdminUp        *bool    `json:"adminUp,omitempty"`
+	Disabled       bool     `json:"disabled,omitempty"` // Windows: adapter disabled
+	SpeedMbps      int      `json:"speedMbps,omitempty"`
+	Duplex         string   `json:"duplex,omitempty"`
+	MTU            int      `json:"mtu,omitempty"`
+	AutoNeg        string   `json:"autoNeg,omitempty"`
+	ForcedSpeed    bool     `json:"forcedSpeed,omitempty"`
+	SupportedMax   int      `json:"supportedMaxMbps,omitempty"`
+	AdvertisedMax  int      `json:"advertisedMaxMbps,omitempty"`
+	PartnerMax     int      `json:"partnerMaxMbps,omitempty"`
+	CarrierChanges *uint64  `json:"carrierChanges,omitempty"`
+	IPs            []string `json:"ips,omitempty"`
+	CarriesIP      bool     `json:"carriesIp,omitempty"` // in use: an IP on it or above it, or a bridge with guests
+	UsedBy         string   `json:"usedBy,omitempty"`
+	// Configured names the network profile that brings the port up at boot
+	// (NetworkManager keyfile, ifcfg file), when it has one.
+	Configured string            `json:"configured,omitempty"`
+	Stats      map[string]uint64 `json:"stats,omitempty"`
+
+	win bool // Windows adapter: actions use PowerShell, not ethtool/ip
 }
+
+// psName quotes an adapter name for a PowerShell command line.
+func psName(n string) string { return "'" + strings.ReplaceAll(n, "'", "''") + "'" }
 
 // Facts is the typed data of the network domain.
 type Facts struct {
@@ -94,7 +102,7 @@ func linuxCoverage(b *collect.Bundle, env model.Env, nics []NIC, res *model.Resu
 	case eth != nil && eth.Missing != "":
 		c.State = model.CovPartial
 		c.Reason = model.T("ethtool is not installed: supported speeds, driver and firmware were not checked.", "Chưa cài ethtool: chưa kiểm tra được tốc độ hỗ trợ, driver và firmware.")
-		c.Fix = hint.Install(env, "ethtool")
+		c.Fix, c.Cmd = hint.InstallFix(env, "ethtool")
 	default:
 		c.State = model.CovRan
 	}
@@ -134,6 +142,7 @@ func linuxNICs(b *collect.Bundle) ([]NIC, []Bond) {
 	tp := parseTopology(b.Get("network.topology").Text())
 	sys := parseSysfs(b.Get("network.sysfs").Text())
 	ips := parseIP(b.Get("network.ip").Text())
+	cfg := parseNetConfig(b.Get("network.config").Text())
 
 	names := map[string]bool{}
 	for n := range sys {
@@ -271,12 +280,24 @@ func linuxNICs(b *collect.Bundle) ([]NIC, []Bond) {
 			if guests[x] > 0 {
 				return true, fmt.Sprintf("bridge %s (%d VM/container ports)", x, guests[x])
 			}
+			// Open vSwitch ports all have the datapath "ovs-system" as
+			// master; the IP sits on an OVS internal port (br-ex) that sysfs
+			// does not link to the uplink. A port added to OVS is in use.
+			if x == "ovs-system" {
+				return true, "Open vSwitch port"
+			}
 			q = append(q, uppers[x]...)
 		}
 		return false, ""
 	}
 	for i := range nics {
 		nics[i].CarriesIP, nics[i].UsedBy = carries(nics[i].Name)
+		if c, ok := cfg[nics[i].Name]; ok && c.Auto {
+			nics[i].Configured = c.File
+			if nics[i].Master == "" && c.Master != "" && !nics[i].CarriesIP {
+				nics[i].Master = c.Master
+			}
+		}
 	}
 	for i := range bonds {
 		bonds[i].CarriesIP, _ = carries(bonds[i].Name)
@@ -426,7 +447,7 @@ func analyze(nics []NIC, bonds []Bond, env model.Env, uptime float64, res *model
 			continue
 		}
 		// Link down while the port carries an IP (and is not protected by a bond).
-		if n.linkDown() && n.CarriesIP && !n.BondSlave {
+		if n.linkDown() && (n.CarriesIP || n.Configured != "") && !n.BondSlave {
 			sev := model.Crit
 			act := model.Tf("Check the cable and the switch port of %s (link LEDs on both ends), try another cable or port, reseat or replace the SFP/DAC. If the switch side is up, check the NIC in the BMC/iDRAC/iLO and the kernel log (journalctl -k | grep %s).",
 				"Kiểm tra dây mạng và cổng switch của %s (đèn link ở cả hai đầu), thử dây hoặc cổng khác, cắm lại hoặc thay module SFP/DAC. Nếu phía switch vẫn up, kiểm tra card mạng trong BMC/iDRAC/iLO và log kernel (journalctl -k | grep %s).", n.Name, n.Name)
@@ -444,6 +465,24 @@ func analyze(nics []NIC, bonds []Bond, env model.Env, uptime float64, res *model
 				detail = model.Tf("%s (member of %s) reports no carrier. Traffic continues over the other port(s) of %s, but redundancy is lost.",
 					"%s (thuộc %s) không có tín hiệu link. Kết nối vẫn chạy qua cổng khác của %s nhưng đã mất dự phòng.", n.Name, n.Master, n.Master)
 			}
+			if n.win && !vm {
+				act = model.Tf("Check the cable and the switch port of %s (link LEDs on both ends), try another cable or port, reseat or replace the SFP/DAC. If the switch side is up, check the adapter in the BMC/iDRAC/iLO and Device Manager, and look for link-down events of its driver in the System event log.",
+					"Kiểm tra dây mạng và cổng switch của %s (đèn link ở cả hai đầu), thử dây hoặc cổng khác, cắm lại hoặc thay module SFP/DAC. Nếu phía switch vẫn up, kiểm tra card mạng trong BMC/iDRAC/iLO và Device Manager, và tìm sự kiện mất link của driver card mạng trong System event log.", n.Name)
+			}
+			title := model.Tf("Network port %s is in use but has no link", "Cổng mạng %s đang được sử dụng nhưng mất link", n.Name)
+			if !n.CarriesIP {
+				// Only the boot configuration says it is used: NetworkManager
+				// and systemd-networkd drop the address when carrier is lost,
+				// but the profile may also be a leftover, so Warn.
+				sev = model.Warn
+				title = model.Tf("Network port %s is configured to start at boot but has no link", "Cổng mạng %s được cấu hình bật khi khởi động nhưng mất link", n.Name)
+				detail = model.Tf("%s has an active network profile (%s) but no carrier, and no IP address. NetworkManager and systemd-networkd remove the address of a port that loses its link, so if this port carried traffic, that traffic is down now.",
+					"%s có cấu hình mạng tự bật (%s) nhưng không có tín hiệu link và không có địa chỉ IP. NetworkManager và systemd-networkd tự gỡ IP khỏi cổng mất link, nên nếu cổng này đang dùng thì kết nối qua nó đang bị gián đoạn.", n.Name, n.Configured)
+				if n.Master != "" && siblingsUp[n.Master] > 0 {
+					detail.EN += fmt.Sprintf(" Other ports of %s still have link.", n.Master)
+					detail.VI += fmt.Sprintf(" Các cổng khác của %s vẫn có link.", n.Master)
+				}
+			}
 			if n.AdminUp != nil && !*n.AdminUp {
 				sev = model.Warn
 				act = model.Tf("The port is administratively down. If it should be in use, bring it up (ip link set %s up, or nmcli/ifup) and check the network configuration.",
@@ -451,7 +490,7 @@ func analyze(nics []NIC, bonds []Bond, env model.Env, uptime float64, res *model
 			}
 			res.Findings = append(res.Findings, model.Finding{
 				ID: "network.link_down", Component: model.CompNetwork, Severity: sev, Target: n.Name,
-				Title:    model.Tf("Network port %s is in use but has no link", "Cổng mạng %s đang được sử dụng nhưng mất link", n.Name),
+				Title:    title,
 				Detail:   detail,
 				Action:   act,
 				Evidence: nicEvidence(n),
@@ -470,8 +509,10 @@ func analyze(nics []NIC, bonds []Bond, env model.Env, uptime float64, res *model
 					Title: model.Tf("%s runs at half duplex (%s)", "%s đang chạy half duplex (%s)", n.Name, speedText(n.SpeedMbps)),
 					Detail: model.T("Switched networks always run full duplex. Half duplex means auto-negotiation failed or one side was forced (duplex mismatch), which causes collisions, late collisions and very slow transfers.",
 						"Mạng dùng switch luôn chạy full duplex. Half duplex nghĩa là tự thương lượng bị lỗi hoặc một đầu bị ép cấu hình (lệch duplex), gây va chạm gói và truyền rất chậm."),
-					Action: model.Tf("Set both the NIC and the switch port to auto-negotiation (ethtool -s %s autoneg on), then replace the cable if it stays at half duplex.",
+					Action: pick(n, model.Tf("Set both the NIC and the switch port to auto-negotiation (ethtool -s %s autoneg on), then replace the cable if it stays at half duplex.",
 						"Đặt cả card mạng và cổng switch về tự thương lượng (ethtool -s %s autoneg on); nếu vẫn half duplex thì thay dây mạng.", n.Name),
+						model.Tf("Set both the adapter and the switch port to auto-negotiation (Set-NetAdapterAdvancedProperty -Name %s -RegistryKeyword '*SpeedDuplex' -RegistryValue 0), then replace the cable if it stays at half duplex.",
+							"Đặt cả card mạng và cổng switch về tự thương lượng (Set-NetAdapterAdvancedProperty -Name %s -RegistryKeyword '*SpeedDuplex' -RegistryValue 0); nếu vẫn half duplex thì thay dây mạng.", psName(n.Name))),
 					Evidence: nicEvidence(n),
 					Part:     n.part(),
 				})
@@ -593,8 +634,10 @@ func speedFindings(n *NIC, res *model.Result, mark func(string, model.Severity))
 			ID: "network.speed_low", Component: model.CompNetwork, Severity: model.Warn, Target: n.Name,
 			Title:  model.Tf("%s runs at only %s on a %s port", "%s chỉ chạy %s trên cổng hỗ trợ %s", n.Name, speedText(sp), speedText(n.SupportedMax)),
 			Detail: why,
-			Action: model.Tf("Check the switch port speed setting (auto), move %s to a gigabit port, replace the cable, and make sure the NIC is set to auto-negotiation (ethtool -s %s autoneg on).",
+			Action: pick(n, model.Tf("Check the switch port speed setting (auto), move %s to a gigabit port, replace the cable, and make sure the NIC is set to auto-negotiation (ethtool -s %s autoneg on).",
 				"Kiểm tra cấu hình tốc độ cổng switch (để auto), chuyển %s sang cổng gigabit, thay dây mạng và đảm bảo card mạng để tự thương lượng (ethtool -s %s autoneg on).", n.Name, n.Name),
+				model.Tf("Check the switch port speed setting (auto), move %s to a gigabit port, replace the cable, and set the adapter's Speed & Duplex back to Auto Negotiation (Set-NetAdapterAdvancedProperty -Name %s -RegistryKeyword '*SpeedDuplex' -RegistryValue 0).",
+					"Kiểm tra cấu hình tốc độ cổng switch (để auto), chuyển %s sang cổng gigabit, thay dây mạng và đặt lại Speed & Duplex của card mạng về Auto Negotiation (Set-NetAdapterAdvancedProperty -Name %s -RegistryKeyword '*SpeedDuplex' -RegistryValue 0).", n.Name, psName(n.Name))),
 			Evidence: nicEvidence(n), Part: n.part(),
 		})
 		mark(n.Name, model.Warn)
@@ -652,8 +695,10 @@ func errorFindings(n *NIC, res *model.Result, mark func(string, model.Severity))
 		Title: model.Tf("%s has %s physical-layer errors (bad frames)", "%s có %s lỗi đường truyền (khung hỏng)", n.Name, units.Thousands(total)),
 		Detail: model.T("CRC/alignment errors mean frames arrived damaged. The rate is far above what a healthy Ethernet link produces (IEEE 802.3 allows about one bad frame in 100 million), which points at the cable, the SFP/transceiver or the switch port. Damaged frames are retransmitted, so applications see slowness and timeouts.",
 			"Lỗi CRC/alignment nghĩa là gói tin đến nơi đã bị hỏng. Tỉ lệ này cao hơn nhiều so với link Ethernet bình thường (chuẩn IEEE 802.3 chỉ cho phép khoảng 1 khung lỗi trên 100 triệu), cho thấy lỗi ở dây mạng, module SFP hoặc cổng switch. Gói hỏng phải gửi lại nên ứng dụng bị chậm và timeout."),
-		Action: model.Tf("Replace the cable of %s, clean or replace the SFP/fibre patch, try another switch port, and check the error counters on the switch side too. Watch whether the counters still grow: ip -s link show %s.",
+		Action: pick(n, model.Tf("Replace the cable of %s, clean or replace the SFP/fibre patch, try another switch port, and check the error counters on the switch side too. Watch whether the counters still grow: ip -s link show %s.",
 			"Thay dây mạng của %s, vệ sinh hoặc thay module SFP/dây quang, thử cổng switch khác và xem bộ đếm lỗi ở phía switch. Theo dõi bộ đếm có còn tăng không: ip -s link show %s.", n.Name, n.Name),
+			model.Tf("Replace the cable of %s, clean or replace the SFP/fibre patch, try another switch port, and check the error counters on the switch side too. Watch whether the counters still grow: Get-NetAdapterStatistics -Name %s | Format-List *Errors*.",
+				"Thay dây mạng của %s, vệ sinh hoặc thay module SFP/dây quang, thử cổng switch khác và xem bộ đếm lỗi ở phía switch. Theo dõi bộ đếm có còn tăng không: Get-NetAdapterStatistics -Name %s | Format-List *Errors*.", n.Name, psName(n.Name))),
 		Evidence: units.Evidence(append(ev, nicEvidence(n)...), 10),
 		Part:     n.part(),
 	})
@@ -701,7 +746,7 @@ func flapFindings(n *NIC, bonds []Bond, uptime float64, res *model.Result, mark 
 		Title: model.Tf("Link on %s keeps going down and up (%s changes)", "Link của %s liên tục rớt rồi lên lại (%s lần)", n.Name, units.Thousands(count)),
 		Detail: model.Text{
 			EN: fmt.Sprintf("%s = %d%s. Each drop interrupts traffic for seconds and can trigger bond failovers and spanning-tree recalculation.", what, count, rate),
-			VI: fmt.Sprintf("%s = %d%s. Mỗi lần rớt link làm gián đoạn kết nối vài giây và có thể gây chuyển đổi bond, tính toán lại spanning-tree.", what, count, rateVI),
+			VI: fmt.Sprintf("%s = %d%s. Mỗi lần rớt link làm gián đoạn kết nối vài giây và có thể làm bond chuyển cổng (failover) và switch tính lại spanning-tree.", what, count, rateVI),
 		},
 		Action: model.Tf("Check the cable and connectors of %s, reseat or replace the SFP/DAC, look at the switch port log (err-disable, flaps), and check the kernel log for the link down/up times: journalctl -k | grep '%s.*Link'.",
 			"Kiểm tra dây và đầu cắm của %s, cắm lại hoặc thay module SFP/DAC, xem log cổng switch (err-disable, flap) và xem thời điểm rớt/lên link trong log kernel: journalctl -k | grep '%s.*Link'.", n.Name, n.Name),
@@ -719,11 +764,13 @@ func dropFindings(n *NIC, res *model.Result, mark func(string, model.Severity)) 
 	}
 	res.Findings = append(res.Findings, model.Finding{
 		ID: "network.drops", Component: model.CompNetwork, Severity: model.Info, Target: n.Name,
-		Title: model.Tf("%s dropped %s packets (%.2f%% of traffic)", "%s đã bỏ %s gói tin (%.2f%% lưu lượng)", n.Name, units.Thousands(drops), float64(drops)*100/float64(pk)),
+		Title: model.Tf("%s dropped %s packets (%.2f%% of traffic)", "%s bị rớt %s gói tin (%.2f%% lưu lượng)", n.Name, units.Thousands(drops), float64(drops)*100/float64(pk)),
 		Detail: model.T("Dropped packets are often harmless (unknown protocols, VLANs not configured on this host), but missed/FIFO drops mean the NIC's receive ring overflowed because the host did not keep up.",
-			"Gói bị bỏ thường vô hại (giao thức lạ, VLAN không cấu hình trên máy này), nhưng lỗi missed/FIFO nghĩa là bộ đệm nhận của card mạng bị tràn do máy xử lý không kịp."),
-		Action: model.Tf("If users see packet loss, check ethtool -S %s for the drop reason and consider a larger ring buffer (ethtool -g/-G).",
+			"Gói bị rớt thường vô hại (giao thức lạ, VLAN không cấu hình trên máy này), nhưng lỗi missed/FIFO nghĩa là bộ đệm nhận của card mạng bị tràn do máy xử lý không kịp."),
+		Action: pick(n, model.Tf("If users see packet loss, check ethtool -S %s for the drop reason and consider a larger ring buffer (ethtool -g/-G).",
 			"Nếu người dùng bị mất gói, xem ethtool -S %s để biết nguyên nhân và cân nhắc tăng ring buffer (ethtool -g/-G).", n.Name),
+			model.Tf("If users see packet loss, watch Get-NetAdapterStatistics -Name %s and consider more receive buffers (Get-NetAdapterAdvancedProperty -Name %s -RegistryKeyword '*ReceiveBuffers').",
+				"Nếu người dùng bị mất gói, theo dõi Get-NetAdapterStatistics -Name %s và cân nhắc tăng receive buffer (Get-NetAdapterAdvancedProperty -Name %s -RegistryKeyword '*ReceiveBuffers').", psName(n.Name), psName(n.Name))),
 		Evidence: []string{fmt.Sprintf("rx_dropped=%d tx_dropped=%d rx_missed_errors=%d rx_fifo_errors=%d discards=%d packets=%d",
 			n.stat("rx_dropped"), n.stat("tx_dropped"), n.stat("rx_missed_errors"), n.stat("rx_fifo_errors"), n.stat("win_rx_discards")+n.stat("win_tx_discards"), pk)},
 	})
@@ -756,7 +803,7 @@ func bondFindings(bd *Bond, byName map[string]*NIC, vm bool, res *model.Result, 
 		}
 		res.Findings = append(res.Findings, model.Finding{
 			ID: "network.bond_down", Component: model.CompNetwork, Severity: sev, Target: bd.Name,
-			Title: model.Tf("%s %s is down: no member port has link", "%s %s đã mất kết nối: không cổng thành viên nào có link", kind, bd.Name),
+			Title: model.Tf("%s %s is down: no member port has link", "%s %s mất kết nối: không còn cổng thành viên nào có link", kind, bd.Name),
 			Detail: model.Tf("All member ports of %s (%s) are down, so everything that uses it is offline.",
 				"Tất cả cổng thành viên của %s (%s) đều mất link nên mọi dịch vụ dùng nó đang mất mạng.", bd.Name, slaveNames(bd.Slaves)),
 			Action: model.T("Check the cables and switch ports of every member (link LEDs), the switch itself (powered, uplinks, port-channel/LACP configuration), and the NIC status in the BMC.",
@@ -913,7 +960,7 @@ func nicTable(nics []NIC, bonds []Bond, status map[string]model.Severity, res *m
 			link = "up"
 		case n.linkDown():
 			link = "down"
-			if !n.CarriesIP && !n.BondSlave {
+			if !n.CarriesIP && !n.BondSlave && n.Configured == "" {
 				link = "down (unused)"
 			}
 		}
@@ -958,4 +1005,12 @@ func firstNonEmpty(ss ...string) string {
 		}
 	}
 	return ""
+}
+
+// pick returns the Windows wording for a Windows adapter.
+func pick(n *NIC, linux, windows model.Text) model.Text {
+	if n.win {
+		return windows
+	}
+	return linux
 }

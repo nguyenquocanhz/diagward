@@ -48,16 +48,17 @@ body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 var(--sans);
 .c-ok{--c:var(--ok);--cb:var(--ok-bg);--cd:var(--ok-bd)}
 .c-info{--c:var(--info);--cb:var(--info-bg);--cd:var(--info-bd)}
 .c-none{--c:var(--none);--cb:var(--none-bg);--cd:var(--none-bd)}
+.c-part{--c:var(--ok);--cb:var(--surface);--cd:var(--ok-bd)}
 .wrap{max-width:1000px;margin:0 auto;padding:20px 20px 40px}
 h1,h2,h3{font-family:var(--serif);font-weight:600;line-height:1.25;margin:0}
 a{color:var(--accent);text-underline-offset:2px}
 code,pre{font-family:var(--mono);font-size:.86em}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:2px 0 14px;border-bottom:1px solid var(--border);margin-bottom:20px}
-.brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;padding:2px 0 14px;border-bottom:1px solid var(--border);margin-bottom:20px}
+.brand{display:flex;align-items:baseline;gap:2px 10px;flex-wrap:wrap;min-width:0}
 .brand .logo{color:var(--accent);font-size:15px}
 .brand .name{font-family:var(--serif);font-size:22px;font-weight:600}
 .brand .sub{color:var(--muted);font-size:14px}
-.ctl{display:flex;gap:8px;align-items:center}
+.ctl{display:flex;gap:8px;align-items:center;flex:none}
 .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .seg button,.iconbtn,.btn{font:inherit;font-size:13px;line-height:1.4;color:var(--text);background:var(--surface);border:0;padding:5px 11px;cursor:pointer}
 .seg button+button{border-left:1px solid var(--border)}
@@ -76,7 +77,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .kv dd{margin:1px 0 0;overflow-wrap:anywhere}
 .verdict{display:flex;gap:16px;align-items:center;margin:18px 0 0;padding:18px 20px;border-radius:14px;background:var(--cb);border:1px solid var(--cd);border-left:6px solid var(--c)}
 .verdict h2{font-size:26px;color:var(--c);letter-spacing:.01em}
-.vsub{margin:4px 0 0}
+.verdict>div{min-width:0}
+.vsub{margin:4px 0 0;overflow-wrap:anywhere}
 .badge{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);color:var(--badge-ink);font:700 13px/1 var(--sans)}
 .badge.lg{width:44px;height:44px;font-size:24px}
 .badge.sm{width:18px;height:18px;font-size:11px}
@@ -84,24 +86,28 @@ section{margin:30px 0}
 h2.sec{font-size:20px;margin-bottom:12px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 h2.sec small{font:400 13px var(--sans);color:var(--muted)}
 .count{font:600 12px/1.5 var(--sans);color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:0 8px}
-.tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}
-.tile>a,.tile>div{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;height:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:inherit;text-decoration:none}
+.tiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.tile{min-width:0}
+.tile>a,.tile>div{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:10px;align-items:center;height:100%;padding:11px 12px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:inherit;text-decoration:none}
 .tile>a:hover{border-color:var(--c)}
 .tile.c-crit>*,.tile.c-warn>*{background:var(--cb);border-color:var(--cd)}
-.tile .badge{grid-row:1/3}
-.tname{font-weight:600;font-size:14px;line-height:1.3}
-.tstat{font-size:12.5px;color:var(--muted)}
+.tile .badge{grid-row:1/4}
+.tile.c-part>*{border:1px dashed var(--cd)}
+.tname{font-weight:600;font-size:14px;line-height:1.3;overflow-wrap:anywhere}
+.tstat,.tpart{font-size:12.5px;line-height:1.35;color:var(--muted);overflow-wrap:anywhere}
+.tpart{font-style:italic}
 .tile.c-crit .tstat,.tile.c-warn .tstat{color:var(--c)}
 .tile.c-none .tname{color:var(--muted);font-weight:500}
 .todo{list-style:none;margin:0;padding:0}
 .todo li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-left:4px solid var(--c);border-radius:10px;background:var(--surface);margin-bottom:8px}
 .todo li>div{min-width:0}
-.todo-t{font-weight:600;color:var(--text);text-decoration:none}
+.todo-t{font-weight:600;color:var(--text);text-decoration:none;overflow-wrap:anywhere}
 .todo-t:hover{text-decoration:underline}
-.todo p{margin:4px 0 0;white-space:pre-line}
+.todo p{margin:4px 0 0;white-space:pre-line;overflow-wrap:anywhere}
 .finding{border:1px solid var(--border);border-left:4px solid var(--c);border-radius:12px;background:var(--surface);padding:14px 16px;margin-bottom:12px;scroll-margin-top:12px}
 .finding:target{box-shadow:0 0 0 3px var(--cd)}
-.fh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+.fh{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;font-size:13px;color:var(--muted)}
+.fh>*{min-width:0}
 .chip{font-weight:600;color:var(--c);background:var(--cb);border:1px solid var(--cd);border-radius:999px;padding:0 9px}
 .tgt{background:var(--code-bg);border-radius:6px;padding:1px 6px;color:var(--text);overflow-wrap:anywhere}
 .finding h3{font-size:18px;margin:8px 0 4px;overflow-wrap:anywhere}
@@ -117,13 +123,14 @@ pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;p
 .ok-msg{color:var(--ok)}
 h3.sub{font-size:16px;margin:20px 0 8px;display:flex;align-items:center;gap:8px}
 .oklist{list-style:none;padding:0;margin:0;columns:2 320px;column-gap:28px}
-.oklist li{display:flex;gap:8px;align-items:flex-start;break-inside:avoid;padding:3px 0}
+.oklist li{display:flex;gap:8px;align-items:flex-start;break-inside:avoid;padding:3px 0;overflow-wrap:anywhere}
+.oklist li>span:last-child{min-width:0}
 .oklist .badge{margin-top:3px}
 .sec-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .tablewrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;background:var(--surface)}
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th,td{text-align:left;vertical-align:top;padding:7px 10px;border-bottom:1px solid var(--border)}
-th{white-space:nowrap;font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;background:var(--bg)}
+th{font-weight:600;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;background:var(--bg)}
 tbody tr:last-child td{border-bottom:0}
 td{overflow-wrap:break-word}
 table.data td{max-width:340px}
@@ -137,26 +144,41 @@ tr.c-crit td.st::before{content:"\2715"}tr.c-warn td.st::before{content:"!"}tr.c
 .cov{list-style:none;margin:0 0 6px;padding:0}
 .cov li{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);margin-bottom:8px}
 .cname{font-weight:600;overflow-wrap:anywhere}
-.creason{color:var(--muted);font-size:14px}
-.cfix{margin-top:6px;font-size:14px}
-.cmd{display:flex;gap:8px;align-items:stretch;margin-top:6px}
-.cmd code{flex:1;min-width:0;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;overflow-x:auto;white-space:pre}
+.creason{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.cfix{margin-top:6px;font-size:14px;overflow-wrap:anywhere}
+.cmd{display:flex;gap:8px;align-items:flex-start;margin-top:6px}
+.cmd code{flex:1;min-width:0;background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.cmd .btn{padding:6px 11px}
 .ran>summary{font-size:14px}
-.ranlist{columns:2 260px;font-size:14px;color:var(--muted);margin:8px 0 0}
+.ranlist{columns:2 260px;font-size:14px;color:var(--muted);margin:8px 0 0;overflow-wrap:anywhere}
 .notes{margin:0;padding-left:20px}
-.notes li{margin:4px 0}
+.notes li{margin:4px 0;overflow-wrap:anywhere}
 .muted{color:var(--muted)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.foot{margin-top:36px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between}
+.foot{margin-top:36px;padding-top:14px;border-top:1px solid var(--border);font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;overflow-wrap:anywhere}
+.foot>div{min-width:0}
 @media (max-width:640px){
-.wrap{padding:14px 14px 32px}
+.wrap{padding:14px 16px 32px}
+.top{align-items:flex-start}
+.brand .sub{flex-basis:100%;font-size:13px}
+.seg button,.iconbtn{padding:6px 10px}
+h2.sec{font-size:19px}
+.finding{padding:12px 13px}
+.finding h3{font-size:17px}
+.action{padding:9px 10px}
+.todo li{padding:11px 12px;gap:10px}
+
 .ident h1{font-size:23px}
 .card{padding:14px}
 .verdict{padding:14px;gap:12px}
-.verdict h2{font-size:21px}
+.verdict h2{font-size:19px}
+table.data{width:max-content;min-width:100%}
+table.data th,table.data td{max-width:210px}
+th,td{padding:7px 8px}
 .badge.lg{width:36px;height:36px;font-size:19px}
-.tiles{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
-.kv{grid-template-columns:1fr 1fr}
+.tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tile>a,.tile>div{padding:10px;column-gap:8px}
+.kv{grid-template-columns:1fr 1fr;gap:10px 16px}
 table.parts thead{display:none}
 table.parts,table.parts tbody,table.parts tr,table.parts td{display:block;width:100%}
 table.parts tr{padding:8px 0;border-bottom:1px solid var(--border)}
@@ -211,7 +233,7 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 <dl class="kv">
 <div><dt>Serial / service tag</dt><dd>S123456X</dd></div>
 <div><dt><span lang="vi">Hệ điều hành</span><span lang="en">Operating system</span></dt><dd>Proxmox VE 8.2</dd></div>
-<div><dt><span lang="vi">Máy ảo</span><span lang="en">Virtual machine</span></dt><dd><span lang="vi">không (máy chủ vật lý)</span><span lang="en">no (physical server)</span></dd></div>
+<div><dt><span lang="vi">Máy ảo</span><span lang="en">Virtual machine</span></dt><dd><span lang="vi">không (máy vật lý)</span><span lang="en">no (physical machine)</span></dd></div>
 <div><dt><span lang="vi">Quyền chạy</span><span lang="en">Ran as</span></dt><dd><span lang="vi">root / Administrator (đầy đủ)</span><span lang="en">root / Administrator (complete)</span></dd></div>
 <div><dt><span lang="vi">Thời điểm thu thập</span><span lang="en">Collected at</span></dt><dd>2026-10-01 09:00:00 &#43;00:00</dd></div>
 </dl>
@@ -225,7 +247,7 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 <section aria-labelledby="h-comp">
 <h2 class="sec" id="h-comp"><span lang="vi">Các nhóm linh kiện</span><span lang="en">Components</span></h2>
 <ul class="tiles">
-<li class="tile c-info"><a href="#f-1"><span class="badge" aria-hidden="true">i</span><span class="tname"><span lang="vi">Hệ thống</span><span lang="en">System</span></span><span class="tstat"><span lang="vi">Ổn · 1 lưu ý</span><span lang="en">OK · 1 note(s)</span></span></a></li>
+<li class="tile c-info"><a href="#f-1"><span class="badge" aria-hidden="true">i</span><span class="tname"><span lang="vi">Hệ thống</span><span lang="en">System</span></span><span class="tstat"><span lang="vi">Ổn · 1 lưu ý</span><span lang="en">OK · 1 note</span></span></a></li>
 <li class="tile c-none"><div><span class="badge" aria-hidden="true">–</span><span class="tname">CPU</span><span class="tstat"><span lang="vi">chưa kiểm tra</span><span lang="en">not checked</span></span></div></li>
 <li class="tile c-none"><div><span class="badge" aria-hidden="true">–</span><span class="tname"><span lang="vi">Bộ nhớ (RAM)</span><span lang="en">Memory (RAM)</span></span><span class="tstat"><span lang="vi">chưa kiểm tra</span><span lang="en">not checked</span></span></div></li>
 <li class="tile c-ok"><div><span class="badge" aria-hidden="true">✓</span><span class="tname"><span lang="vi">Ổ cứng</span><span lang="en">Disks</span></span><span class="tstat"><span lang="vi">Ổn</span><span lang="en">OK</span></span></div></li>

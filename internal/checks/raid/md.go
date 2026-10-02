@@ -26,6 +26,7 @@ type MDMember struct {
 type MDArray struct {
 	Name      string     `json:"name"`
 	Active    bool       `json:"active"`
+	Broken    bool       `json:"broken,omitempty"`   // "broken" instead of "active" in mdstat (MD_BROKEN, kernel >= 5.x)
 	ReadOnly  string     `json:"readOnly,omitempty"` // "read-only", "auto-read-only"
 	Level     string     `json:"level,omitempty"`
 	Container bool       `json:"container,omitempty"` // IMSM/DDF metadata container (normally inactive)
@@ -52,6 +53,7 @@ type MDArray struct {
 	// sysfs
 	ArrayState string `json:"arrayState,omitempty"`
 	SyncAction string `json:"syncAction,omitempty"`
+	SyncDone   string `json:"syncCompleted,omitempty"` // sync_completed: "n / m", "none" or "delayed"
 	Degraded   int    `json:"degraded,omitempty"`
 	Mismatch   int64  `json:"mismatchCnt,omitempty"`
 
@@ -87,6 +89,12 @@ func parseMdstat(s string) []*MDArray {
 				switch {
 				case t == "active":
 					cur.Active = true
+				case t == "broken":
+					// md_seq_show prints "broken" in place of "active" when
+					// MD_BROKEN is set: the array is still assembled, but a
+					// raid0/linear member is gone or a raid1/10 runs on its
+					// last device (drivers/md/md.c).
+					cur.Active, cur.Broken = true, true
 				case t == "inactive":
 					cur.Active = false
 				case t == "(read-only)":
@@ -236,6 +244,7 @@ func (c *checker) checkMD() {
 		if at := attrs[a.Name]; at != nil {
 			a.ArrayState = at["array_state"]
 			a.SyncAction = at["sync_action"]
+			a.SyncDone = at["sync_completed"]
 			if n := atoi(at["degraded"]); n > 0 {
 				a.Degraded = int(n)
 			}
@@ -304,10 +313,11 @@ func (c *checker) checkMD() {
 	scan := c.b.Get("raid.mdadm_scan")
 	switch {
 	case scan != nil && scan.Missing != "":
+		fix, cmd := hint.InstallFix(c.env, "mdadm")
 		c.cover("raid.md", mdNames, model.CovPartial,
 			model.T("/proc/mdstat was read, but mdadm is not installed, so member details (which disk failed) are limited.",
 				"Đã đọc /proc/mdstat nhưng chưa cài mdadm nên thông tin chi tiết từng ổ thành viên bị hạn chế."),
-			hint.Install(c.env, "mdadm"))
+			fix, cmd)
 	case scan != nil && scan.Skipped != "":
 		c.cover("raid.md", mdNames, model.CovPartial,
 			model.T("/proc/mdstat was read; mdadm --detail needs root.", "Đã đọc /proc/mdstat; mdadm --detail cần quyền root."),
@@ -442,14 +452,26 @@ func (c *checker) analyzeMD(a *MDArray) {
 	if a.Removed > missing {
 		missing = a.Removed
 	}
-	degraded := missing > 0 || strings.Contains(a.Status, "_") || strings.Contains(strings.ToLower(a.State), "degraded")
-	rebuilding := a.SyncOp == "recovery" || a.SyncOp == "reshape" || strings.Contains(strings.ToLower(a.State), "recovering") || strings.Contains(strings.ToLower(a.State), "reshaping")
+	degraded := missing > 0 || strings.Contains(a.Status, "_") || strings.Contains(strings.ToLower(a.State), "degraded") ||
+		(a.Broken && mdRedundant(a.Level))
+	// sysfs sync_action says "recover"/"reshape" as soon as a spare is
+	// being rebuilt into a degraded array, also while the rebuild waits for
+	// another array on the same disks (mdstat "resync=DELAYED", mdadm
+	// "resyncing (DELAYED)", sync_completed "delayed"). Right after a member
+	// fails without a spare, sync_action briefly reads "recover" too, but
+	// sync_completed stays "none" (real WSL capture): that is no rebuild.
+	syncRunning := a.SyncDone != "" && a.SyncDone != "none"
+	rebuilding := a.SyncOp == "recovery" || a.SyncOp == "reshape" || strings.Contains(strings.ToLower(a.State), "recovering") || strings.Contains(strings.ToLower(a.State), "reshaping") ||
+		((a.SyncAction == "recover" || a.SyncAction == "reshape") && syncRunning)
+	queued := a.SyncOp == "" && (a.Pending != "" || a.SyncDone == "delayed")
 	for _, m := range a.Members {
 		if strings.Contains(m.State, "rebuilding") {
 			rebuilding = true
 		}
 	}
-	failedArray := strings.Contains(a.State, "FAILED") || a.ArrayState == "broken" ||
+	// array_state "broken" (and the mdstat word "broken") on raid0/linear:
+	// a member is gone and the data is not readable.
+	failedArray := strings.Contains(a.State, "FAILED") || a.ArrayState == "broken" || (a.Broken && !mdRedundant(a.Level)) ||
 		(a.Active && mdRedundant(a.Level) && missing > mdTolerance(a) && a.Want > 0)
 
 	sev := model.OK
@@ -471,7 +493,7 @@ func (c *checker) analyzeMD(a *MDArray) {
 		sev = model.Crit
 		c.add(model.Finding{
 			ID: "raid.md_failed", Severity: model.Crit, Target: a.Name,
-			Title: model.Tf("RAID %s has failed: %d of %d members missing", "RAID %s đã hỏng: thiếu %d/%d thành viên", a.Name, missing, a.Want),
+			Title: mdFailedTitle(a, missing),
 			Detail: model.Tf("Array %s (%s) lost more members than its level can tolerate. Data on it is very likely unreadable. Failed: %s.",
 				"Mảng %s (%s) mất nhiều thành viên hơn mức chịu lỗi. Dữ liệu trên mảng gần như chắc chắn không đọc được. Ổ lỗi: %s.", a.Name, a.Level, joinOr(failedNames, "-")),
 			Action: model.T("Stop writing to the server. Restore from backup, or contact a data recovery expert before touching the disks; do not re-create or force-assemble the array.",
@@ -486,14 +508,23 @@ func (c *checker) analyzeMD(a *MDArray) {
 			e := mdETA(a.Finish)
 			eta = model.Text{EN: ", about " + e.EN + " left", VI: ", còn khoảng " + e.VI}
 		}
+		title := model.Text{
+			EN: fmt.Sprintf("RAID %s is rebuilding: %s done%s", a.Name, fmtPct(a.SyncPct), eta.EN),
+			VI: fmt.Sprintf("RAID %s đang rebuild: xong %s%s", a.Name, fmtPct(a.SyncPct), eta.VI),
+		}
+		if queued {
+			title = model.Tf("RAID %s is degraded; its rebuild is queued (waiting for another array on the same disks)",
+				"RAID %s đang thiếu ổ; rebuild đang chờ tới lượt (đợi mảng khác dùng chung ổ đồng bộ xong)", a.Name)
+		}
+		op := a.SyncOp
+		if op == "" {
+			op = "recovery"
+		}
 		c.add(model.Finding{
 			ID: "raid.md_rebuilding", Severity: model.Warn, Target: a.Name,
-			Title: model.Text{
-				EN: fmt.Sprintf("RAID %s is rebuilding: %s done%s", a.Name, fmtPct(a.SyncPct), eta.EN),
-				VI: fmt.Sprintf("RAID %s đang rebuild: xong %s%s", a.Name, fmtPct(a.SyncPct), eta.VI),
-			},
+			Title: title,
 			Detail: model.Tf("Array %s (%s) is degraded and is copying data onto a replacement/spare (%s, speed %s). Until it finishes the array has no redundancy: another disk failure can lose data.",
-				"Mảng %s (%s) đang thiếu thành viên và đang chép dữ liệu sang ổ thay thế/ổ dự phòng (%s, tốc độ %s). Cho tới khi xong, mảng không còn dự phòng: hỏng thêm một ổ là có thể mất dữ liệu.", a.Name, a.Level, a.SyncOp, joinOr([]string{a.Speed}, "-")),
+				"Mảng %s (%s) đang thiếu thành viên và đang chép dữ liệu sang ổ thay thế/ổ dự phòng (%s, tốc độ %s). Cho tới khi xong, mảng không còn dự phòng: hỏng thêm một ổ là có thể mất dữ liệu.", a.Name, a.Level, op, joinOr([]string{a.Speed}, "-")),
 			Action: model.Tf("Do not reboot, shut down or pull any disk until the rebuild finishes (watch: cat /proc/mdstat). Make sure the backup is current. When it is done, check that 'mdadm --detail /dev/%s' shows State: clean.",
 				"Không khởi động lại, tắt máy hay rút ổ nào cho tới khi rebuild xong (theo dõi: cat /proc/mdstat). Kiểm tra bản sao lưu còn mới. Khi xong, kiểm tra 'mdadm --detail /dev/%s' báo State: clean.", a.Name),
 			Evidence: ev(evid),
@@ -507,6 +538,13 @@ func (c *checker) analyzeMD(a *MDArray) {
 		}
 		part := c.firstPart(a, failed)
 		pen, pvi := partText(part)
+		// A spare is already attached but an (auto-)read-only array never
+		// starts recovery until it is switched to read-write (md.rst).
+		startEN, startVI := "", ""
+		if sp := mdSpares(a); len(sp) > 0 && a.ReadOnly != "" {
+			startEN = fmt.Sprintf("Spare %s is attached but the array is %s, so the rebuild has not started: run 'mdadm --readwrite /dev/%s' and watch /proc/mdstat. ", strings.Join(sp, ", "), a.ReadOnly, a.Name)
+			startVI = fmt.Sprintf("Đã có ổ dự phòng %s nhưng mảng đang %s nên chưa rebuild: chạy 'mdadm --readwrite /dev/%s' rồi theo dõi /proc/mdstat. ", strings.Join(sp, ", "), a.ReadOnly, a.Name)
+		}
 		c.add(model.Finding{
 			ID: "raid.md_degraded", Severity: model.Crit, Target: a.Name,
 			Title: model.Text{
@@ -516,8 +554,8 @@ func (c *checker) analyzeMD(a *MDArray) {
 			Detail: model.Tf("Array %s (%s) runs with %d of %d members [%s]. It still works, but has lost redundancy: one more disk failure can lose data.",
 				"Mảng %s (%s) đang chạy với %d/%d thành viên [%s]. Mảng vẫn hoạt động nhưng đã mất dự phòng: hỏng thêm một ổ là có thể mất dữ liệu.", a.Name, a.Level, a.Have, a.Want, a.Status),
 			Action: model.Text{
-				EN: fmt.Sprintf("Back up now. Replace the failed disk%s: 1) mdadm --manage /dev/%s --fail /dev/sdX1 (if not already failed); 2) mdadm --manage /dev/%s --remove /dev/sdX1; 3) swap the disk and check the new one with 'smartctl -H -a'; 4) copy the partition table from a healthy member (sfdisk -d /dev/sdOK | sfdisk /dev/sdNEW, or sgdisk for GPT); 5) mdadm --manage /dev/%s --add /dev/sdNEW1 and watch /proc/mdstat until the rebuild ends. If the disk is not failed but missing, check its cable/backplane first.", pen, a.Name, a.Name, a.Name),
-				VI: fmt.Sprintf("Sao lưu ngay. Thay ổ lỗi%s: 1) mdadm --manage /dev/%s --fail /dev/sdX1 (nếu ổ chưa bị đánh dấu lỗi); 2) mdadm --manage /dev/%s --remove /dev/sdX1; 3) thay ổ mới và kiểm tra bằng 'smartctl -H -a'; 4) chép bảng phân vùng từ ổ còn tốt (sfdisk -d /dev/sdOK | sfdisk /dev/sdNEW, hoặc sgdisk với GPT); 5) mdadm --manage /dev/%s --add /dev/sdNEW1 rồi theo dõi /proc/mdstat tới khi rebuild xong. Nếu ổ không hỏng mà chỉ mất kết nối, kiểm tra cáp/backplane trước.", pvi, a.Name, a.Name, a.Name),
+				EN: startEN + fmt.Sprintf("Back up now. Replace the failed disk%s: 1) mdadm --manage /dev/%s --fail /dev/sdX1 (if not already failed); 2) mdadm --manage /dev/%s --remove /dev/sdX1; 3) swap the disk and check the new one with 'smartctl -H -a'; 4) copy the partition table from a healthy member (sfdisk -d /dev/sdOK | sfdisk /dev/sdNEW, or sgdisk for GPT); 5) mdadm --manage /dev/%s --add /dev/sdNEW1 and watch /proc/mdstat until the rebuild ends. If the disk is not failed but missing, check its cable/backplane first.", pen, a.Name, a.Name, a.Name),
+				VI: startVI + fmt.Sprintf("Sao lưu ngay. Thay ổ lỗi%s: 1) mdadm --manage /dev/%s --fail /dev/sdX1 (nếu ổ chưa bị đánh dấu lỗi); 2) mdadm --manage /dev/%s --remove /dev/sdX1; 3) thay ổ mới và kiểm tra bằng 'smartctl -H -a'; 4) chép bảng phân vùng từ ổ còn tốt (sfdisk -d /dev/sdOK | sfdisk /dev/sdNEW, hoặc sgdisk với GPT); 5) mdadm --manage /dev/%s --add /dev/sdNEW1 rồi theo dõi /proc/mdstat tới khi rebuild xong. Nếu ổ không hỏng mà chỉ mất kết nối, kiểm tra cáp/backplane trước.", pvi, a.Name, a.Name, a.Name),
 			},
 			Evidence: ev(evid),
 			Part:     part,
@@ -579,7 +617,7 @@ func (c *checker) analyzeMD(a *MDArray) {
 			Evidence: ev(a.lines),
 		})
 	}
-	if a.Active && a.SyncOp == "" && a.Pending != "" {
+	if a.Active && a.SyncOp == "" && a.Pending != "" && !(degraded && rebuilding) {
 		sev = model.Worst(sev, model.Info)
 		c.add(model.Finding{
 			ID: "raid.md_sync_pending", Severity: model.Info, Target: a.Name,
@@ -629,7 +667,7 @@ func (c *checker) analyzeMD(a *MDArray) {
 			sev = model.Worst(sev, model.Warn)
 			c.add(model.Finding{
 				ID: "raid.md_member_errors", Severity: model.Warn, Target: a.Name + "/" + m.Name,
-				Title: model.Tf("Disk %s in RAID %s reported write errors", "Ổ %s trong RAID %s đã gặp lỗi ghi", m.Name, a.Name),
+				Title: mdMemberErrTitle(m, a),
 				Detail: model.Tf("md sysfs state of %s is %q. The disk is still in the array, but it is unreliable.",
 					"Trạng thái md sysfs của %s là %q. Ổ vẫn nằm trong mảng nhưng không còn đáng tin cậy.", m.Name, m.State),
 				Action: model.Tf("Check 'smartctl -a /dev/%s' and the kernel log; plan to replace the disk.", "Kiểm tra 'smartctl -a /dev/%s' và nhật ký kernel; lên kế hoạch thay ổ.", diskOf(m.Name)),
@@ -667,6 +705,14 @@ func (c *checker) analyzeMD(a *MDArray) {
 	}
 }
 
+// mdFailedTitle: raid0/linear have no "[n/m]" counts in mdstat.
+func mdFailedTitle(a *MDArray, missing int) model.Text {
+	if a.Want > 0 && missing > 0 {
+		return model.Tf("RAID %s has failed: %d of %d members missing", "RAID %s đã hỏng: thiếu %d/%d thành viên", a.Name, missing, a.Want)
+	}
+	return model.Tf("RAID %s has failed: a member is missing or failed", "RAID %s đã hỏng: có ổ thành viên bị mất hoặc lỗi", a.Name)
+}
+
 func (c *checker) firstPart(a *MDArray, failed []MDMember) *model.Part {
 	if len(failed) == 0 {
 		return nil
@@ -684,4 +730,13 @@ func mdDetailEvidence(a *MDArray) []string {
 		}
 	}
 	return out
+}
+
+// mdMemberErrTitle: "write_error" comes from the disk; "want_replacement"
+// is set by 'mdadm --replace' or by md when the bad-block list fills up.
+func mdMemberErrTitle(m MDMember, a *MDArray) model.Text {
+	if strings.Contains(m.State, "write_error") {
+		return model.Tf("Disk %s in RAID %s reported write errors", "Ổ %s trong RAID %s đã gặp lỗi ghi", m.Name, a.Name)
+	}
+	return model.Tf("Disk %s in RAID %s is marked for replacement (want_replacement)", "Ổ %s trong RAID %s đang được đánh dấu cần thay (want_replacement)", m.Name, a.Name)
 }

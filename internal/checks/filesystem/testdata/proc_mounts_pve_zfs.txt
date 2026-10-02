@@ -1,0 +1,6 @@
+rpool/ROOT/pve-1 / zfs rw,relatime,xattr,noacl,casesensitive 0 0
+rpool /rpool zfs rw,relatime,xattr,noacl,casesensitive 0 0
+rpool/data /rpool/data zfs rw,relatime,xattr,noacl,casesensitive 0 0
+rpool/ROOT /rpool/ROOT zfs rw,relatime,xattr,noacl,casesensitive 0 0
+rpool/pve-container /rpool/pve-container zfs rw,relatime,xattr,noacl,casesensitive 0 0
+/dev/fuse /etc/pve fuse rw,nosuid,nodev,relatime,user_id=0,group_id=0,default_permissions,allow_other 0 0

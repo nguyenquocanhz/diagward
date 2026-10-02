@@ -1,0 +1,2 @@
+DBD::SQLite::db prepare failed: no such table: mc_event at /usr/sbin/ras-mc-ctl line 1560.
+Can't call method "execute" on an undefined value at /usr/sbin/ras-mc-ctl line 1561.

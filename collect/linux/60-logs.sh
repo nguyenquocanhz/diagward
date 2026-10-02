@@ -12,7 +12,18 @@
 # Kernel messages worth keeping at ANY priority (some hardware errors are
 # logged at info/notice level). Kept broad on purpose: the Go pattern table
 # decides what each line means. Basic ERE only (busybox grep compatible).
-_lg_re='I/O error|medium error|Medium Error|Unrecovered read|Sense Key|FAILED Result|rejecting I/O|offlined|timing out command|protection error|target error|nexus error|transport error|ata[0-9.]+: (exception|failed command|error:|status:|hard resetting|soft resetting|COMRESET|SATA link down|disabled|SError|ATA-[0-9])|nvme[0-9]+: |nvme[0-9]+n[0-9]+: |mpt[23]sas|megaraid|megasas|hpsa|smartpqi|aacraid|EXT[234]-fs (error|warning)|EXT[234]-fs \(.*(read-only|error)|XFS \(|BTRFS|EDAC|mce:|Machine [Cc]heck|Hardware Error|Memory failure|MCE 0x|temperature above threshold|ritical temperature|AER:|PCIe Bus Error|soft lockup|hard LOCKUP|detected stall|blocked for more than|kernel BUG at|BUG: unable to handle|general protection fault|Oops:|Kernel panic|NMI (received|watchdog)|NMI: |Dazed and confused|Out of memory|oom-kill|[Ll]ink is [Dd]own|Link down|link status definitely down|running without any active interface|NETDEV WATCHDOG|Unit Hang|[Tt][Xx] timeout|ACPI (BIOS )?(Error|Warning|Exception)|Firmware Bug|md/raid|Disk failure'
+# The usb-storage/uas and "Attached SCSI" lines tell which sdX are USB disks;
+# a bare "sd H:C:T:L: [sdX]" line names the disk of the sense lines that
+# follow it on kernels before 4.5.
+_lg_re='I/O error|medium error|Medium Error|Unrecovered read|Sense Key|FAILED Result|rejecting I/O|offlined|timing out command|protection error|target error|nexus error|transport error|ata[0-9.]+: (exception|failed command|error:|status:|hard resetting|soft resetting|COMRESET|SATA link down|disabled|SError|ATA-[0-9])|nvme[0-9]+: |nvme[0-9]+n[0-9]+: |mpt[23]sas|megaraid|megasas|hpsa|smartpqi|aacraid|EXT[234]-fs (error|warning)|EXT[234]-fs \(.*(read-only|error)|XFS \(|BTRFS|EDAC|mce:|Machine [Cc]heck|Hardware Error|Memory failure|MCE 0x|temperature above threshold|ritical temperature|AER:|PCIe Bus Error|soft lockup|hard LOCKUP|detected stall|blocked for more than|kernel BUG at|BUG: unable to handle|general protection fault|Oops:|Kernel panic|NMI (received|watchdog)|NMI: |Dazed and confused|Out of memory|oom-kill|[Ll]ink is [Dd]own|Link down|link status definitely down|running without any active interface|NETDEV WATCHDOG|Unit Hang|[Tt][Xx] timeout|ACPI (BIOS )?(Error|Warning|Exception)|Firmware Bug|md/raid|Disk failure|usb-storage |scsi ?(host)?[0-9]+ ?: uas|Attached SCSI (removable )?disk|: \[s[dr][a-z0-9]+\] *$'
+
+# Frequent, low-value kernel lines: corrected PCIe errors (a marginal link or
+# a device passed through to a VM can log thousands a day), ACPI/firmware
+# complaints, link flaps, disk attach messages. They are kept in their own
+# capped block so that a flood of them cannot push real disk/memory errors
+# out of the newest DW_MAXLINES lines. No backslashes: awk -v would mangle
+# them.
+_lg_noise='severity=Correct|(Corrected|Correctable) error (message )?received|error status/mask=|AER: +[[] *[0-9]+|ACPI (BIOS )?(Error|Warning|Exception)|Firmware Bug|[Ll]ink is [Dd]own|Link down|Attached SCSI|usb-storage |scsi ?(host)?[0-9]+ ?: uas'
 
 # Hardware daemons whose journal/syslog lines matter. rasdaemon is left out:
 # it can log every traced event (very noisy) and the memory domain reads its
@@ -53,6 +64,30 @@ _lg_logfiles() {
 	return 0
 }
 
+# _lg_split HEADER — read log lines (and a "# rc=N" line) on stdin and print
+# HEADER with max=/total= (so the Go side can tell when lines were dropped),
+# the newest DW_MAXLINES ordinary lines, the rc line, then a second block
+# (class=noise) with the newest DW_MAXLINES noise lines. awk keeps two ring
+# buffers, so memory stays bounded however big the log is.
+_lg_split() {
+	if dw_has awk; then
+		awk -v max="$DW_MAXLINES" -v hdr="$1" -v noise="$_lg_noise" '
+			/^# rc=/ { rc = $0; next }
+			$0 ~ noise { nz[nn % max] = $0; nn++; next }
+			{ kp[kn % max] = $0; kn++ }
+			END {
+				print hdr " max=" max " total=" kn + 0
+				for (i = (kn > max ? kn - max : 0); i < kn; i++) print kp[i % max]
+				if (rc != "") print rc
+				print hdr " max=" max " total=" nn + 0 " class=noise"
+				for (i = (nn > max ? nn - max : 0); i < nn; i++) print nz[i % max]
+			}'
+	else
+		echo "$1"
+		tail -n "$_lg_max"
+	fi
+}
+
 # _lg_mtime FILE — modification time in epoch seconds (for year inference).
 _lg_mtime() {
 	stat -c %Y "$1" 2>/dev/null || date -r "$1" +%s 2>/dev/null || echo 0
@@ -64,11 +99,11 @@ _lg_grepfiles() {
 	shift
 	for _lg_f in "$@"; do
 		[ -r "$_lg_f" ] || { echo "cannot read $_lg_f" >&2; continue; }
-		echo "# source=syslog file=$_lg_f mtime=$(_lg_mtime "$_lg_f") tz=$_lg_tz"
+		_lg_h="# source=syslog file=$_lg_f mtime=$(_lg_mtime "$_lg_f") tz=$_lg_tz"
 		if [ "$_lg_kind" = k ]; then
-			$DW_TO grep -h ' kernel: ' "$_lg_f" | grep -E "$_lg_re" | tail -n "$DW_MAXLINES"
+			$DW_TO grep -h ' kernel: ' "$_lg_f" | grep -E "$_lg_re" | _lg_split "$_lg_h"
 		else
-			$DW_TO grep -h -E "$_lg_tagre" "$_lg_f" | grep -v -E 'Temperature_Cel(sius)? changed' | tail -n "$DW_MAXLINES"
+			$DW_TO grep -h -E "$_lg_tagre" "$_lg_f" | grep -v -E 'Temperature_Cel(sius)? changed' | _lg_split "$_lg_h"
 		fi
 	done
 }
@@ -78,17 +113,15 @@ _lg_uptime() { cut -d. -f1 /proc/uptime 2>/dev/null || echo 0; }
 # _lg_dmesg all|warn — kernel ring buffer (current boot only).
 _lg_dmesg() {
 	if [ "$1" = warn ] && $DW_TO dmesg -T --level=emerg,alert,crit,err,warn >"$DW_T/lg" 2>/dev/null; then
-		echo "# source=dmesg-T tz=$_lg_tz"
-		tail -n "$DW_MAXLINES" "$DW_T/lg"
+		_lg_split "# source=dmesg-T tz=$_lg_tz" <"$DW_T/lg"
 	elif [ "$1" = all ] && $DW_TO dmesg -T >"$DW_T/lg" 2>/dev/null; then
-		echo "# source=dmesg-T tz=$_lg_tz"
-		grep -E "$_lg_re" "$DW_T/lg" | tail -n "$DW_MAXLINES"
+		grep -E "$_lg_re" "$DW_T/lg" | _lg_split "# source=dmesg-T tz=$_lg_tz"
 	elif $DW_TO dmesg >"$DW_T/lg" 2>"$DW_T/lge"; then
-		echo "# source=dmesg boot=$((_lg_now - $(_lg_uptime))) tz=$_lg_tz"
+		_lg_h="# source=dmesg boot=$((_lg_now - $(_lg_uptime))) tz=$_lg_tz"
 		if [ "$1" = all ]; then
-			grep -E "$_lg_re" "$DW_T/lg" | tail -n "$DW_MAXLINES"
+			grep -E "$_lg_re" "$DW_T/lg" | _lg_split "$_lg_h"
 		else
-			tail -n "$DW_MAXLINES" "$DW_T/lg"
+			_lg_split "$_lg_h" <"$DW_T/lg"
 		fi
 	else
 		cat "$DW_T/lge" >&2
@@ -101,11 +134,10 @@ _lg_dmesg() {
 
 _lg_kernel() {
 	if [ "$_lg_jr" = 1 ]; then
-		echo "# source=journal persistent=$_lg_persist tz=$_lg_tz"
 		{
 			$DW_TO journalctl _TRANSPORT=kernel --since "$_lg_since" -p warning -o short-iso --no-pager -q
 			echo "# rc=$?"
-		} | tail -n "$_lg_max"
+		} | _lg_split "# source=journal persistent=$_lg_persist tz=$_lg_tz"
 		return 0
 	fi
 	if dw_has dmesg; then
@@ -119,11 +151,10 @@ _lg_kernel() {
 _lg_match() {
 	_lg_ok=1
 	if [ "$_lg_jr" = 1 ]; then
-		echo "# source=journal persistent=$_lg_persist tz=$_lg_tz"
 		{
 			$DW_TO journalctl _TRANSPORT=kernel --since "$_lg_since" -o short-iso --no-pager -q
 			echo "# rc=$?"
-		} | grep -E -e "$_lg_re" -e '^# rc=' | tail -n "$_lg_max"
+		} | grep -E -e "$_lg_re" -e '^# rc=' | _lg_split "# source=journal persistent=$_lg_persist tz=$_lg_tz"
 		_lg_ok=0
 	elif dw_has dmesg; then
 		_lg_dmesg all && _lg_ok=0
@@ -145,11 +176,10 @@ _lg_units() {
 	if [ "$_lg_jr" = 1 ]; then
 		set --
 		for _lg_t in $_lg_tags; do set -- "$@" -t "$_lg_t"; done
-		echo "# source=journal persistent=$_lg_persist tz=$_lg_tz"
 		{
 			$DW_TO journalctl --since "$_lg_since" -o short-iso --no-pager -q "$@"
 			echo "# rc=$?"
-		} | grep -v -E 'Temperature_Cel(sius)? changed' | tail -n "$_lg_max"
+		} | grep -v -E 'Temperature_Cel(sius)? changed' | _lg_split "# source=journal persistent=$_lg_persist tz=$_lg_tz"
 		_lg_ok=0
 	fi
 	if [ "$_lg_jr" != 1 ] || [ "$_lg_persist" != 1 ]; then

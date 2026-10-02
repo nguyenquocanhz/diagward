@@ -94,7 +94,8 @@ else
 	if [ "$DW_ROOT" != 1 ]; then
 		dw_skip disk.smart_scan not-root
 	else
-		_dk_maj=$(smartctl --version 2>/dev/null | sed -n '1s/^smartctl \([0-9][0-9]*\)\..*/\1/p')
+		# "smartctl 7.4 2023-08-01 r5530 ..."; SVN builds say "smartctl pre-7.5 ...".
+		_dk_maj=$(smartctl --version 2>/dev/null | sed -n '1s/^smartctl \(pre-\)\{0,1\}\([0-9][0-9]*\)\..*/\2/p')
 		_dk_j=""
 		[ -n "$_dk_maj" ] && [ "$_dk_maj" -ge 7 ] 2>/dev/null && _dk_j="-j"
 		$DW_TO smartctl --scan-open >"$DW_T/dk_scan" 2>"$DW_T/dk_scan_e" </dev/null
@@ -216,14 +217,26 @@ _dk_bench() {
 	_dk_secs=$((DW_TIMEOUT + _dk_mb / 10))
 	_dk_to=""
 	[ -n "$DW_TO" ] && _dk_to=$(echo "$DW_TO" | sed "s/[0-9][0-9]*\$/$_dk_secs/")
-	_dk_bf="$_dk_bd/.diagward-bench.$$"
-	trap 'rm -f "$_dk_bf"' EXIT
-	trap 'rm -f "$_dk_bf"; exit 130' HUP INT TERM
-	# Refuse to touch a file that already exists (set -C: create exclusively).
-	if ! (set -C; : >"$_dk_bf") 2>/dev/null; then
-		echo "error=cannot-create"
-		return 2
+	# The cleanup traps only ever delete a file this function created
+	# ($_dk_made is set after the exclusive create succeeded), so a
+	# pre-existing file of the same name is never touched, on any path.
+	_dk_made=""
+	trap 'if [ -n "$_dk_made" ]; then rm -f "$_dk_made"; fi' EXIT
+	trap 'if [ -n "$_dk_made" ]; then rm -f "$_dk_made"; fi; exit 130' HUP INT TERM
+	# Create the test file exclusively: mktemp (O_EXCL, unique name), or
+	# set -C (noclobber) when mktemp is missing.
+	_dk_bf=""
+	if dw_has mktemp; then
+		_dk_bf=$(mktemp "$_dk_bd/.diagward-bench.XXXXXX" 2>/dev/null) || _dk_bf=""
 	fi
+	if [ -z "$_dk_bf" ]; then
+		_dk_bf="$_dk_bd/.diagward-bench.$$"
+		if ! (set -C; : >"$_dk_bf") 2>/dev/null; then
+			echo "error=cannot-create"
+			return 2
+		fi
+	fi
+	_dk_made=$_dk_bf
 	echo "write_direct=1"
 	$_dk_to dd if=/dev/zero of="$_dk_bf" bs=1048576 count="$_dk_mb" oflag=direct conv=fdatasync 2>"$DW_T/dk_w"
 	_dk_wrc=$?

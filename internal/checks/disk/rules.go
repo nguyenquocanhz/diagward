@@ -356,8 +356,10 @@ func ataRules(d *diskInfo) []model.Finding {
 	if s.ErrLogCount != nil && *s.ErrLogCount > 0 {
 		cnt := *s.ErrLogCount
 		recent := true
-		if s.ErrLogLastPOH != nil && s.POH != nil && *s.POH >= *s.ErrLogLastPOH && *s.POH-*s.ErrLogLastPOH > errLogRecentHours {
-			recent = false
+		if s.ErrLogLastPOH != nil && s.POH != nil {
+			if age, ok := errLogAge(*s.POH, *s.ErrLogLastPOH); ok && age > errLogRecentHours {
+				recent = false
+			}
 		}
 		icrc := false
 		for _, e := range s.ErrLogDescs {
@@ -367,7 +369,11 @@ func ataRules(d *diskInfo) []model.Finding {
 		}
 		ev := append([]string{fmt.Sprintf("ATA error count: %d", cnt)}, s.ErrLogDescs...)
 		if s.ErrLogLastPOH != nil {
-			ev = append(ev, fmt.Sprintf("most recent error at %d power-on hours (now %d)", *s.ErrLogLastPOH, derefU(s.POH)))
+			l := fmt.Sprintf("most recent error at %d power-on hours (now %d)", *s.ErrLogLastPOH, derefU(s.POH))
+			if derefU(s.POH) > 0xffff && *s.ErrLogLastPOH <= 0xffff {
+				l += "; the log timestamp is 16-bit and wraps every 65536 h"
+			}
+			ev = append(ev, l)
 		}
 		detail := model.Tf("The drive's error log holds %d error(s). These are commands the drive itself reported as failed.",
 			"Nhật ký lỗi của ổ ghi nhận %d lỗi. Đây là các lệnh chính ổ báo thất bại.", cnt)
@@ -389,6 +395,26 @@ func ataRules(d *diskInfo) []model.Finding {
 		fs = append(fs, d.finding("ata_error_log", sev, title, detail, action, ev))
 	}
 	return fs
+}
+
+// errLogAge returns how many power-on hours ago an ATA error-log entry was
+// logged. The entry's "Life Timestamp" is a single 16-bit word (ACS-3,
+// summary and comprehensive error logs), so it wraps every 65536 hours:
+// on a disk with 70000 h, an error logged 10 h ago reads 4454 h.
+func errLogAge(poh, logged uint64) (uint64, bool) {
+	if logged > 0xffff {
+		if poh < logged {
+			return 0, false
+		}
+		return poh - logged, true
+	}
+	if poh <= 0xffff {
+		if poh < logged {
+			return 0, false
+		}
+		return poh - logged, true
+	}
+	return (poh - logged) & 0xffff, true
 }
 
 // commandTimeouts decodes attribute 188.
@@ -447,7 +473,7 @@ func nvmeRules(d *diskInfo) []model.Finding {
 			}
 		}
 		if len(en) == 0 {
-			en, vi = []string{"reserved bits set"}, []string{"các bit dự phòng được bật"}
+			en, vi = []string{"reserved bits set"}, []string{"các bit reserved được bật"}
 		}
 		ev := []string{fmt.Sprintf("Critical Warning: 0x%02x", cw)}
 		ev = append(ev, en...)
@@ -458,13 +484,18 @@ func nvmeRules(d *diskInfo) []model.Finding {
 		if cw&(1<<3) != 0 {
 			extraEN, extraVI = "The drive is read-only now: copy the data off before anything else.", "Ổ đã ở chế độ chỉ đọc: chép dữ liệu ra trước tiên."
 		}
+		action := d.replaceAction(extraEN, extraVI)
 		if cw == 2 {
-			extraEN, extraVI = "If only the temperature bit is set, fix the cooling first (airflow, heatsink) and check again.", "Nếu chỉ có bit nhiệt độ, xử lý tản nhiệt trước (luồng gió, heatsink) rồi kiểm tra lại."
+			// Only the temperature bit: the drive is too hot, not worn out.
+			// Cooling fixes it; the bit clears when the temperature drops.
+			action = model.Tf("Fix the cooling of %s now: check the fans, the airflow over the drive, its heatsink and the room temperature, and reduce the load if needed. Run Diagward again once it has cooled down; if the warning stays while the temperature is normal, back up the data and replace the drive (%s).",
+				"Xử lý tản nhiệt cho %s ngay: kiểm tra quạt, luồng gió qua ổ, heatsink và nhiệt độ phòng máy, giảm tải nếu cần. Chạy lại Diagward khi ổ đã nguội; nếu nhiệt độ đã bình thường mà cảnh báo vẫn còn, sao lưu dữ liệu và thay ổ (%s).",
+				d.target(), d.ident())
 		}
 		fs = append(fs, d.finding("nvme_critical_warning", model.Crit,
 			model.Tf("NVMe %s reports a critical warning (0x%02x)", "Ổ NVMe %s báo cảnh báo nghiêm trọng (0x%02x)", d.target(), cw),
 			model.T("The controller raised its Critical Warning flags: "+strings.Join(en, "; ")+".", "Controller của ổ bật cờ Critical Warning: "+strings.Join(vi, "; ")+"."),
-			d.replaceAction(extraEN, extraVI), ev))
+			action, ev))
 		// Critical Warning sets Passed=false; do not report it twice.
 	} else if s.Passed != nil && !*s.Passed {
 		fs = append(fs, d.finding("smart_failed", model.Crit,
@@ -693,6 +724,16 @@ func wearCandidates(s *smartData) []*ataAttr {
 	for _, w := range want {
 		a := s.attr(w.id)
 		if a == nil || a.Value == nil || *a.Value > 100 || *a.Value < 0 {
+			continue
+		}
+		// SandForce drives (Kingston SV300, OCZ...) unknown to the drive
+		// database show 177/233 as "Wear_Leveling_Count" /
+		// "Media_Wearout_Indicator" with flag word 0x0000 and VALUE, WORST
+		// and THRESH all 000: the normalised value is not maintained at all,
+		// so it is not "0 % life left" (real output: linux.org.ru forum
+		// thread 10049404, see testdata/SOURCES.md). A worn Intel drive
+		// floors at 001 with flags 0x0032.
+		if a.Flags == 0 && *a.Value == 0 && (a.Worst == nil || *a.Worst == 0) && (a.Thresh == nil || *a.Thresh == 0) {
 			continue
 		}
 		n := strings.ToLower(a.Name)

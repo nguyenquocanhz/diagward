@@ -396,3 +396,84 @@ func sortedKeys[M ~map[string]V, V any](m M) []string {
 	sort.Strings(out)
 	return out
 }
+
+// portCfg is what the boot configuration says about one port.
+type portCfg struct {
+	File   string
+	Auto   bool   // brought up at boot
+	Master string // bond/bridge it is configured into
+}
+
+// parseNetConfig parses network.config: "path:KEY=value" lines grepped from
+// NetworkManager keyfiles (/etc/NetworkManager/system-connections), RHEL
+// ifcfg files (/etc/sysconfig/network-scripts) and SUSE ifcfg files
+// (/etc/sysconfig/network). Defaults follow each format: NM autoconnect
+// is true unless "autoconnect=false"; RHEL ONBOOT is yes unless set to
+// no; SUSE STARTMODE must be auto/onboot/hotplug/nfsroot.
+func parseNetConfig(s string) map[string]portCfg {
+	type file struct{ kv map[string]string }
+	files := map[string]*file{}
+	var order []string
+	for _, l := range strings.Split(s, "\n") {
+		i := strings.Index(l, ":")
+		if i <= 0 {
+			continue
+		}
+		path, rest := l[:i], l[i+1:]
+		k, v, ok := strings.Cut(rest, "=")
+		if !ok {
+			continue
+		}
+		v = strings.Trim(strings.TrimSpace(v), `"'`)
+		f := files[path]
+		if f == nil {
+			f = &file{kv: map[string]string{}}
+			files[path] = f
+			order = append(order, path)
+		}
+		if _, dup := f.kv[k]; !dup {
+			f.kv[k] = v
+		}
+	}
+	out := map[string]portCfg{}
+	for _, path := range order {
+		kv := files[path].kv
+		var c portCfg
+		var name string
+		switch {
+		case strings.Contains(path, "/NetworkManager/"):
+			name = kv["interface-name"]
+			c.Auto = !strings.EqualFold(kv["autoconnect"], "false")
+			c.Master = firstNonEmpty(kv["controller"], kv["master"])
+		case strings.Contains(path, "/ifcfg-"):
+			name = kv["DEVICE"]
+			if name == "" {
+				name = path[strings.LastIndex(path, "/ifcfg-")+len("/ifcfg-"):]
+			}
+			if strings.Contains(path, "/network-scripts/") {
+				switch strings.ToLower(kv["ONBOOT"]) {
+				case "no", "false", "0":
+				default:
+					c.Auto = true
+				}
+			} else {
+				switch strings.ToLower(kv["STARTMODE"]) {
+				case "auto", "onboot", "hotplug", "nfsroot":
+					c.Auto = true
+				}
+			}
+			c.Master = firstNonEmpty(kv["MASTER"], kv["BRIDGE"])
+		default:
+			continue
+		}
+		if name == "" || name == "lo" || strings.ContainsAny(name, "*?[") {
+			continue
+		}
+		c.File = path
+		if prev, ok := out[name]; ok && prev.Auto && !c.Auto {
+			continue // another profile already brings it up
+		}
+		out[name] = c
+	}
+	return out
+}

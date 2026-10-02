@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/nguyenquocanhz/diagward/internal/hint"
 	"github.com/nguyenquocanhz/diagward/internal/testkit"
 	"github.com/nguyenquocanhz/diagward/model"
 )
@@ -131,7 +132,7 @@ func richReport() *model.Report {
 	sensors := model.Result{
 		Domain: "sensors",
 		Coverage: []model.Coverage{
-			{ID: "sensors.lm", Component: model.CompThermal, Name: model.T("lm-sensors", "lm-sensors"), State: model.CovSkipped, Reason: model.T("sensors is not installed.", "Chưa cài sensors."), Fix: model.T("Install it: dnf install -y lm_sensors", "Cài đặt: dnf install -y lm_sensors")},
+			lmSensorsCov(),
 			{ID: "sensors.dmi", Component: model.CompThermal, Name: model.T("hwmon", "hwmon"), State: model.CovSkipped, Reason: model.T("Needs root.", "Cần quyền root."), Fix: model.T("Run it as root: sudo diagward", "Chạy với quyền root: sudo diagward")},
 		},
 	}
@@ -204,6 +205,12 @@ func summarize(rep *model.Report) []model.ComponentSummary {
 	for _, c := range rep.Coverage {
 		if i, ok := idx[c.Component]; ok && (c.State == model.CovRan || c.State == model.CovPartial) {
 			out[i].Checked = true
+			out[i].Partial = out[i].Partial || c.State == model.CovPartial
+		}
+	}
+	for _, c := range rep.Coverage {
+		if i, ok := idx[c.Component]; ok && out[i].Checked && (c.State == model.CovFailed || (c.State == model.CovSkipped && c.ID != "disk.bench" && c.ID != "memory.memtest")) {
+			out[i].Partial = true
 		}
 	}
 	for _, f := range rep.Findings {
@@ -224,6 +231,14 @@ func summarize(rep *model.Report) []model.ComponentSummary {
 		}
 	}
 	return out
+}
+
+// lmSensorsCov is a coverage entry in the current contract: Fix explains,
+// Cmd is the command to copy (hint.InstallFix).
+func lmSensorsCov() model.Coverage {
+	fix, cmd := hint.InstallFix(model.Env{OS: "linux", Distro: "almalinux", PM: "dnf"}, "sensors")
+	return model.Coverage{ID: "sensors.lm", Component: model.CompThermal, Name: model.T("lm-sensors", "lm-sensors"), State: model.CovSkipped,
+		Reason: hint.Missing("sensors"), Fix: fix, Cmd: cmd}
 }
 
 func okReport() *model.Report {
@@ -416,8 +431,8 @@ func TestTextContent(t *testing.T) {
 	for _, want := range []string{
 		"CẦN XỬ LÝ NGAY", "srv-db01.khachhang.vn", "PowerEdge R740", "7XK9Q73",
 		"Ổ /dev/sda sắp hỏng", "Sao lưu dữ liệu ngay", "LINH KIỆN CẦN THAY", "ZC1234AB", "4C1A2B3D",
-		"CHƯA KIỂM TRA ĐƯỢC", "dnf install -y nvme-cli", "ĐÃ KIỂM TRA, ỔN", "6 quạt quay bình thường",
-		"GHI CHÚ", "diagward check --html report.html", "--lang en",
+		"CHƯA KIỂM TRA ĐẦY ĐỦ", "dnf install -y nvme-cli", "ĐÃ KIỂM TRA, ỔN", "6 quạt quay bình thường",
+		"GHI CHÚ", "--html report.html", "--lang en",
 	} {
 		if !strings.Contains(vi, want) {
 			t.Errorf("vi text lacks %q", want)
@@ -436,7 +451,7 @@ func TestTextContent(t *testing.T) {
 		t.Errorf("duplicate part rows:\n%s", vi)
 	}
 	en := render(t, "text", r, Options{Lang: "en", Width: 100})
-	for _, want := range []string{"ACTION NEEDED NOW", "Disk /dev/sda is failing", "PARTS TO REPLACE", "NOT CHECKED", "--lang vi"} {
+	for _, want := range []string{"ACTION NEEDED NOW", "Disk /dev/sda is failing", "PARTS TO REPLACE", "NOT FULLY CHECKED", "--lang vi"} {
 		if !strings.Contains(en, want) {
 			t.Errorf("en text lacks %q", want)
 		}
@@ -675,7 +690,7 @@ func TestMarkdown(t *testing.T) {
 	if strings.Contains(out, "|---") || strings.Contains(out, "<br") {
 		t.Error("Markdown should have no tables or HTML")
 	}
-	for _, want := range []string{"**Diagward · srv-db01.khachhang.vn**", "### 🔴 CẦN XỬ LÝ NGAY", "Sao lưu dữ liệu ngay", "`ZC1234AB`", "`dnf install -y nvme-cli`", "Linh kiện cần thay", "Chưa kiểm tra được", RepoURL} {
+	for _, want := range []string{"**Diagward · srv-db01.khachhang.vn**", "### 🔴 CẦN XỬ LÝ NGAY", "Sao lưu dữ liệu ngay", "`ZC1234AB`", "`dnf install -y nvme-cli`", "Linh kiện cần thay", "Chưa kiểm tra đầy đủ", RepoURL} {
 		if !strings.Contains(out, want) {
 			t.Errorf("markdown lacks %q", want)
 		}
@@ -863,5 +878,191 @@ func TestRandomReports(t *testing.T) {
 			t.Fatalf("report %d: %v", i, err)
 		}
 		render(t, "json", r, o)
+	}
+}
+
+// partialReport: CPU fully checked, memory and thermal only partly (one
+// check ran, another needed root), disk partly checked with a warning.
+func partialReport() *model.Report {
+	env := model.Env{OS: "linux", Distro: "ubuntu", PM: "apt"}
+	fix, cmd := hint.InstallFix(env, "smartctl")
+	r := &model.Report{
+		Host: model.HostInfo{Hostname: "srv-partial"},
+		Env:  env,
+		Findings: []model.Finding{
+			{ID: "disk.crc", Component: model.CompDisk, Severity: model.Warn, Title: model.T("Cable errors on /dev/sdb", "Lỗi cáp trên /dev/sdb")},
+			{ID: "memory.info", Component: model.CompMemory, Severity: model.Info, Title: model.T("Mixed DIMMs", "RAM không đồng bộ")},
+		},
+		Coverage: []model.Coverage{
+			{ID: "cpu.mce", Component: model.CompCPU, Name: model.T("Machine checks", "Machine check"), State: model.CovRan},
+			{ID: "memory.edac", Component: model.CompMemory, Name: model.T("ECC counters", "Bộ đếm ECC"), State: model.CovRan},
+			{ID: "memory.dmi", Component: model.CompMemory, Name: model.T("DIMM inventory", "Danh sách thanh RAM"), State: model.CovSkipped, Reason: hint.NeedRoot(env), Fix: hint.RunAsRoot(env)},
+			{ID: "sensors.temperature", Component: model.CompThermal, Name: model.T("Temperatures", "Nhiệt độ"), State: model.CovPartial, Reason: model.T("No ACPI zones.", "Không có vùng nhiệt ACPI.")},
+			{ID: "disk.lsblk", Component: model.CompDisk, Name: model.T("Disk list", "Danh sách ổ"), State: model.CovRan},
+			{ID: "disk.smart", Component: model.CompDisk, Name: model.T("S.M.A.R.T.", "S.M.A.R.T."), State: model.CovSkipped, Reason: hint.Missing("smartctl"), Fix: fix, Cmd: cmd},
+			{ID: "disk.bench", Component: model.CompDisk, Name: model.T("Disk speed test", "Đo tốc độ ổ"), State: model.CovSkipped, Reason: model.T("Not requested.", "Không yêu cầu."),
+				Fix: model.T("Run a write/read test in a directory on the disk.", "Chạy bài đo ghi/đọc trong một thư mục trên ổ."), Cmd: "sudo diagward check --bench /var/tmp --bench-size 1G"},
+		},
+	}
+	r.Summary = summarize(r)
+	r.Verdict = model.Warn
+	return r
+}
+
+func TestPartialComponents(t *testing.T) {
+	r := partialReport()
+	byComp := map[string]model.ComponentSummary{}
+	for _, s := range r.Summary {
+		byComp[s.Component] = s
+	}
+	if !byComp[model.CompMemory].Partial || !byComp[model.CompThermal].Partial || byComp[model.CompCPU].Partial || !byComp[model.CompDisk].Partial {
+		t.Fatalf("fixture summary: %+v", r.Summary)
+	}
+	vi := render(t, "text", r, Options{Lang: "vi", Width: 100})
+	for _, want := range []string{"◐ Bộ nhớ (RAM)", "◐ Nhiệt độ", "✓ CPU", "⚠ Ổ cứng (1)", "◐ kiểm tra một phần", "(3 nhóm chỉ một phần)"} {
+		if !strings.Contains(vi, want) {
+			t.Errorf("vi text lacks %q:\n%s", want, vi)
+		}
+	}
+	if a := render(t, "text", r, Options{Lang: "en", ASCII: true}); !strings.Contains(a, "[PART] Memory (RAM)") || !strings.Contains(a, "(3 only partly)") {
+		t.Errorf("ascii text lacks partial mark:\n%s", a)
+	}
+	// A report without partial components has no partial legend.
+	if ok := render(t, "text", okReport(), Options{Lang: "en"}); strings.Contains(ok, "partly checked") {
+		t.Errorf("legend shows partial without partial components:\n%s", ok)
+	}
+	h := render(t, "html", r, Options{Lang: "vi"})
+	for _, want := range []string{
+		`<li class="tile c-part"><a href="#coverage"><span class="badge" aria-hidden="true">◐</span>`,
+		`<span class="tpart">&#9680; <span lang="vi">kiểm tra một phần</span>`, // the warn disk tile is partial too
+		`<li class="tile c-ok"><div><span class="badge" aria-hidden="true">✓</span><span class="tname">CPU</span>`,
+	} {
+		if !strings.Contains(h, want) {
+			t.Errorf("html lacks %q", want)
+		}
+	}
+	if n := strings.Count(h, `class="tile c-part"`); n != 2 {
+		t.Errorf("want 2 partial tiles (memory, thermal), got %d", n)
+	}
+}
+
+func TestCoverageCmd(t *testing.T) {
+	r := partialReport()
+	vi := render(t, "text", r, Options{Lang: "vi", Width: 100})
+	// Fix stays prose; Cmd is on its own line, verbatim.
+	for _, re := range []string{
+		`(?m)^\s+Cài smartmontools rồi chạy lại Diagward\.$`,
+		`(?m)^\s+sudo apt-get install -y --no-install-recommends smartmontools$`,
+		`(?m)^\s+sudo diagward check --bench /var/tmp --bench-size 1G$`,
+	} {
+		if !regexp.MustCompile(re).MatchString(vi) {
+			t.Errorf("text lacks %s:\n%s", re, vi)
+		}
+	}
+	// Narrow terminals split a long Cmd with continuations.
+	narrow := render(t, "text", r, Options{Lang: "en", Width: 40})
+	if !regexp.MustCompile(`(?m) \\$`).MatchString(narrow) {
+		t.Errorf("long Cmd not split with continuations:\n%s", narrow)
+	}
+	md := render(t, "md", r, Options{Lang: "en"})
+	if !strings.Contains(md, "  - Install smartmontools, then run Diagward again. `sudo apt-get install -y --no-install-recommends smartmontools`") {
+		t.Errorf("markdown Cmd:\n%s", md)
+	}
+	h := render(t, "html", r, Options{Lang: "en"})
+	for _, want := range []string{
+		`<span class="fprose">Install smartmontools, then run Diagward again.</span><div class="cmd"><code>sudo apt-get install -y --no-install-recommends smartmontools</code>`,
+		`<code>sudo diagward check --bench /var/tmp --bench-size 1G</code>`,
+	} {
+		if !strings.Contains(h, want) {
+			t.Errorf("html lacks %q", want)
+		}
+	}
+	// A Fix with an embedded command and no Cmd is still split (older bundles).
+	old := render(t, "html", richReport(), Options{Lang: "en"})
+	if !strings.Contains(old, `<span class="fprose">Install it:</span><div class="cmd"><code>dnf install -y nvme-cli</code>`) {
+		t.Error("splitFix fallback lost")
+	}
+	// A Cmd with HTML in it is escaped.
+	r.Coverage[len(r.Coverage)-1].Cmd = evil
+	h = render(t, "html", r, Options{Lang: "en"})
+	if strings.Contains(h, "<script>alert") || strings.Contains(h, "<img") {
+		t.Error("Cmd not escaped")
+	}
+	if strings.ContainsRune(render(t, "text", r, Options{}), 0x1b) {
+		t.Error("escape in text")
+	}
+}
+
+func TestNoHints(t *testing.T) {
+	r := richReport()
+	with := render(t, "text", r, Options{Lang: "en"})
+	without := render(t, "text", r, Options{Lang: "en", NoHints: true})
+	for _, h := range []string{"--html report.html", "--lang vi", "add -v"} {
+		if !strings.Contains(with, h) {
+			t.Errorf("hints missing by default: %q", h)
+		}
+		if strings.Contains(without, h) {
+			t.Errorf("NoHints still shows %q", h)
+		}
+	}
+	if !strings.Contains(without, RepoURL) {
+		t.Error("NoHints must keep the version/repo line")
+	}
+}
+
+// A healthy VM or container must not get the green "no hardware problems"
+// banner: its hardware belongs to the host and was not checked.
+func TestGuestHeadline(t *testing.T) {
+	r := okReport()
+	r.Env.Virtual = "kvm"
+	if h := Headline(r); h.EN != "NO PROBLEMS FOUND IN THIS VIRTUAL MACHINE" || h.VI != "KHÔNG PHÁT HIỆN LỖI TRONG MÁY ẢO NÀY" {
+		t.Errorf("vm headline: %+v", h)
+	}
+	if s := headlineSeverity(r); s != model.Info {
+		t.Errorf("vm banner severity %v, want info", s)
+	}
+	out := render(t, "text", r, Options{Lang: "en", ASCII: true})
+	if !strings.Contains(out, "[INFO]  NO PROBLEMS FOUND IN THIS VIRTUAL MACHINE") {
+		t.Errorf("vm banner:\n%s", out)
+	}
+	if h := render(t, "html", r, Options{Lang: "en"}); !strings.Contains(h, `<section class="verdict c-info" role="status">`) {
+		t.Error("vm html banner should be info")
+	}
+	r.Env.Container, r.Env.Virtual = true, "wsl"
+	if h := Headline(r); h.EN != "NO PROBLEMS FOUND IN THIS CONTAINER" {
+		t.Errorf("container headline: %+v", h)
+	}
+	// Problems found inside a VM are still reported as such.
+	r.Verdict = model.Warn
+	if h := Headline(r); h.EN != "NEEDS ATTENTION" {
+		t.Errorf("vm with warnings: %+v", h)
+	}
+	// A BMC bundle is out-of-band hardware data, never "virtual".
+	b := okReport()
+	b.Env = model.Env{OS: "bmc"}
+	if h := Headline(b); h.EN != "NO HARDWARE PROBLEMS FOUND" {
+		t.Errorf("bmc headline: %+v", h)
+	}
+}
+
+// TestHTMLNarrow guards the rules that keep the page inside a 360 px phone
+// screen: long unbroken tokens (stop codes, serials, paths) in flex/grid
+// items must be allowed to break, tiles go to two columns, and tables keep
+// their natural width inside their own scroll box.
+func TestHTMLNarrow(t *testing.T) {
+	out := render(t, "html", richReport(), Options{Lang: "vi"})
+	for _, want := range []string{
+		`<meta name="viewport" content="width=device-width, initial-scale=1">`,
+		".todo-t{font-weight:600;color:var(--text);text-decoration:none;overflow-wrap:anywhere}",
+		".tile>a,.tile>div{display:grid;grid-template-columns:auto minmax(0,1fr)",
+		".tiles{grid-template-columns:repeat(2,minmax(0,1fr))",
+		".tablewrap{overflow-x:auto",
+		"table.data{width:max-content;min-width:100%}",
+		".brand .sub{flex-basis:100%",
+		".cmd code{flex:1;min-width:0;",
+	} {
+		if !strings.Contains(out, want) {
+			t.Errorf("html lacks %q", want)
+		}
 	}
 }

@@ -2,6 +2,7 @@ package ipmi
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -62,6 +63,43 @@ func splitPipes(line string) []string {
 var selIDRe = regexp.MustCompile(`^[0-9a-fA-F]{1,8}$`)
 
 func parseSEL(out string, now time.Time) []*selEntry {
+	return parseSELShift(out, now, 0, dayFirstDates(out))
+}
+
+var slashDateRe = regexp.MustCompile(`^\s*([0-9]{1,2})/([0-9]{1,2})/[0-9]{2,4}\s*$`)
+
+// dayFirstDates reports whether the slashed dates in a SEL listing are
+// DD/MM: ipmitool >= 1.8.19 prints the date with strftime("%x"), which
+// follows LC_TIME. The in-band collectors run under LC_ALL=C (MM/DD/YY),
+// but ipmitool run by hand or on a laptop with vi_VN/en_GB/fr_FR prints
+// DD/MM/YYYY. A file is day-first when some first field is > 12 and no
+// second field is.
+func dayFirstDates(out string) bool {
+	first, second := false, false
+	for _, line := range strings.Split(out, "\n") {
+		f := strings.SplitN(line, "|", 3)
+		if len(f) < 3 {
+			continue
+		}
+		m := slashDateRe.FindStringSubmatch(f[1])
+		if m == nil {
+			continue
+		}
+		a, _ := strconv.Atoi(m[1])
+		b, _ := strconv.Atoi(m[2])
+		if a > 12 && b <= 12 {
+			first = true
+		}
+		if b > 12 {
+			second = true
+		}
+	}
+	return first && !second
+}
+
+// parseSELShift parses the listing; shift is subtracted from every time
+// stamp (the measured BMC clock error, see checker.bmcClock).
+func parseSELShift(out string, now time.Time, shift time.Duration, dayFirst bool) []*selEntry {
 	var list []*selEntry
 	for _, line := range strings.Split(strings.ReplaceAll(out, "\r\n", "\n"), "\n") {
 		if !strings.Contains(line, "|") {
@@ -85,7 +123,8 @@ func parseSEL(out string, now time.Time) []*selEntry {
 		if strings.EqualFold(f[1], "Pre-Init") {
 			e.PreInit = true
 		} else {
-			e.Time, e.TimeOK = parseSELTime(f[1], f[2])
+			e.Time, e.TimeOK = parseSELTimeOrder(f[1], f[2], dayFirst)
+			e.Time = e.Time.Add(-shift)
 			if e.TimeOK && (e.Time.Year() < 2008 || e.Time.After(now.Add(48*time.Hour))) {
 				e.TimeOK = false // BMC clock not set (01/01/2000, 2007...) or wrong
 			}
@@ -106,12 +145,18 @@ func parseSEL(out string, now time.Time) []*selEntry {
 	return list
 }
 
-var tzRe = regexp.MustCompile(`^[A-Za-z]{2,6}$|^[+-][0-9]{2}:?[0-9]{2}$`)
+// tzRe matches what glibc's %Z prints: a name ("UTC", "CEST", "IST") or,
+// for the many zones without an established abbreviation, a numeric one
+// ("+07" for Asia/Ho_Chi_Minh, "-03", "+0530", "+0545").
+var tzRe = regexp.MustCompile(`^[A-Za-z]{2,6}$|^[+-][0-9]{2}(:?[0-9]{2})?$`)
 
-// parseSELTime parses ipmitool's date and time columns. The zone name is
-// dropped: the BMC clock is usually local time and a few hours do not
+// parseSELTime parses ipmitool's date and time columns (month-first dates).
+func parseSELTime(d, t string) (time.Time, bool) { return parseSELTimeOrder(d, t, false) }
+
+// parseSELTimeOrder parses ipmitool's date and time columns. The zone name
+// is dropped: the BMC clock is usually local time and a few hours do not
 // matter for a 30-day window.
-func parseSELTime(d, t string) (time.Time, bool) {
+func parseSELTimeOrder(d, t string, dayFirst bool) (time.Time, bool) {
 	d = strings.TrimSpace(d)
 	fs := strings.Fields(t)
 	if len(fs) > 1 {
@@ -124,7 +169,11 @@ func parseSELTime(d, t string) (time.Time, bool) {
 	if d == "" || t == "" || strings.HasPrefix(d, "S+") || strings.EqualFold(d, "Unspecified") {
 		return time.Time{}, false
 	}
-	for _, dl := range []string{"01/02/2006", "01/02/06", "2006-01-02", "02.01.2006", "2006/01/02"} {
+	layouts := []string{"01/02/2006", "01/02/06", "2006-01-02", "02.01.2006", "2006/01/02"}
+	if dayFirst {
+		layouts[0], layouts[1] = "02/01/2006", "02/01/06"
+	}
+	for _, dl := range layouts {
 		for _, tl := range []string{"15:04:05", "03:04:05 PM", "3:04:05 PM", "15:04"} {
 			if tm, err := time.Parse(dl+" "+tl, d+" "+t); err == nil {
 				return tm, true
@@ -207,6 +256,25 @@ func groupSEL(entries []*selEntry, now time.Time, window time.Duration) []*selGr
 			g.Recent++
 		}
 	}
+	// Recovery logged as a new assertion rather than a deassertion: Dell
+	// asserts "Fully Redundant" when a lost PSU comes back, HPE asserts
+	// "Transition to OK" after "Transition to Critical..." (generic event
+	// types 0Bh and 07h, IPMI 2.0 table 42-2).
+	for _, g := range order {
+		n := normEvent(g.Event)
+		var r int
+		switch {
+		case g.v.key == "redundancy_lost":
+			r = recoveredAt(entries, g.Sensor, "fully redundant")
+		case strings.HasPrefix(n, "transition to ") && n != "transition to ok":
+			r = recoveredAt(entries, g.Sensor, "transition to ok")
+		default:
+			continue
+		}
+		if r > g.lastAssert && r > g.lastDeassert {
+			g.lastDeassert = r
+		}
+	}
 	var out []*selGroup
 	for _, g := range order {
 		if g.Count == 0 {
@@ -223,6 +291,18 @@ func groupSEL(entries []*selEntry, now time.Time, window time.Duration) []*selGr
 		out = append(out, g)
 	}
 	return out
+}
+
+// recoveredAt is the index of the last asserted event on sensor whose text
+// is recovery, or -1.
+func recoveredAt(entries []*selEntry, sensor, recovery string) int {
+	at := -1
+	for i, e := range entries {
+		if e.Sensor == sensor && !e.Deasserted && normEvent(e.Event) == recovery {
+			at = i
+		}
+	}
+	return at
 }
 
 func cleanEvent(s string) string {

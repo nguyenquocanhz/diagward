@@ -1,0 +1,8 @@
+Personalities : [raid1] 
+md96 : broken (auto-read-only) raid1 loop2p2[2](S) loop0p2[0]
+      142336 blocks super 1.2 [2/1] [U_]
+      
+md95 : broken (auto-read-only) raid1 loop2p1[2](S) loop0p1[0]
+      142336 blocks super 1.2 [2/1] [U_]
+      
+unused devices: <none>

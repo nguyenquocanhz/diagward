@@ -9,10 +9,13 @@
 # logs.win_events   hardware-relevant error/warning events (newest first)
 #                   [{t, p, id, l, m, x}] t=UTC ISO time, p=provider, l=level
 #                   (1 critical, 2 error, 3 warning), m=message (400 chars),
-#                   x=first 6 properties as strings (Kernel-Power 41: [0]
-#                   BugcheckCode in decimal, [5] PowerButtonTimestamp)
+#                   x=first 8 properties as strings (Kernel-Power 41: [0]
+#                   BugcheckCode in decimal, [5] SleepInProgress,
+#                   [6] PowerButtonTimestamp)
 # logs.win_summary  every error/warning provider+ID in the window with a count
 # logs.win_boots    boot/shutdown bookkeeping events (planned restarts, 41/6008)
+# logs.win_meta     [{read, readMax, wanted, wantedMax, oldest}]: how many
+#                   events were read, so a cap hit is reported as partial
 
 $_lg_days = 7
 try { $_lg_days = [int]$DW_SINCE_DAYS } catch {}
@@ -58,7 +61,7 @@ function _lg_Props($e) {
   $out = @()
   $n = 0
   foreach ($pr in @($e.Properties)) {
-    if ($n -ge 6) { break }
+    if ($n -ge 8) { break }
     $n++
     $v = $pr.Value
     if ($null -eq $v -or $v -is [byte[]]) { $out += ''; continue }
@@ -88,23 +91,30 @@ function _lg_Event($e) {
 }
 
 # One read of the System log (levels 1-3) shared by both sections.
+$_lg_readMax = 50000
 $_lg_err = $null
 $_lg_ev = @()
 try {
-  $_lg_ev = @(Get-WinEvent -FilterHashtable @{ LogName = 'System'; Level = 1, 2, 3; StartTime = $_lg_start } -MaxEvents 50000 -ErrorAction Stop)
+  $_lg_ev = @(Get-WinEvent -FilterHashtable @{ LogName = 'System'; Level = 1, 2, 3; StartTime = $_lg_start } -MaxEvents $_lg_readMax -ErrorAction Stop)
 } catch {
   if ($_.FullyQualifiedErrorId -notmatch 'NoMatchingEventsFound') { $_lg_err = $_.ToString() }
   $_lg_ev = @()
 }
 
+$_lg_wanted = 0
 DW-Json 'logs.win_events' {
   if ($_lg_err) { Write-Error $_lg_err }
-  $n = 0
   foreach ($e in $_lg_ev) {
-    if ($n -ge $_lg_max) { break }
-    if (_lg_Wanted $e) { $n++; _lg_Event $e }
+    if ($script:_lg_wanted -ge $_lg_max) { break }
+    if (_lg_Wanted $e) { $script:_lg_wanted++; _lg_Event $e }
   }
 } 4
+
+DW-Json 'logs.win_meta' {
+  $oldest = $null
+  if ($_lg_ev.Count -gt 0 -and $_lg_ev[-1].TimeCreated) { $oldest = $_lg_ev[-1].TimeCreated.ToUniversalTime().ToString('o') }
+  [pscustomobject]@{ read = [int]$_lg_ev.Count; readMax = [int]$_lg_readMax; wanted = [int]$script:_lg_wanted; wantedMax = [int]$_lg_max; oldest = $oldest }
+}
 
 DW-Json 'logs.win_summary' {
   if ($_lg_err) { Write-Error $_lg_err }

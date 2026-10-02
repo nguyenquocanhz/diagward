@@ -105,6 +105,15 @@ type state struct {
 	virtual bool
 	dimms   []DIMM
 	arrays  []Array
+	// eccShort is the error-correction value for the summary table.
+	eccShort string
+}
+
+func noECCDetail(why model.Text) model.Text {
+	return model.Text{
+		EN: why.EN + ". Without ECC, a flipped bit is neither corrected nor reported: it silently corrupts data or crashes programs. Servers should use ECC memory.",
+		VI: why.VI + ". Không có ECC thì bit bị lỗi không được sửa cũng không được báo: dữ liệu hỏng âm thầm hoặc chương trình bị crash. Máy chủ nên dùng RAM ECC.",
+	}
 }
 
 func (s *state) add(f model.Finding) {
@@ -115,8 +124,25 @@ func (s *state) add(f model.Finding) {
 }
 
 func (s *state) cov(id string, name model.Text, state string, reason, fix model.Text) {
-	s.res.Coverage = append(s.res.Coverage, model.Coverage{ID: id, Component: model.CompMemory, Name: name, State: state, Reason: reason, Fix: fix})
+	s.covCmd(id, name, state, reason, fix, "")
 }
+
+// covCmd records coverage with the one command that enables the check.
+func (s *state) covCmd(id string, name model.Text, state string, reason, fix model.Text, cmd string) {
+	s.res.Coverage = append(s.res.Coverage, model.Coverage{ID: id, Component: model.CompMemory, Name: name, State: state, Reason: reason, Fix: fix, Cmd: cmd})
+}
+
+// sudo prefixes cmd with sudo when the collector did not run as root.
+func (s *state) sudo(cmd string) string {
+	if s.env.Root {
+		return cmd
+	}
+	return "sudo " + cmd
+}
+
+// memtestCmd is the command that runs the opt-in memory test (root only:
+// memtester must lock the memory it tests).
+func (s *state) memtestCmd(size string) string { return s.sudo("diagward check --memtest " + size) }
 
 func okF(id, en, vi string) model.Finding {
 	return model.Finding{ID: id, Component: model.CompMemory, Severity: model.OK, Title: model.T(en, vi)}
@@ -142,9 +168,10 @@ func (s *state) linux() {
 	case dsec.Skipped == "container":
 		s.cov("memory.inventory", nameInventory, model.CovSkipped, hint.Virtual(s.env), model.Text{})
 	case dsec.Skipped == "not-root":
-		s.cov("memory.inventory", nameInventory, model.CovSkipped, hint.NeedRoot(s.env), hint.RunAsRoot(s.env))
+		s.covCmd("memory.inventory", nameInventory, model.CovSkipped, hint.NeedRoot(s.env), hint.RunAsRoot(s.env), "sudo diagward check")
 	case dsec.Missing != "":
-		s.cov("memory.inventory", nameInventory, model.CovSkipped, hint.Missing("dmidecode"), hint.Install(s.env, "dmidecode"))
+		fix, cmd := hint.InstallFix(s.env, "dmidecode")
+		s.covCmd("memory.inventory", nameInventory, model.CovSkipped, hint.Missing("dmidecode"), fix, cmd)
 	case s.virtual:
 		s.cov("memory.inventory", nameInventory, model.CovSkipped, hint.Virtual(s.env), model.Text{})
 	default:
@@ -234,8 +261,8 @@ func (s *state) matchDIMM(label string) int {
 func (s *state) ecc(mcs []EDACMC) {
 	b := s.b
 	sec := b.Get("memory.edac")
-	ecc, eccType := s.eccState()
-	s.facts.ECC, s.facts.ECCType = ecc, eccType
+	ecc, eccText, eccShort := s.eccState()
+	s.facts.ECC, s.facts.ECCType, s.eccShort = ecc, eccText.EN, eccShort
 	rasRep := s.rasMemory()
 	clients := ras.McelogClient(b.Get("cpu.mcelog_client").Text())
 
@@ -274,11 +301,11 @@ func (s *state) ecc(mcs []EDACMC) {
 		s.cov("memory.ecc", nameECC, model.CovSkipped,
 			model.T("The installed RAM has no ECC, so memory errors cannot be detected.", "RAM đang lắp không có ECC nên không phát hiện được lỗi bộ nhớ."), model.Text{})
 	default:
-		reason, fix := s.noEDAC()
+		reason, fix, cmd := s.noEDAC()
 		if len(rasRep.Mem)+len(rasRep.MemEvents) > 0 || len(clients) > 0 {
 			reason = model.Text{EN: reason.EN + " Using the rasdaemon/mcelog history instead.", VI: reason.VI + " Dùng lịch sử của rasdaemon/mcelog thay thế."}
 		}
-		s.cov("memory.ecc", nameECC, model.CovPartial, reason, fix)
+		s.covCmd("memory.ecc", nameECC, model.CovPartial, reason, fix, cmd)
 	}
 
 	if len(mcs) > 0 {
@@ -290,40 +317,82 @@ func (s *state) ecc(mcs []EDACMC) {
 	if ecc == "none" && !s.virtual && len(s.dimms) > 0 {
 		s.add(model.Finding{
 			ID: "memory.no_ecc", Severity: model.Info,
-			Title: model.T("The RAM has no ECC", "RAM không có ECC"),
-			Detail: model.Tf("%s. Without ECC, a flipped bit is neither corrected nor reported: it silently corrupts data or crashes programs. Servers should use ECC memory.",
-				"%s. Không có ECC thì bit bị lỗi không được sửa cũng không được báo: dữ liệu hỏng âm thầm hoặc chương trình bị crash. Máy chủ nên dùng RAM ECC.", eccType),
+			Title:  model.T("The RAM has no ECC", "RAM không có ECC"),
+			Detail: noECCDetail(eccText),
 			Action: model.T("For a production server, use ECC DIMMs on a board/CPU that supports ECC. Until then, run a memory test (memtester or Memtest86+) when you suspect RAM problems.",
 				"Với máy chủ chạy thật, dùng RAM ECC trên bo mạch/CPU hỗ trợ ECC. Trong lúc chưa thay, hãy test RAM (memtester hoặc Memtest86+) khi nghi ngờ lỗi RAM."),
 		})
 	}
 }
 
-// noEDAC explains a missing EDAC driver on bare metal and names the module
-// for the CPU family.
-func (s *state) noEDAC() (model.Text, model.Text) {
+// Intel server CPU models (family 6, /proc/cpuinfo "model") and the EDAC
+// driver that supports them (CPU match tables in drivers/edac/sb_edac.c,
+// skx_base.c and i10nm_base.c).
+var intelEDAC = map[int]string{
+	// Sandy Bridge-EP, Ivy Bridge-EP, Haswell-EP, Broadwell-EP/DE, Xeon Phi
+	45: "sb_edac", 62: "sb_edac", 63: "sb_edac", 79: "sb_edac", 86: "sb_edac", 87: "sb_edac", 133: "sb_edac",
+	// Skylake-SP, Cascade Lake, Cooper Lake
+	85: "skx_edac",
+	// Ice Lake-SP/D, Snow Ridge, Sapphire/Granite/Emerald Rapids, Sierra Forest
+	106: "i10nm_edac", 108: "i10nm_edac", 134: "i10nm_edac", 143: "i10nm_edac", 173: "i10nm_edac", 175: "i10nm_edac", 207: "i10nm_edac",
+}
+
+var (
+	reCPUModel   = regexp.MustCompile(`(?m)(?:\tmodel=|^Model:\s+|"Model:",\s*"data":\s*")(\d+)`)
+	reCPUFamily6 = regexp.MustCompile(`(?m)(?:\tcpu family=|^CPU family:\s+|"CPU family:",\s*"data":\s*")6\b`)
+)
+
+// edacModule names the EDAC driver for this CPU, or "" when unsure.
+func (s *state) edacModule() string {
+	ci := s.b.Get("cpu.cpuinfo").Text() + "\n" + s.b.Get("cpu.lscpu_json").Text() + "\n" + s.b.Get("cpu.lscpu").Text()
+	l := strings.ToLower(ci)
+	if strings.Contains(l, "authenticamd") || strings.Contains(l, "amd epyc") {
+		return "amd64_edac"
+	}
+	if !strings.Contains(l, "genuineintel") || !reCPUFamily6.MatchString(ci) {
+		return ""
+	}
+	if m := reCPUModel.FindStringSubmatch(ci); m != nil {
+		n, _ := strconv.Atoi(m[1])
+		return intelEDAC[n]
+	}
+	return ""
+}
+
+// noEDAC explains a missing EDAC driver on bare metal, names the module for
+// the CPU family and returns the modprobe command when the CPU is known.
+func (s *state) noEDAC() (model.Text, model.Text, string) {
 	ci := strings.ToLower(s.b.Get("cpu.cpuinfo").Text() + s.b.Get("cpu.lscpu_json").Text() + s.b.Get("cpu.lscpu").Text())
 	drv := "skx_edac / i10nm_edac (Intel Xeon), amd64_edac (AMD)"
+	mod := s.edacModule()
 	switch {
-	case strings.Contains(ci, "authenticamd") || strings.Contains(ci, "amd epyc") || strings.Contains(ci, "amd ryzen"):
+	case mod != "":
+		drv = mod
+	case strings.Contains(ci, "authenticamd") || strings.Contains(ci, "amd ryzen"):
 		drv = "amd64_edac"
 	case strings.Contains(ci, "genuineintel"):
 		drv = "i10nm_edac (Xeon Ice Lake and newer), skx_edac (Xeon Scalable 1st/2nd gen), sb_edac (Xeon E5/E7 v1-v4), ie31200_edac (Xeon E3)"
 	}
 	reason := model.Tf("ECC error counters unavailable: no EDAC driver is loaded (for this CPU: %s). Some vendors (Dell, HPE) handle memory errors in firmware and only report them to the BMC.",
 		"Không có bộ đếm lỗi ECC: chưa nạp driver EDAC (với CPU này: %s). Một số hãng (Dell, HPE) xử lý lỗi RAM trong firmware và chỉ báo lên BMC.", drv)
-	fix := model.T("Load the EDAC driver (e.g. modprobe skx_edac, i10nm_edac or amd64_edac) or read the BMC event log (iDRAC/iLO/IPMI SEL) for correctable memory errors.",
-		"Nạp driver EDAC (vd. modprobe skx_edac, i10nm_edac hoặc amd64_edac) hoặc đọc log sự kiện BMC (iDRAC/iLO/IPMI SEL) để xem lỗi RAM.")
-	return reason, fix
+	if mod != "" {
+		fix := model.Tf("Load the %s driver, then run Diagward again. If it does not load (firmware-first platforms), read the BMC event log (iDRAC/iLO/IPMI SEL) for memory errors.",
+			"Nạp driver %s rồi chạy lại Diagward. Nếu không nạp được (máy xử lý lỗi bằng firmware), đọc log sự kiện BMC (iDRAC/iLO/IPMI SEL) để xem lỗi RAM.", mod)
+		return reason, fix, s.sudo("modprobe " + mod)
+	}
+	fix := model.T("Load the EDAC driver for this CPU (modprobe skx_edac, i10nm_edac or amd64_edac) or read the BMC event log (iDRAC/iLO/IPMI SEL) for memory errors.",
+		"Nạp driver EDAC phù hợp với CPU (modprobe skx_edac, i10nm_edac hoặc amd64_edac) hoặc đọc log sự kiện BMC (iDRAC/iLO/IPMI SEL) để xem lỗi RAM.")
+	return reason, fix, ""
 }
 
 // eccState decides whether the memory has ECC: from the modules' widths
 // (72/80-bit total for 64 data bits), else from the array's error
-// correction type.
-func (s *state) eccState() (string, string) {
+// correction type. It returns the state, an explanation and a short value
+// for the summary table.
+func (s *state) eccState() (string, model.Text, string) {
 	widthECC, widthNone := 0, 0
 	for _, d := range s.dimms {
-		if !d.Populated {
+		if !d.Populated || d.PMem {
 			continue
 		}
 		if e, ok := d.ECCWidth(); ok {
@@ -344,27 +413,32 @@ func (s *state) eccState() (string, string) {
 	la := strings.ToLower(arr)
 	arrECC := strings.Contains(la, "ecc") || la == "crc"
 	arrNone := la == "none"
+	w := s.firstWidth()
 	switch {
 	case widthECC > 0 && widthNone == 0:
-		return "ecc", firstNonEmpty(arr, "ECC")
+		v := firstNonEmpty(arr, "ECC")
+		return "ecc", model.T(v, v), v
 	case widthNone > 0 && widthECC == 0:
+		short := fmt.Sprintf("None (%d-bit)", w)
 		if arrECC {
-			return "none", fmt.Sprintf("The board supports %s, but the installed modules are %d-bit without ECC bits", arr, s.firstWidth())
+			return "none", model.Tf("The board supports %s, but the installed modules are %d-bit without ECC bits",
+				"Bo mạch hỗ trợ %s, nhưng các thanh RAM đang lắp là loại %d-bit, không có bit ECC", arr, w), short
 		}
-		return "none", fmt.Sprintf("Error correction type: %s; modules are %d-bit without ECC bits", firstNonEmpty(arr, "None"), s.firstWidth())
+		return "none", model.Tf("The SMBIOS table gives error correction type %s, and the modules are %d-bit without ECC bits",
+			"Bảng SMBIOS ghi kiểu sửa lỗi là %s, và các thanh RAM là loại %d-bit, không có bit ECC", firstNonEmpty(arr, "None"), w), short
 	case widthECC > 0 && widthNone > 0:
-		return "unknown", "ECC and non-ECC modules are mixed"
+		return "unknown", model.T("ECC and non-ECC modules are mixed", "Đang lắp lẫn thanh RAM có ECC và không có ECC"), "ECC + non-ECC"
 	case arrECC:
-		return "ecc", arr
+		return "ecc", model.T(arr, arr), arr
 	case arrNone:
-		return "none", "Error correction type: None"
+		return "none", model.T("The SMBIOS table gives error correction type None", "Bảng SMBIOS ghi kiểu sửa lỗi là None"), "None"
 	}
-	return "unknown", arr
+	return "unknown", model.T(arr, arr), arr
 }
 
 func (s *state) firstWidth() int {
 	for _, d := range s.dimms {
-		if d.Populated && d.TotalWidth > 0 {
+		if d.Populated && !d.PMem && d.TotalWidth > 0 {
 			return d.TotalWidth
 		}
 	}
@@ -415,13 +489,20 @@ func (s *state) edacFindings(mcs []EDACMC, monitored int) {
 			drv = ", " + mcs[0].Ctl
 		}
 		n := monitored
-		unit := "DIMMs"
-		if n == 0 {
-			n, unit = len(mcs), "memory controllers"
+		unit, vi := "DIMMs", "thanh RAM"
+		ranks := 0
+		for _, mc := range mcs {
+			for _, d := range mc.DIMMs {
+				if strings.HasPrefix(d.Node, "rank") || strings.HasPrefix(d.Node, "csrow") {
+					ranks++
+				}
+			}
 		}
-		vi := "thanh RAM"
-		if unit != "DIMMs" {
-			vi = "bộ điều khiển bộ nhớ"
+		switch {
+		case n == 0:
+			n, unit, vi = len(mcs), "memory controllers", "bộ điều khiển bộ nhớ"
+		case ranks == n: // chip-select based drivers (amd64_edac, old csrow layout) count ranks, not DIMMs
+			unit, vi = "memory ranks", "rank RAM"
 		}
 		s.add(okF("memory.ecc_ok",
 			fmt.Sprintf("ECC: no memory errors since boot on %d %s (EDAC%s)", n, unit, drv),
@@ -714,40 +795,148 @@ func (s *state) inventoryFindings(visible uint64, visibleName string) {
 	s.facts.DIMMs = s.dimms
 	s.facts.Arrays = s.arrays
 	s.facts.VisibleBytes = visible
-	var installed, smallest uint64
-	var pop []DIMM
+	var installed, volatile, smallest uint64
+	var pop []DIMM // populated DRAM modules
+	pmemVolatile := false
 	for _, d := range s.dimms {
-		if d.Populated {
-			pop = append(pop, d)
-			installed += d.SizeBytes
-			if smallest == 0 || d.SizeBytes < smallest {
-				smallest = d.SizeBytes
-			}
+		if !d.Populated {
+			continue
+		}
+		installed += d.SizeBytes
+		if d.PMem {
+			pmemVolatile = pmemVolatile || d.VolatileBytes > 0
+			continue
+		}
+		pop = append(pop, d)
+		volatile += d.VolatileBytes
+		if d.VolatileBytes > 0 && (smallest == 0 || d.VolatileBytes < smallest) {
+			smallest = d.VolatileBytes
 		}
 	}
 	s.facts.InstalledBytes = installed
 	if len(pop) == 0 || s.virtual {
 		return
 	}
-	// Firmware, the kernel's crash-dump reservation and an onboard GPU
-	// keep a few percent away from the OS. Report only a gap of at least
-	// ~one module (90 % of the smallest DIMM) and at least 5 % of the
-	// total, which these reservations do not reach.
-	if visible > 0 && installed > visible {
-		gap := installed - visible
-		if float64(gap) >= 0.9*float64(smallest) && float64(gap) >= 0.05*float64(installed) {
-			s.add(model.Finding{
-				ID: "memory.capacity_missing", Severity: model.Warn,
-				Title: model.Tf("%s of installed RAM is not usable: %s installed, the OS sees %s", "%s RAM đã lắp nhưng không dùng được: lắp %s, hệ điều hành chỉ thấy %s", units.IEC(gap), units.IEC(installed), units.IEC(visible)),
-				Detail: model.Tf("The DIMMs listed by the BIOS add up to %s, but %s is %s. The gap is at least one module: a DIMM may have been disabled by the BIOS after a memory error at POST, or is not detected (bad seating, wrong slot order). A kernel limit (mem=) or a 32-bit OS also cause this.",
-					"Tổng dung lượng các thanh RAM BIOS liệt kê là %s, nhưng %s chỉ là %s. Phần thiếu ít nhất bằng một thanh: có thể BIOS đã tắt một thanh RAM do lỗi lúc POST, hoặc thanh RAM không được nhận (cắm lỏng, sai thứ tự khe). Giới hạn kernel (mem=) hoặc hệ điều hành 32-bit cũng gây ra hiện tượng này.",
-					units.IEC(installed), visibleName, units.IEC(visible)),
-				Action: model.T("Check the BMC/POST event log (iDRAC Lifecycle Log, iLO IML, IPMI SEL) for a DIMM disabled or \"memory training\" error and note the slot. Reseat that DIMM, follow the vendor's slot population order, and replace it if it is disabled again.",
-					"Xem log sự kiện BMC/POST (iDRAC Lifecycle Log, iLO IML, IPMI SEL) có báo thanh RAM bị tắt hoặc lỗi \"memory training\" không, ghi lại khe. Gắn lại thanh đó, cắm đúng thứ tự khe theo hướng dẫn của hãng, và thay nếu nó lại bị tắt."),
-				Evidence: []string{fmt.Sprintf("installed (%d DIMMs): %s", len(pop), units.IEC(installed)), fmt.Sprintf("%s: %s", visibleName, units.IEC(visible))},
-			})
+	// Persistent memory in Memory Mode turns the DRAM into a cache and the
+	// OS sees the PMem capacity instead: installed and visible RAM cannot be
+	// compared. In App Direct mode it is not RAM at all and is left out.
+	if visible > 0 && volatile > visible && !pmemVolatile {
+		s.capacityFindings(volatile, visible, smallest, len(pop), visibleName)
+	}
+	s.mixedFindings(pop)
+}
+
+// capacityFindings compares the RAM the BIOS lists with what the OS sees.
+//
+// Firmware, the crash-kernel reservation (RHEL crashkernel=auto takes at
+// most 512 MiB on 1 TiB+ machines) and an onboard GPU keep a few percent
+// away from the OS, so only a gap of at least ~one module (90 % of the
+// smallest DIMM) and at least 5 % of the total counts. Servers can also hold
+// memory back on purpose: full mirroring hides half of it, rank sparing one
+// rank per channel (a half, a quarter or an eighth). The memory
+// controller's own DIMM list (EDAC, when a native driver is loaded) settles
+// it; without it, a gap matching those fractions is only Info.
+func (s *state) capacityFindings(installed, visible, smallest uint64, n int, visibleName string) {
+	gap := installed - visible
+	if float64(gap) < 0.9*float64(smallest) || float64(gap) < 0.05*float64(installed) {
+		return
+	}
+	ev := []string{fmt.Sprintf("installed (%d DIMMs): %s", n, units.IEC(installed)), fmt.Sprintf("%s: %s", visibleName, units.IEC(visible))}
+	edacN, drv := s.edacDIMMCount()
+	if edacN > 0 {
+		ev = append(ev, fmt.Sprintf("EDAC (%s) sees %d DIMMs", drv, edacN))
+	}
+	title := model.Tf("%s of installed RAM is not usable: %s installed, the OS sees %s", "%s RAM đã lắp nhưng không dùng được: lắp %s, hệ điều hành chỉ thấy %s", units.IEC(gap), units.IEC(installed), units.IEC(visible))
+	checkLog := model.T("Check the BMC/POST event log (iDRAC Lifecycle Log, iLO IML, IPMI SEL) for a DIMM disabled or \"memory training\" error and note the slot. Reseat that DIMM, follow the vendor's slot population order, and replace it if it is disabled again.",
+		"Xem log sự kiện BMC/POST (iDRAC Lifecycle Log, iLO IML, IPMI SEL) có báo thanh RAM bị tắt hoặc lỗi \"memory training\" không, ghi lại khe. Gắn lại thanh đó, cắm đúng thứ tự khe theo hướng dẫn của hãng, và thay nếu nó lại bị tắt.")
+	switch {
+	case edacN > 0 && edacN >= n:
+		s.add(model.Finding{
+			ID: "memory.capacity_reserved", Severity: model.Info,
+			Title: model.Tf("%s of RAM is held in reserve: %s installed, the OS sees %s", "%s RAM được giữ dự phòng: lắp %s, hệ điều hành thấy %s", units.IEC(gap), units.IEC(installed), units.IEC(visible)),
+			Detail: model.Tf("The memory controller (EDAC, %s) has all %d DIMMs in use, so none is missing. The difference is memory the firmware keeps back: usually a RAS mode such as mirroring (half of the RAM) or rank sparing (one rank per channel), set in the BIOS.",
+				"Bộ điều khiển bộ nhớ (EDAC, %s) đang dùng đủ %d thanh RAM nên không thiếu thanh nào. Phần chênh lệch là RAM firmware giữ lại: thường là chế độ RAS như mirroring (một nửa RAM) hoặc rank sparing (một rank mỗi kênh), đặt trong BIOS.", drv, edacN),
+			Action: model.T("Nothing to replace. If you did not choose mirroring/sparing, check the memory operating mode in the BIOS (Dell: Memory Settings > Memory Operating Mode; HPE: Advanced Memory Protection).",
+				"Không cần thay gì. Nếu không cố ý bật mirroring/sparing, kiểm tra chế độ hoạt động của RAM trong BIOS (Dell: Memory Settings > Memory Operating Mode; HPE: Advanced Memory Protection)."),
+			Evidence: ev,
+		})
+	case edacN > 0:
+		s.add(model.Finding{
+			ID: "memory.capacity_missing", Severity: model.Warn, Title: title,
+			Detail: model.Tf("The BIOS lists %d DIMMs (%s), but the memory controller (EDAC, %s) uses only %d and %s is %s. A DIMM was disabled by the BIOS after a memory error at POST, or is not detected (bad seating, wrong slot order).",
+				"BIOS liệt kê %d thanh RAM (%s), nhưng bộ điều khiển bộ nhớ (EDAC, %s) chỉ dùng %d thanh và %s chỉ là %s. Có thanh RAM đã bị BIOS tắt do lỗi lúc POST, hoặc không được nhận (cắm lỏng, sai thứ tự khe).",
+				n, units.IEC(installed), drv, edacN, visibleName, units.IEC(visible)),
+			Action: checkLog, Evidence: ev,
+		})
+	case rasFraction(float64(visible) / float64(installed)):
+		s.add(model.Finding{
+			ID: "memory.capacity_missing", Severity: model.Info, Title: title,
+			Detail: model.Tf("The DIMMs listed by the BIOS add up to %s, but %s is %s. The ratio matches a memory RAS mode that hides part of the RAM on purpose (mirroring keeps half, rank sparing a half, a quarter or an eighth in reserve); it can also be a DIMM the BIOS disabled after a memory error at POST.",
+				"Tổng dung lượng các thanh RAM BIOS liệt kê là %s, nhưng %s chỉ là %s. Tỷ lệ này khớp với chế độ RAS cố ý giữ lại một phần RAM (mirroring giữ một nửa, rank sparing giữ một nửa, một phần tư hoặc một phần tám); cũng có thể BIOS đã tắt một thanh RAM do lỗi lúc POST.",
+				units.IEC(installed), visibleName, units.IEC(visible)),
+			Action: model.T("Check the memory operating mode in the BIOS (Dell: Memory Settings > Memory Operating Mode; HPE: Advanced Memory Protection). If it is the normal (optimizer) mode, check the BMC/POST event log for a disabled DIMM, reseat it and replace it if it is disabled again.",
+				"Kiểm tra chế độ hoạt động của RAM trong BIOS (Dell: Memory Settings > Memory Operating Mode; HPE: Advanced Memory Protection). Nếu đang ở chế độ thường (Optimizer), xem log sự kiện BMC/POST có thanh RAM bị tắt không, gắn lại và thay nếu nó lại bị tắt."),
+			Evidence: ev,
+		})
+	default:
+		s.add(model.Finding{
+			ID: "memory.capacity_missing", Severity: model.Warn, Title: title,
+			Detail: model.Tf("The DIMMs listed by the BIOS add up to %s, but %s is %s. The gap is at least one module: a DIMM may have been disabled by the BIOS after a memory error at POST, or is not detected (bad seating, wrong slot order). A kernel limit (mem=) or a 32-bit OS also cause this.",
+				"Tổng dung lượng các thanh RAM BIOS liệt kê là %s, nhưng %s chỉ là %s. Phần thiếu ít nhất bằng một thanh: có thể BIOS đã tắt một thanh RAM do lỗi lúc POST, hoặc thanh RAM không được nhận (cắm lỏng, sai thứ tự khe). Giới hạn kernel (mem=) hoặc hệ điều hành 32-bit cũng gây ra hiện tượng này.",
+				units.IEC(installed), visibleName, units.IEC(visible)),
+			Action: checkLog, Evidence: ev,
+		})
+	}
+}
+
+// rasFraction reports whether visible/installed matches the share of RAM a
+// mirroring or rank-sparing mode leaves to the OS (1/2, 3/4, 7/8), allowing
+// for up to 5 % of firmware/kernel reservations below it.
+func rasFraction(r float64) bool {
+	for _, c := range []float64{0.5, 0.75, 0.875} {
+		if r >= c-0.05 && r <= c+0.005 {
+			return true
 		}
 	}
+	return false
+}
+
+// edacDIMMCount returns how many DIMMs a native Intel EDAC driver
+// (skx_edac, i10nm_edac, sb_edac) reports, and the driver's name; 0 when
+// unknown. These drivers read DIMM presence from the memory controller's
+// own registers (skx_common.c skx_get_dimm_info(), sb_edac.c
+// get_dimm_config()), and sysfs only has dimmN nodes for populated DIMMs.
+// ghes_edac copies the SMBIOS table, amd64_edac counts chip selects, and
+// HBM channels (Xeon Max, label "..._HBMC#...") and NVDIMMs are not
+// DIMMs of the DRAM list: none of those can be compared with it.
+func (s *state) edacDIMMCount() (int, string) {
+	n, drv := 0, ""
+	for _, mc := range s.facts.EDAC {
+		ctl := strings.TrimSpace(mc.Ctl)
+		switch {
+		case strings.HasPrefix(ctl, "Skylake Socket"):
+			drv = "skx_edac"
+		case strings.HasPrefix(ctl, "Intel_10nm Socket"):
+			drv = "i10nm_edac"
+		case strings.Contains(ctl, " SrcID#") && strings.Contains(ctl, "_Ha#"):
+			drv = "sb_edac"
+		default:
+			return 0, ""
+		}
+		for _, d := range mc.DIMMs {
+			if !strings.HasPrefix(d.Node, "dimm") {
+				return 0, ""
+			}
+			mt := strings.ToLower(d.MemType)
+			if d.SizeMB > 0 && !strings.Contains(mt, "nvdimm") && !strings.Contains(mt, "hbm") && !strings.Contains(d.Label, "_HBMC#") {
+				n++
+			}
+		}
+	}
+	return n, drv
+}
+
+func (s *state) mixedFindings(pop []DIMM) {
 	sizes, speeds, parts := map[string]int{}, map[string]int{}, map[string]int{}
 	for _, d := range pop {
 		sizes[units.IEC(d.SizeBytes)]++
@@ -759,21 +948,23 @@ func (s *state) inventoryFindings(visible uint64, visibleName string) {
 		}
 	}
 	if len(sizes) > 1 || len(speeds) > 1 || len(parts) > 1 {
-		var what []string
+		var en, vi []string
 		if len(sizes) > 1 {
-			what = append(what, "sizes "+keys(sizes))
+			en, vi = append(en, "sizes "+keys(sizes)), append(vi, "dung lượng "+keys(sizes))
 		}
 		if len(speeds) > 1 {
-			what = append(what, "speeds "+keys(speeds))
+			en, vi = append(en, "speeds "+keys(speeds)), append(vi, "tốc độ "+keys(speeds))
 		}
 		if len(parts) > 1 {
-			what = append(what, "part numbers "+keys(parts))
+			en, vi = append(en, "part numbers "+keys(parts)), append(vi, "mã linh kiện (part number) "+keys(parts))
 		}
 		s.add(model.Finding{
 			ID: "memory.mixed_dimms", Severity: model.Info,
 			Title: model.T("The installed DIMMs are not all identical", "Các thanh RAM đang lắp không giống nhau"),
-			Detail: model.Tf("Different %s. It works, but all memory runs at the speed of the slowest module, uneven channels lower bandwidth, and vendors support only matching DIMMs. Keep it in mind when a DIMM has to be replaced or added.",
-				"Khác nhau về %s. Vẫn chạy được, nhưng toàn bộ RAM chạy theo tốc độ của thanh chậm nhất, các kênh không đều làm giảm băng thông, và hãng chỉ hỗ trợ RAM đồng bộ. Lưu ý khi cần thay hoặc thêm RAM.", strings.Join(what, "; ")),
+			Detail: model.Text{
+				EN: "Different " + strings.Join(en, "; ") + ". It works, but all memory runs at the speed of the slowest module, uneven channels lower bandwidth, and vendors support only matching DIMMs. Keep it in mind when a DIMM has to be replaced or added.",
+				VI: "Khác nhau về " + strings.Join(vi, "; ") + ". Vẫn chạy được, nhưng toàn bộ RAM chạy theo tốc độ của thanh chậm nhất, các kênh không đều làm giảm băng thông, và hãng chỉ hỗ trợ RAM đồng bộ. Lưu ý khi cần thay hoặc thêm RAM.",
+			},
 		})
 	}
 	var slow []string
@@ -958,28 +1149,42 @@ func (s *state) memtestLinux() {
 		return
 	}
 	switch {
-	case sec.Skipped == "disabled":
+	case sec.Skipped == "disabled" && s.virtual:
+		// On a VM or in a container memtester would only exercise memory
+		// the host hands out: test the host instead.
 		s.cov("memory.memtest", nameMemtest, model.CovSkipped,
+			model.T("Not requested, and of little use here: memtester can only test the memory the host gives this machine.",
+				"Không yêu cầu, và cũng ít ý nghĩa ở đây: memtester chỉ test được phần RAM máy host cấp cho máy này."),
+			hint.Virtual(s.env))
+		return
+	case sec.Skipped == "disabled":
+		s.covCmd("memory.memtest", nameMemtest, model.CovSkipped,
 			model.T("Not requested: memtester runs only on request, because it loads the server and takes several minutes per GB.",
 				"Không yêu cầu: memtester chỉ chạy khi được yêu cầu vì nó làm nặng máy và mất vài phút cho mỗi GB."),
-			model.T("Run Diagward with the memory-test option and a size (e.g. 2G) during a maintenance window.",
-				"Chạy Diagward với tuỳ chọn test RAM và dung lượng (vd. 2G) trong giờ bảo trì."))
+			model.T("Run the memory test as root during a maintenance window, with a size the server can spare (it needs twice that much free RAM).",
+				"Chạy test RAM với quyền root trong giờ bảo trì, với dung lượng máy có thể dành ra (cần lượng RAM trống gấp đôi)."),
+			s.memtestCmd("2G"))
 		return
 	case sec.Skipped == "low-memory":
-		s.cov("memory.memtest", nameMemtest, model.CovSkipped,
+		cmd := ""
+		if mb := s.facts.AvailableBytes >> 20 / 4 / 64 * 64; mb >= 64 { // a quarter of MemAvailable, in 64 MiB steps
+			cmd = s.memtestCmd(strconv.FormatUint(mb, 10) + "M")
+		}
+		s.covCmd("memory.memtest", nameMemtest, model.CovSkipped,
 			model.Tf("Not enough free RAM: memtester needs at least twice the test size available (MemAvailable %s).", "Không đủ RAM trống: memtester cần lượng RAM trống ít nhất gấp đôi dung lượng test (MemAvailable %s).", units.IEC(s.facts.AvailableBytes)),
-			model.T("Use a smaller test size, or stop services during a maintenance window.", "Dùng dung lượng test nhỏ hơn, hoặc dừng bớt dịch vụ trong giờ bảo trì."))
+			model.T("Use a smaller test size, or stop services during a maintenance window.", "Dùng dung lượng test nhỏ hơn, hoặc dừng bớt dịch vụ trong giờ bảo trì."), cmd)
 		return
 	case sec.Skipped == "not-root":
-		s.cov("memory.memtest", nameMemtest, model.CovSkipped,
+		s.covCmd("memory.memtest", nameMemtest, model.CovSkipped,
 			model.T("Needs root: without it memtester cannot lock that much memory and would test far less than asked.", "Cần quyền root: không có root thì memtester không khoá được lượng RAM đó và sẽ test ít hơn nhiều so với yêu cầu."),
-			hint.RunAsRoot(s.env))
+			hint.RunAsRoot(s.env), "sudo diagward check --memtest "+firstNonEmpty(s.b.Options.Memtest, "2G"))
 		return
 	case sec.Skipped != "":
 		s.cov("memory.memtest", nameMemtest, model.CovSkipped, hint.Virtual(s.env), model.Text{})
 		return
 	case sec.Missing != "":
-		s.cov("memory.memtest", nameMemtest, model.CovSkipped, hint.Missing("memtester"), hint.Install(s.env, "memtester"))
+		fix, cmd := hint.InstallFix(s.env, "memtester")
+		s.covCmd("memory.memtest", nameMemtest, model.CovSkipped, hint.Missing("memtester"), fix, cmd)
 		return
 	}
 	m := parseMemtest(sec.Out, sec.Err, sec.RC)
@@ -999,14 +1204,14 @@ func (s *state) memtestLinux() {
 		if tests == "" {
 			tests = "?"
 		}
-		addr := ""
+		addr, addrVI := "", ""
 		if contains(m.Failed, "Stuck Address") || (!m.Killed() && m.RC&2 != 0) {
-			addr = " (stuck address: possible bad address line)"
+			addr, addrVI = " (stuck address: possible bad address line)", " (stuck address: có thể hỏng đường địa chỉ)"
 		}
 		ev := append([]string{fmt.Sprintf("memtester %s, 1 loop: failed %s; exit code %d", size, tests, m.RC)}, m.Failures...)
 		s.add(model.Finding{
 			ID: "memory.memtest_failed", Severity: model.Crit, Target: "memtester " + size,
-			Title: model.Tf("memtester found RAM errors: %s failed%s", "memtester phát hiện lỗi RAM: test %s thất bại%s", tests, addr),
+			Title: model.Text{EN: fmt.Sprintf("memtester found RAM errors: %s failed%s", tests, addr), VI: fmt.Sprintf("memtester phát hiện lỗi RAM: test %s thất bại%s", tests, addrVI)},
 			Detail: model.Tf("memtester wrote patterns to %s of RAM and read back different values. Software cannot cause this: a DIMM (or, less often, the CPU's memory controller or an unstable overclock/voltage setting) is faulty.",
 				"memtester ghi mẫu dữ liệu vào %s RAM và đọc lại thì giá trị bị sai. Phần mềm không thể gây ra lỗi này: có thanh RAM hỏng (ít gặp hơn là bộ điều khiển bộ nhớ của CPU hoặc cấu hình ép xung/điện áp không ổn định).", size),
 			Action: model.T("Back up important data. Find the DIMM: check the ECC counters and the BMC event log, or run the vendor's diagnostics / Memtest86+ from boot media, or test the DIMMs in halves. Replace the faulty DIMM and run the test again.",
@@ -1014,14 +1219,32 @@ func (s *state) memtestLinux() {
 			Evidence: units.Evidence(ev, 10),
 		})
 	case m.Killed():
+		passed := firstNonEmpty(strings.Join(m.Passed, ", "), "none")
+		passedVI := firstNonEmpty(strings.Join(m.Passed, ", "), "chưa có")
+		ranS := sec.MS / 1000
+		if sec.MS > 0 && m.TimeoutS > 0 && sec.MS < m.TimeoutS*900 {
+			// Stopped well before the time limit: killed by a signal, in
+			// practice the OOM killer (the RAM was needed elsewhere).
+			s.cov("memory.memtest", nameMemtest, model.CovPartial,
+				model.Tf("memtester was killed after %d s, before its %d s limit.", "memtester bị dừng sau %d giây, trước giới hạn %d giây.", ranS, m.TimeoutS), model.Text{})
+			s.add(model.Finding{
+				ID: "memory.memtest_incomplete", Severity: model.Info, Target: "memtester " + size,
+				Title: model.Tf("memtester was killed after %d s (exit code %d); no errors until then", "memtester bị dừng sau %d giây (mã thoát %d); đến lúc đó chưa thấy lỗi", ranS, m.RC),
+				Detail: model.Text{
+					EN: "It was stopped by a signal well before its time limit, usually by the kernel's OOM killer because other programs needed the memory. Passed before it stopped: " + passed + ". Run it again with a smaller size (diagward check --memtest 1G) when the server is quiet.",
+					VI: "Tiến trình bị dừng bởi tín hiệu (signal) trước giới hạn thời gian, thường do OOM killer của kernel vì chương trình khác cần RAM. Các test đã qua trước khi dừng: " + passedVI + ". Chạy lại với dung lượng nhỏ hơn (diagward check --memtest 1G) lúc máy rảnh.",
+				},
+			})
+			break
+		}
 		s.cov("memory.memtest", nameMemtest, model.CovPartial,
 			model.Tf("memtester did not finish within %d s.", "memtester chưa chạy xong trong %d giây.", m.TimeoutS), model.Text{})
 		s.add(model.Finding{
 			ID: "memory.memtest_incomplete", Severity: model.Info, Target: "memtester " + size,
 			Title: model.Tf("memtester did not finish (stopped after %d s); no errors until then", "memtester chưa chạy xong (dừng sau %d giây); đến lúc đó chưa thấy lỗi", m.TimeoutS),
 			Detail: model.Text{
-				EN: "Passed before it stopped: " + firstNonEmpty(strings.Join(m.Passed, ", "), "none") + ". Run it again with a smaller size or a longer timeout.",
-				VI: "Các test đã qua trước khi dừng: " + firstNonEmpty(strings.Join(m.Passed, ", "), "chưa có") + ". Chạy lại với dung lượng nhỏ hơn hoặc thời gian chờ dài hơn.",
+				EN: "Passed before it stopped: " + passed + ". Run it again with a smaller size (diagward check --memtest 1G) or a longer limit (--timeout, in seconds).",
+				VI: "Các test đã qua trước khi dừng: " + passedVI + ". Chạy lại với dung lượng nhỏ hơn (diagward check --memtest 1G) hoặc thời gian chờ dài hơn (--timeout, tính bằng giây).",
 			},
 		})
 	case m.RC&1 != 0 && len(m.Passed) == 0:
@@ -1180,8 +1403,14 @@ func (s *state) summaryTable() {
 			pop++
 		}
 	}
-	if slots > 0 && !s.virtual {
-		row(model.T("Installed", "Đã lắp"), fmt.Sprintf("%s in %d of %d slots", iec(f.InstalledBytes), pop, slots), model.OK)
+	// Windows lists only populated modules; the arrays know the slot count.
+	arraySlots := 0
+	for _, a := range s.arrays {
+		arraySlots += a.Devices
+	}
+	slots = max(slots, arraySlots)
+	if pop > 0 && !s.virtual {
+		row(model.T("Installed", "Đã lắp"), fmt.Sprintf("%s, %d/%d slots", iec(f.InstalledBytes), pop, slots), model.OK)
 	}
 	row(model.T("Visible to the OS", "Hệ điều hành thấy"), iec(f.VisibleBytes), model.OK)
 	if f.VisibleBytes > 0 {
@@ -1190,8 +1419,8 @@ func (s *state) summaryTable() {
 	if f.SwapTotal > 0 {
 		row(model.T("Swap / page file used", "Swap / page file đang dùng"), fmt.Sprintf("%s of %s", units.IEC(f.SwapUsed), units.IEC(f.SwapTotal)), model.OK)
 	}
-	if !s.virtual && f.ECCType != "" {
-		row(model.T("Error correction", "Sửa lỗi (ECC)"), f.ECCType, model.OK)
+	if !s.virtual && s.eccShort != "" {
+		row(model.T("Error correction", "Sửa lỗi (ECC)"), s.eccShort, model.OK)
 	}
 	for i, a := range s.arrays {
 		if a.MaxCapacity != "" && !s.virtual {

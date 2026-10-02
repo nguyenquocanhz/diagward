@@ -432,7 +432,7 @@ func linuxReboots(b *collect.Bundle, env model.Env, res *model.Result, facts *Fa
 		cov.State = model.CovPartial
 		cov.Reason = model.T("The journal only holds the current boot and wtmp (last) is not available, so earlier restarts cannot be checked.",
 			"Journal chỉ lưu lần khởi động hiện tại và không có wtmp (lệnh last), nên không kiểm tra được các lần khởi động lại trước đó.")
-		cov.Fix = persistFix
+		cov.Fix, cov.Cmd = persistFix, persistCmd(env)
 	case classified == 0 && len(journalBoots) == 0 && !ls.Ran():
 		cov.State = model.CovPartial
 		cov.Reason = model.T("Neither the journal boot list nor wtmp (last) could be read.", "Không đọc được danh sách boot của journal lẫn wtmp (lệnh last).")
@@ -514,12 +514,13 @@ func linuxReboots(b *collect.Bundle, env model.Env, res *model.Result, facts *Fa
 		if panics > 0 {
 			detail = joinText(detail, model.Tf("%d of them end with a kernel panic/Oops.", "%d lần trong số đó kết thúc bằng kernel panic/Oops.", panics))
 		}
+		sev, vmDetail, vmAct := rebootSeverity(env, panics)
 		res.Findings = append(res.Findings, model.Finding{
-			ID: "logs.unexpected_reboot", Component: model.CompSystem, Severity: model.Warn,
+			ID: "logs.unexpected_reboot", Component: model.CompSystem, Severity: sev,
 			Title: tf("Server restarted without a clean shutdown %d time(s) in the last %d days",
 				"Máy chủ khởi động lại mà không tắt máy đúng cách %d lần trong %d ngày qua", len(unclean), env.SinceDays),
-			Detail:   detail,
-			Action:   actUnclean,
+			Detail:   joinText(detail, vmDetail),
+			Action:   joinText(vmAct, actUnclean),
 			Evidence: units.Evidence(evidence, 10),
 		})
 	} else if classified > 0 && len(recentDumps) == 0 {
@@ -569,3 +570,19 @@ func bootTable(boots []BootFact) model.Table {
 }
 
 func sortStrings(s []string) { sort.Strings(s) }
+
+// rebootSeverity: an unclean end is a Warn on physical servers (power, PSU,
+// heat, hang). On a virtual machine it is nearly always the hypervisor
+// powering the VM off or resetting it (forced stop, HA restart, heartbeat
+// reset), which is not a hardware fault of this machine: Info, unless a
+// kernel panic/blue screen was seen too (that is reported on its own).
+func rebootSeverity(env model.Env, panics int) (model.Severity, model.Text, model.Text) {
+	if env.Virtual == "" || env.Container || panics > 0 {
+		return model.Warn, model.Text{}, model.Text{}
+	}
+	return model.Info,
+		model.Tf("This is a virtual machine (%s): a forced power-off or reset from the hypervisor (or its HA/heartbeat monitor) looks exactly like this.",
+			"Đây là máy ảo (%s): tắt nguồn cưỡng bức hoặc reset từ hypervisor (hay cơ chế HA/heartbeat của nó) cũng để lại dấu vết y như vậy.", env.Virtual),
+		model.T("First check the hypervisor's task/event log for forced stops, resets or HA restarts of this VM at those times.",
+			"Trước tiên xem log tác vụ/sự kiện của hypervisor có lệnh tắt cưỡng bức, reset hoặc HA khởi động lại máy ảo này vào các thời điểm đó không.")
+}

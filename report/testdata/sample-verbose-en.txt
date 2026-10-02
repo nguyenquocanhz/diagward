@@ -10,22 +10,22 @@ DIAGWARD · Server hardware report
   BIOS                  2.12.2 (2021-07-09)
   BMC                   iDRAC9 4.40.00.00
   Uptime                12 days 3 hours
-  Virtual machine       no (physical server)
+  Virtual machine       no (physical machine)
   Ran as                normal user (some checks skipped)
   Collected at          2026-10-01 16:00:20 +07:00
   Collection took       23 s
 
 ╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
 │ ✗  ACTION NEEDED NOW                                                                             │
-│    4 critical problems · 3 warnings · 1 note · 8 of 12 components checked                        │
+│    4 critical problems · 3 warnings · 1 note · 8 of 12 components checked (4 only partly)        │
 ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
 
 ── COMPONENTS ──────────────────────────────────────────────────────────────────────────────────────
   – System                        – CPU                           ⚠ Memory (RAM) (1)
   ✗ Disks (3)                     ✗ RAID & storage pools (1)      – Filesystems
   ✓ Temperature                   ✓ Fans                          ✗ Power supply (1)
-  – Network                       i Management controller (BMC)   ⚠ System logs (1)
-  ✓ ok  ⚠ warning  ✗ critical  i note  – not checked
+  – Network                       ◐ Management controller (BMC)   ⚠ System logs (1)
+  ✓ ok  ⚠ warning  ✗ critical  i note  ◐ partly checked  – not checked
 
 ── PROBLEMS FOUND (8) ──────────────────────────────────────────────────────────────────────────────
   1. ✗ Critical · Disks · /dev/sda
@@ -100,7 +100,7 @@ DIAGWARD · Server hardware report
      Serial: 4C1A2B3D · Location: CPU1 DIMM_A1
      Reason: Corrected ECC errors on DIMM_A1 (152 in 7 days)
 
-── NOT CHECKED (7) ─────────────────────────────────────────────────────────────────────────────────
+── NOT FULLY CHECKED (7) ───────────────────────────────────────────────────────────────────────────
   ✗ FRU inventory (check failed)
     ipmitool fru timed out: <script>alert("x")</script>" onmouseover="alert(1)" '><img src=x
     onerror=alert(2)>
@@ -126,8 +126,8 @@ DIAGWARD · Server hardware report
 
   – lm-sensors (not checked)
     sensors is not installed.
-    Install it:
-      dnf install -y lm_sensors
+    Install lm_sensors, then run Diagward again.
+      sudo dnf install -y lm_sensors
 
 ── CHECKED (5) ─────────────────────────────────────────────────────────────────────────────────────
   ✓ S.M.A.R.T. health, Linux software RAID, ECC error counters, IPMI sensors, Kernel log
@@ -146,6 +146,6 @@ DIAGWARD · Server hardware report
     report.
 
 ────────────────────────────────────────────────────────────────────────────────────────────────────
-HTML report: diagward check --html report.html
-Vietnamese: --lang vi
+HTML report to send or print: add --html report.html
+Vietnamese: add --lang vi
 Diagward 0.1.0-test · https://github.com/nguyenquocanhz/diagward

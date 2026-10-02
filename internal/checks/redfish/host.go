@@ -5,8 +5,21 @@ import (
 	"strings"
 
 	"github.com/nguyenquocanhz/diagward/collect"
+	"github.com/nguyenquocanhz/diagward/internal/checks/cpu/dmi"
 	"github.com/nguyenquocanhz/diagward/model"
 )
+
+// clean drops the placeholder values BMCs copy from unprogrammed SMBIOS/FRU
+// fields ("To be filled by O.E.M.", "Default string", Supermicro's
+// "0123456789").
+func clean(v string) string {
+	v = dmi.Clean(v)
+	switch strings.ToLower(v) {
+	case "0123456789", "123456789", "system serial number", "system product name", "system manufacturer", "chassis serial number":
+		return ""
+	}
+	return v
+}
 
 // HostInfo identifies a server read through its BMC: from the Redfish
 // System / Manager resources, or for IPMI-only bundles from the ipmi.fru,
@@ -31,19 +44,44 @@ func HostInfo(b *collect.Bundle) (h model.HostInfo) {
 	if root, _, _ := s.get("/redfish/v1"); root != nil {
 		w := &walker{s: s, f: &Facts{}, areas: map[string]*area{}}
 		sysColl, _, _ := s.get(link(root, "Systems"))
+		var chRef string
 		for _, sys := range s.members(nil, sysColl) {
 			w.systemIdentity(sys, &h)
+			if l := links(sys, "Links", "Chassis"); len(l) > 0 {
+				chRef = normKey(l[0])
+			}
 			break
 		}
+		// The server's own chassis: the one the system links to, else the
+		// first rack/tower/blade chassis (not a backplane, GPU tray or
+		// enclosure, which Dell and Supermicro also list).
 		chColl, _, _ := s.get(link(root, "Chassis"))
+		var main map[string]any
 		for _, ch := range s.members(nil, chColl) {
+			if chRef != "" && normKey(str(ch, "@odata.id")) == chRef {
+				main = ch
+				break
+			}
+			switch strings.ToLower(str(ch, "ChassisType")) {
+			case "rackmount", "standalone", "blade", "sled", "tower", "desktop", "minitower", "mainframe", "multisystemchassis":
+				if main == nil {
+					main = ch
+				}
+			}
+		}
+		if main != nil {
 			if h.Serial == "" {
-				h.Serial = str(ch, "SerialNumber")
+				h.Serial = clean(str(main, "SerialNumber"))
+			}
+			if h.Vendor == "" {
+				h.Vendor = clean(str(main, "Manufacturer"))
 			}
 			if h.Board == "" {
-				h.Board = first(str(ch, "Model"), str(ch, "PartNumber"))
+				h.Board = clean(first(str(main, "Model"), str(main, "PartNumber")))
 			}
-			break
+		}
+		if h.Vendor == "" {
+			h.Vendor = str(root, "Vendor") // service root: "Dell", "HPE", "Lenovo"
 		}
 		mColl, _, _ := s.get(link(root, "Managers"))
 		for _, m := range s.members(nil, mColl) {
@@ -66,10 +104,10 @@ func HostInfo(b *collect.Bundle) (h model.HostInfo) {
 	fru := colonKV(b.Get("ipmi.fru").Text(), true)
 	mc := colonKV(b.Get("ipmi.mc").Text(), false)
 	lan := colonKV(b.Get("ipmi.lan").Text(), false)
-	h.Vendor = first(fru["Product Manufacturer"], fru["Board Mfg"], meta["manufacturer"])
-	h.Model = first(fru["Product Name"], fru["Board Product"], meta["model"])
-	h.Serial = first(fru["Product Serial"], fru["Chassis Serial"], fru["Board Serial"], meta["serial"])
-	h.Board = fru["Board Product"]
+	h.Vendor = first(clean(fru["Product Manufacturer"]), clean(fru["Board Mfg"]), clean(meta["manufacturer"]))
+	h.Model = first(clean(fru["Product Name"]), clean(fru["Board Product"]), clean(meta["model"]))
+	h.Serial = first(clean(fru["Product Serial"]), clean(fru["Chassis Serial"]), clean(fru["Board Serial"]), clean(meta["serial"]))
+	h.Board = clean(fru["Board Product"])
 	ip := lan["IP Address"]
 	if ip == "0.0.0.0" {
 		ip = ""
@@ -89,11 +127,11 @@ func (w *walker) systemIdentity(sys map[string]any, h *model.HostInfo) {
 	if n := str(sys, "HostName"); n != "" {
 		h.Hostname = n
 	}
-	h.Vendor = str(sys, "Manufacturer")
-	h.Model = str(sys, "Model")
-	h.Serial = str(sys, "SerialNumber")
+	h.Vendor = clean(str(sys, "Manufacturer"))
+	h.Model = clean(str(sys, "Model"))
+	h.Serial = clean(str(sys, "SerialNumber"))
 	// Dell's service tag (what Dell support asks for) is the SKU.
-	if sku := str(sys, "SKU"); sku != "" && strings.Contains(strings.ToLower(h.Vendor), "dell") {
+	if sku := clean(str(sys, "SKU")); sku != "" && strings.Contains(strings.ToLower(h.Vendor), "dell") {
 		h.Serial = sku
 	}
 	h.BIOS = str(sys, "BiosVersion")

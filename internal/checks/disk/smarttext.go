@@ -13,7 +13,8 @@ import (
 // (smartctl 5.40 to 7.5, default and --format=brief attribute tables).
 
 var (
-	reVersion = regexp.MustCompile(`^smartctl (\d+\.\d+)`)
+	// "smartctl 7.4 2023-08-01 r5530 ..." or, for SVN builds, "smartctl pre-7.5 ...".
+	reVersion = regexp.MustCompile(`^smartctl (?:pre-)?(\d+\.\d+)`)
 	// ATA attribute table, default format:
 	//   5 Reallocated_Sector_Ct   0x0033   100   100   010    Pre-fail  Always       -       0
 	reAttrDefault = regexp.MustCompile(`^\s*(\d{1,3})\s+(\S+)\s+0x([0-9a-fA-F]{4})\s+(\d+|---)\s+(\d+|---)\s+(\d+|---)\s+(Pre-fail|Old_age)\s+(\S+)\s+(\S+)\s+(.*)$`)
@@ -136,6 +137,10 @@ func parseSmartText(out string) (*smartData, bool) {
 		case "Revision":
 			if d.Firmware == "" {
 				d.Firmware = clean(v)
+			}
+		case "Namespace 1 IEEE EUI-64":
+			if e := strings.ToUpper(strings.ReplaceAll(v, " ", "")); len(e) == 16 {
+				d.EUI64 = e
 			}
 		case "LU WWN Device Id", "Logical Unit id":
 			d.WWN = clean(v)
@@ -276,7 +281,7 @@ func parseSmartText(out string) (*smartData, bool) {
 			d.TempC = nvme.Temperature
 		}
 		if d.POH == nil {
-			d.POH = nvme.PowerOnHours
+			d.POH = plausibleHours(nvme.PowerOnHours)
 		}
 		if nvme.PercentageUsed != nil && d.Endurance == nil {
 			d.Endurance, d.EndurSrc = nvme.PercentageUsed, "nvme percentage_used"
@@ -286,7 +291,7 @@ func parseSmartText(out string) (*smartData, bool) {
 		d.Protocol = "ATA"
 		if a := d.attr(9); a != nil && d.POH == nil {
 			n := a.count()
-			d.POH = &n
+			d.POH = plausibleHours(&n)
 		}
 		if d.TempC == nil {
 			for _, id := range []int{194, 190} {
@@ -311,7 +316,10 @@ func parseSmartText(out string) (*smartData, bool) {
 
 func parseAttrLine(line string) (ataAttr, bool) {
 	if m := reAttrDefault.FindStringSubmatch(line); m != nil {
-		a := ataAttr{Name: m[2], Prefail: m[7] == "Pre-fail"}
+		a := ataAttr{Name: m[2], Prefail: m[7] == "Pre-fail", Flags: -1}
+		if f, err := strconv.ParseUint(m[3], 16, 16); err == nil {
+			a.Flags = int(f)
+		}
 		a.ID, _ = strconv.Atoi(m[1])
 		a.Value, a.Worst, a.Thresh = atoip(m[4]), atoip(m[5]), atoip(m[6])
 		switch m[9] {
@@ -325,7 +333,10 @@ func parseAttrLine(line string) (ataAttr, bool) {
 		return a, true
 	}
 	if m := reAttrBrief.FindStringSubmatch(line); m != nil {
-		a := ataAttr{Name: m[2], Prefail: strings.HasPrefix(m[3], "P")}
+		a := ataAttr{Name: m[2], Prefail: strings.HasPrefix(m[3], "P"), Flags: -1}
+		if strings.Trim(m[3], "-") == "" {
+			a.Flags = 0 // brief format: "------" is flag word 0x0000
+		}
 		a.ID, _ = strconv.Atoi(m[1])
 		a.Value, a.Worst, a.Thresh = atoip(m[4]), atoip(m[5]), atoip(m[6])
 		switch m[7] {

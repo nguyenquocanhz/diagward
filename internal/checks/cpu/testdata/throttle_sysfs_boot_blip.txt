@@ -1,0 +1,12 @@
+/sys/devices/system/cpu/cpu0/thermal_throttle/core_throttle_count=2
+/sys/devices/system/cpu/cpu0/thermal_throttle/core_throttle_max_time_ms=40
+/sys/devices/system/cpu/cpu0/thermal_throttle/core_throttle_total_time_ms=55
+/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_count=1
+/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_max_time_ms=30
+/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_total_time_ms=30
+/sys/devices/system/cpu/cpu0/topology/physical_package_id=0
+/sys/devices/system/cpu/cpu1/thermal_throttle/core_throttle_count=0
+/sys/devices/system/cpu/cpu1/thermal_throttle/core_throttle_total_time_ms=0
+/sys/devices/system/cpu/cpu1/thermal_throttle/package_throttle_count=1
+/sys/devices/system/cpu/cpu1/thermal_throttle/package_throttle_total_time_ms=30
+/sys/devices/system/cpu/cpu1/topology/physical_package_id=0

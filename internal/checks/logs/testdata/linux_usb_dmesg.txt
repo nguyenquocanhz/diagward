@@ -1,0 +1,21 @@
+# source=dmesg boot=1790700000 tz=+0700 max=3000 total=19
+[    4.213371] usb-storage 2-1.4:1.0: USB Mass Storage device detected
+[    4.213790] scsi6 : usb-storage 2-1.4:1.0
+[    5.215502] sd 6:0:0:0: [sdb] Attached SCSI disk
+[  117.070255] usb 2-1.4: reset high-speed USB device number 3 using ehci-pci
+[  117.549179] sd 6:0:0:0: [sdb] Media Changed
+[  117.549184] sd 6:0:0:0: [sdb]
+[  117.549187] Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+[  117.549191] Sense Key : Unit Attention [current]
+[  117.549201] Add. Sense: Not ready to ready change, medium may have changed
+[  117.549212] end_request: I/O error, dev sdb, sector 182528
+[  117.549218] Buffer I/O error on device sdb1, logical block 22560
+[  117.549225] Buffer I/O error on device sdb1, logical block 22561
+[  117.549228] Buffer I/O error on device sdb1, logical block 22562
+[  117.549231] Buffer I/O error on device sdb1, logical block 22563
+[  117.549233] Buffer I/O error on device sdb1, logical block 22564
+[  117.549235] Buffer I/O error on device sdb1, logical block 22565
+[  117.549238] Buffer I/O error on device sdb1, logical block 22566
+[  117.549240] Buffer I/O error on device sdb1, logical block 22567
+[  117.549243] Buffer I/O error on device sdb1, logical block 22568
+# source=dmesg boot=1790700000 tz=+0700 max=3000 total=0 class=noise

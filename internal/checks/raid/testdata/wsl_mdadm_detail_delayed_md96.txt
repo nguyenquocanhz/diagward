@@ -1,0 +1,26 @@
+/dev/md96:
+           Version : 1.2
+     Creation Time : Fri Oct  2 16:21:57 2026
+        Raid Level : raid1
+        Array Size : 142336 (139.00 MiB 145.75 MB)
+     Used Dev Size : 142336 (139.00 MiB 145.75 MB)
+      Raid Devices : 2
+     Total Devices : 2
+       Persistence : Superblock is persistent
+
+       Update Time : Fri Oct  2 16:21:58 2026
+             State : clean, degraded, resyncing (DELAYED) 
+    Active Devices : 1
+   Working Devices : 2
+    Failed Devices : 0
+     Spare Devices : 1
+
+Consistency Policy : resync
+
+              Name : DESKTOP-ARP8AJ1:96  (local to host DESKTOP-ARP8AJ1)
+              UUID : fbd04a88:a5d6f132:58dd1021:0cb294f9
+            Events : 6
+
+    Number   Major   Minor   RaidDevice State
+       0     259        1        0      active sync   /dev/loop0p2
+       2     259        9        1      spare rebuilding   /dev/loop2p2

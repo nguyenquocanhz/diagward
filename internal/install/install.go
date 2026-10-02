@@ -55,12 +55,13 @@ type Tool struct {
 // Probe is what Detect found.
 type Probe struct {
 	Env       model.Env `json:"env"`
-	BMC       bool      `json:"bmc"`       // an IPMI BMC is described by SMBIOS or has a device node
-	IPMIDev   bool      `json:"ipmiDev"`   // /dev/ipmi* exists (driver loaded)
-	MD        bool      `json:"md"`        // Linux software RAID arrays exist
-	NVMe      bool      `json:"nvme"`      // NVMe controllers exist
-	Systemctl bool      `json:"systemctl"` // systemd is available
-	EPEL      bool      `json:"epel"`      // EPEL repository configured (RHEL family)
+	OSName    string    `json:"osName,omitempty"` // PRETTY_NAME from os-release, e.g. "Ubuntu 24.04.1 LTS"
+	BMC       bool      `json:"bmc"`              // an IPMI BMC is described by SMBIOS or has a device node
+	IPMIDev   bool      `json:"ipmiDev"`          // /dev/ipmi* exists (driver loaded)
+	MD        bool      `json:"md"`               // Linux software RAID arrays exist
+	NVMe      bool      `json:"nvme"`             // NVMe controllers exist
+	Systemctl bool      `json:"systemctl"`        // systemd is available
+	EPEL      bool      `json:"epel"`             // EPEL repository configured (RHEL family)
 	// VendorTools are RAID controller CLIs this machine needs and lacks
 	// (storcli, perccli, ssacli, arcconf); they are not in distribution
 	// repositories, so they are only advised.
@@ -92,7 +93,7 @@ func (p Probe) Tool(name string) (Tool, bool) {
 // Detect inspects the machine.
 func Detect(ctx context.Context, sys System, o Options) Probe {
 	var p Probe
-	p.Env = detectEnv(ctx, sys)
+	p.Env, p.OSName = detectEnv(ctx, sys)
 	p.Systemctl = sys.LookPath("systemctl")
 	p.BMC, p.IPMIDev = detectBMC(sys)
 	p.MD = detectMD(sys)
@@ -161,13 +162,14 @@ func Detect(ctx context.Context, sys System, o Options) Probe {
 	return p
 }
 
-func detectEnv(ctx context.Context, sys System) model.Env {
+func detectEnv(ctx context.Context, sys System) (model.Env, string) {
 	env := model.Env{OS: collect.OSLinux, Root: sys.Root()}
 	data, err := sys.ReadFile("/etc/os-release")
 	if err != nil {
 		data, _ = sys.ReadFile("/usr/lib/os-release")
 	}
 	osr := collect.ParseOSRelease(string(data))
+	pretty := strings.TrimSpace(osr["PRETTY_NAME"])
 	env.Distro, env.DistroVer, env.Like = strings.ToLower(osr["ID"]), osr["VERSION_ID"], strings.ToLower(osr["ID_LIKE"])
 	if env.Distro == "debian" && (len(sys.Glob("/etc/pve")) > 0 || sys.LookPath("pveversion")) {
 		env.Distro = "proxmox"
@@ -197,7 +199,7 @@ func detectEnv(ctx context.Context, sys System) model.Env {
 			env.Virtual = strings.TrimSpace(v)
 		}
 	}
-	return env
+	return env, pretty
 }
 
 // detectPM picks the package manager that belongs to the distribution
@@ -286,6 +288,13 @@ type Step struct {
 	Args      []string `json:"args"`
 	Env       []string `json:"env,omitempty"`
 	AllowFail bool     `json:"allowFail,omitempty"` // a failure is reported but the plan goes on
+	// Fallback runs when the step fails: one install per package, so a
+	// single package missing from the configured repositories (Ubuntu
+	// without "universe", RHEL without EPEL, an Arch AUR-only package)
+	// does not stop the others from being installed. apt-get, dnf (strict
+	// by default), zypper, apk and pacman all reject the whole command
+	// when one name is unknown.
+	Fallback []Step `json:"fallback,omitempty"`
 }
 
 func (s Step) String() string { return shellJoin(s.Args) }
@@ -345,12 +354,28 @@ func MakePlan(p Probe) Plan {
 	if fam == "rhel" && p.Env.Distro != "fedora" && !p.EPEL && needsEPEL(pl.Packages) {
 		step, note := epelStep(p.Env)
 		if step != nil {
+			// Without EPEL only memtester/edac-utils fail to install; the
+			// other tools must still be installed.
+			step.AllowFail = true
 			pl.Steps = append(pl.Steps, *step)
 		}
 		if !note.IsZero() {
 			pl.Notes = append(pl.Notes, note)
 		}
 	}
+	defer func() {
+		// The last step is the install command: give it its per-package
+		// fallback.
+		if n := len(pl.Steps); n > 0 && len(pl.Packages) > 1 && pl.Problem.IsZero() {
+			last := pl.Steps[n-1]
+			base := last.Args[:len(last.Args)-len(pl.Packages)]
+			for _, pkg := range pl.Packages {
+				args := append(append([]string{}, base...), pkg)
+				last.Fallback = append(last.Fallback, Step{Args: args, Env: last.Env, AllowFail: true})
+			}
+			pl.Steps[n-1] = last
+		}
+	}()
 	switch p.Env.PM {
 	case "dnf", "yum":
 		pl.Steps = append(pl.Steps, Step{Args: append([]string{p.Env.PM, "install", "-y"}, pl.Packages...)})
@@ -433,6 +458,24 @@ func (pl Plan) Run(ctx context.Context, sys System, warn func(step Step, err err
 		err := sys.Run(ctx, s.Env, s.Args[0], s.Args[1:]...)
 		if err == nil {
 			continue
+		}
+		if len(s.Fallback) > 0 && ctx.Err() == nil {
+			if warn != nil {
+				warn(s, err)
+			}
+			ok := 0
+			for _, f := range s.Fallback {
+				if ferr := sys.Run(ctx, f.Env, f.Args[0], f.Args[1:]...); ferr != nil {
+					if warn != nil {
+						warn(f, ferr)
+					}
+					continue
+				}
+				ok++
+			}
+			if ok > 0 {
+				continue
+			}
 		}
 		if s.AllowFail {
 			if warn != nil {
@@ -517,6 +560,32 @@ func FollowUps(ctx context.Context, sys System, before, after Probe) []FollowUp 
 		}
 	}
 	return out
+}
+
+// ubuntuUniverse are the packages Diagward installs that Ubuntu ships in
+// its "universe" component (packages.ubuntu.com), which some minimal or
+// hardened servers do not enable.
+var ubuntuUniverse = map[string]bool{"lm-sensors": true, "ipmitool": true, "rasdaemon": true, "memtester": true, "edac-utils": true}
+
+// MissingHint explains why tools may still be missing after the install
+// ran, or returns an empty Text.
+func MissingHint(p Probe, still []Tool) model.Text {
+	var uni []string
+	for _, t := range still {
+		if ubuntuUniverse[t.Package] {
+			uni = append(uni, t.Package)
+		}
+	}
+	switch {
+	case len(uni) > 0 && p.Env.Distro == "ubuntu":
+		return model.Tf("Ubuntu ships these packages in its \"universe\" repository: %s. Enable it, then run sudo diagward install-tools again: sudo add-apt-repository -y universe && sudo apt-get update",
+			"Ubuntu để các gói này trong kho \"universe\": %s. Bật kho này rồi chạy lại sudo diagward install-tools: sudo add-apt-repository -y universe && sudo apt-get update",
+			strings.Join(uni, ", "))
+	case hint.Family(p.Env) == "rhel" && p.Env.Distro != "fedora" && !p.EPEL && len(still) > 0:
+		return model.T("Some packages may need the EPEL repository: dnf install -y epel-release (on RHEL see https://docs.fedoraproject.org/en-US/epel/getting-started/).",
+			"Một số gói có thể cần kho EPEL: dnf install -y epel-release (trên RHEL xem https://docs.fedoraproject.org/en-US/epel/getting-started/).")
+	}
+	return model.Text{}
 }
 
 // VendorAdvice returns the install advice for RAID controller CLIs.

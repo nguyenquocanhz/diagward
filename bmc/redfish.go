@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/nguyenquocanhz/diagward/collect"
+	"github.com/nguyenquocanhz/diagward/internal/checks/redfish"
 )
 
 // Limits of the Redfish walk. Variables so tests can shrink them.
@@ -34,11 +35,11 @@ var (
 	maxLogPages          = 25               // pages read per log service
 	maxEntryFetch        = 100              // entries fetched one by one when a collection lists links only
 	logoutTimeout        = 10 * time.Second
+	maxRetries           = 1               // extra tries of a GET answered 429/503
+	retryWait            = 2 * time.Second // when the BMC sends no Retry-After
+	maxRetryWait         = 5 * time.Second
+	maxSkipPages         = 10 // $skip pages tried when a log omits its nextLink
 )
-
-// Log services that hold no hardware events (dumps, POST codes, the BMC's
-// own journal, audit and security logs) or are huge and noisy.
-var skipLogServices = []string{"dump", "crash", "postcode", "hostlogger", "journal", "audit", "debug", "diag", "fdr", "telemetry"}
 
 type rfClient struct {
 	base       *url.URL
@@ -224,6 +225,12 @@ func collectRedfish(ctx context.Context, b *collect.Bundle, o Options, a address
 	return nil
 }
 
+// authError is an ErrAuth with its own explanation.
+type authError struct{ msg string }
+
+func (e *authError) Error() string        { return e.msg }
+func (e *authError) Is(target error) bool { return target == ErrAuth }
+
 // looksLikeServiceRoot tells a Redfish service root from some other JSON.
 func looksLikeServiceRoot(root map[string]any) bool {
 	return str(root, "RedfishVersion") != "" || link(root, "Systems") != "" || link(root, "Chassis") != ""
@@ -262,7 +269,11 @@ func (c *rfClient) login(ctx context.Context, root map[string]any) error {
 	}
 	u, _, ok := c.resolve(ref)
 	if !ok {
-		u, _, _ = c.resolve("/redfish/v1/SessionService/Sessions")
+		u, _, ok = c.resolve("/redfish/v1/SessionService/Sessions")
+	}
+	if !ok {
+		c.basic = true
+		return nil
 	}
 	body, _ := json.Marshal(map[string]string{"UserName": c.user, "Password": c.pass})
 	rctx, cancel := context.WithTimeout(ctx, requestTimeout)
@@ -288,8 +299,14 @@ func (c *rfClient) login(ctx context.Context, root map[string]any) error {
 	rb, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	resp.Body.Close()
 	switch {
-	case resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden:
-		return fmt.Errorf("%w (HTTP %d from the session service)", ErrAuth, resp.StatusCode)
+	case resp.StatusCode == http.StatusUnauthorized:
+		return fmt.Errorf("%w (HTTP 401 from the session service)", ErrAuth)
+	case resp.StatusCode == http.StatusForbidden:
+		// 403 is not "wrong password": the account exists but may not log in
+		// (locked out after failed attempts, disabled, or without the Login
+		// privilege / Redfish interface right). Retrying with Basic would
+		// fail the same way and count against the lockout.
+		return &authError{msg: "the BMC refused this account (HTTP 403 from the session service): it may be locked out after failed logins, disabled, or lack the right to log in over Redfish. Check the account in the BMC user settings (it needs at least the Login / Read Only role, and on Supermicro the Redfish interface enabled for it)"}
 	case resp.StatusCode >= 200 && resp.StatusCode < 300 && resp.Header.Get("X-Auth-Token") != "":
 		c.token = resp.Header.Get("X-Auth-Token")
 		loc := resp.Header.Get("Location")
@@ -378,11 +395,14 @@ func (c *rfClient) resolve(ref string) (*url.URL, string, bool) {
 	if strings.HasSuffix(p, "/") {
 		reqPath += "/" // some BMCs (iLO) list links with a trailing slash; keep it
 	}
-	target, err := url.Parse(c.base.Scheme + "://" + c.base.Host + reqPath)
+	// Build the URL from the parsed base rather than by concatenating
+	// strings: a link-local IPv6 host carries a zone ("fe80::1%eth0") that
+	// must be escaped as %25 in a URL.
+	pu, err := url.Parse(reqPath)
 	if err != nil {
 		return nil, "", false
 	}
-	target.RawQuery = u.RawQuery
+	target := &url.URL{Scheme: c.base.Scheme, Host: c.base.Host, Path: pu.Path, RawPath: pu.RawPath, RawQuery: u.RawQuery}
 	return target, key, true
 }
 
@@ -445,23 +465,24 @@ func (c *rfClient) get(ctx context.Context, u *url.URL, key string) (map[string]
 		return nil, rfSection{Section: sec}
 	}
 	start := time.Now()
-	rctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	req, err := http.NewRequestWithContext(rctx, http.MethodGet, u.String(), nil)
 	var (
 		resp      *http.Response
 		body      []byte
 		truncated bool
+		err       error
 	)
-	if err == nil {
-		setHeaders(req)
-		c.authorize(req)
-		resp, err = c.hc.Do(req)
-		if err == nil {
-			body, truncated, err = readCapped(resp.Body, maxBody)
-			resp.Body.Close()
+	for attempt := 0; ; attempt++ {
+		resp, body, truncated, err = c.do(ctx, u)
+		// A busy BMC answers 429 Too Many Requests or 503 Service
+		// Unavailable (iDRAC, iLO, Supermicro under load): wait as told
+		// (Retry-After, capped) and try once more.
+		if resp == nil || attempt >= maxRetries || (resp.StatusCode != http.StatusTooManyRequests && resp.StatusCode != http.StatusServiceUnavailable) {
+			break
+		}
+		if !sleepCtx(ctx, retryDelay(resp.Header.Get("Retry-After"))) {
+			break
 		}
 	}
-	cancel()
 	<-c.sem
 	sec.MS = int(time.Since(start) / time.Millisecond)
 
@@ -494,6 +515,50 @@ func (c *rfClient) get(ctx context.Context, u *url.URL, key string) (map[string]
 		return nil, out
 	}
 	return obj, out
+}
+
+// do sends one GET and reads the body (at most maxBody).
+func (c *rfClient) do(ctx context.Context, u *url.URL) (*http.Response, []byte, bool, error) {
+	rctx, cancel := context.WithTimeout(ctx, requestTimeout)
+	defer cancel()
+	req, err := http.NewRequestWithContext(rctx, http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	setHeaders(req)
+	c.authorize(req)
+	resp, err := c.hc.Do(req)
+	if err != nil {
+		return nil, nil, false, err
+	}
+	body, truncated, err := readCapped(resp.Body, maxBody)
+	resp.Body.Close()
+	return resp, body, truncated, err
+}
+
+// retryDelay reads a Retry-After header (seconds; an HTTP date is ignored),
+// defaulting to retryWait and capped at maxRetryWait so a BMC cannot stall
+// the collection.
+func retryDelay(h string) time.Duration {
+	d := retryWait
+	if n, err := strconv.Atoi(strings.TrimSpace(h)); err == nil && n >= 0 {
+		d = time.Duration(n) * time.Second
+	}
+	if d > maxRetryWait {
+		d = maxRetryWait
+	}
+	return d
+}
+
+func sleepCtx(ctx context.Context, d time.Duration) bool {
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-t.C:
+		return true
+	case <-ctx.Done():
+		return false
+	}
 }
 
 func (c *rfClient) add(s *collect.Section) {
@@ -604,16 +669,19 @@ func (c *rfClient) system(ctx context.Context, s map[string]any) {
 	}
 	c.mu.Unlock()
 	for _, k := range []string{"Processors", "Memory", "EthernetInterfaces", "SimpleStorage"} {
-		c.collection(ctx, link(s, k), maxMembers, nil)
+		// iLO 4 links Processors only under "links" and Memory only
+		// under Oem.Hp.links (its "Memory" is a summary object).
+		c.collection(ctx, first(link(s, k), link(s, "links", k), link(s, "Oem", "Hp", "links", k)), maxMembers, nil)
 	}
 	c.collection(ctx, link(s, "Storage"), 32, c.storage)
 	c.logServices(ctx, link(s, "LogServices"))
 	// HPE iLO 4/5: Smart Array controllers are described under Oem.Hpe
-	// (SmartStorage) on firmware that has no standard Storage for them.
-	c.visit(ctx, link(s, "Oem", "Hpe", "Links", "SmartStorage"), func(ctx context.Context, ss map[string]any) {
-		c.collection(ctx, link(ss, "Links", "ArrayControllers"), 16, func(ctx context.Context, ac map[string]any) {
-			c.collection(ctx, link(ac, "Links", "PhysicalDrives"), maxMembers, nil)
-			c.collection(ctx, link(ac, "Links", "LogicalDrives"), maxMembers, nil)
+	// (iLO 4: Oem.Hp) SmartStorage on firmware that has no standard Storage
+	// for them.
+	c.visit(ctx, first(link(s, "Oem", "Hpe", "Links", "SmartStorage"), link(s, "Oem", "Hp", "links", "SmartStorage")), func(ctx context.Context, ss map[string]any) {
+		c.collection(ctx, first(link(ss, "Links", "ArrayControllers"), link(ss, "links", "ArrayControllers")), 16, func(ctx context.Context, ac map[string]any) {
+			c.collection(ctx, first(link(ac, "Links", "PhysicalDrives"), link(ac, "links", "PhysicalDrives")), maxMembers, nil)
+			c.collection(ctx, first(link(ac, "Links", "LogicalDrives"), link(ac, "links", "LogicalDrives")), maxMembers, nil)
 		})
 	})
 }
@@ -693,50 +761,71 @@ func (c *rfClient) logServices(ctx context.Context, ref string) {
 	})
 }
 
+// skipLog uses the analysis' own rule, so that every log the analysis reads
+// is collected and nothing else.
 func skipLog(ls map[string]any) bool {
-	id := strings.ToLower(str(ls, "Id"))
+	id := str(ls, "Id")
 	if id == "" {
-		id = strings.ToLower(path.Base(str(ls, "@odata.id")))
+		id = path.Base(str(ls, "@odata.id"))
 	}
-	if id == "sl" { // HPE iLO security log: logins, not hardware
-		return true
-	}
-	for _, s := range skipLogServices {
-		if strings.Contains(id, s) {
-			return true
-		}
-	}
-	return false
+	return redfish.SkipLogService(id, str(ls, "Name"))
 }
 
 // entries reads one log service's entries: newest ones only, at most
 // maxLogEntries and back to the SinceDays window.
 //
-// Services order entries differently (Dell newest first, HPE iLO and
-// OpenBMC oldest first). For an oldest-first log longer than the cap, the
-// first page is followed by a jump to $skip=count-cap so the newest
-// entries are read; iLO, iDRAC and bmcweb support $skip.
+// Services order entries differently (Dell newest first, HPE iLO, OpenBMC
+// and Supermicro oldest first). For a log longer than the cap that is not
+// newest first, the first page is followed by a jump to $skip=count-cap so
+// the newest entries are read; iLO, iDRAC and bmcweb support $skip.
+//
+// Some services page without a nextLink (Members@odata.count is larger than
+// the page and nothing says where the rest is): the following pages are then
+// asked for with $skip, so that the newest entries of an oldest-first log
+// are not missed. A service that ignores $skip (returns the same page) or
+// rejects it (400) simply ends the walk.
 func (c *rfClient) entries(ctx context.Context, ref string) {
 	total, first, next := 0, true, ref
+	count, pos, skipPages := 0, 0, 0
+	firstID := ""
 	for page := 0; next != "" && page < maxLogPages && total < maxLogEntries && ctx.Err() == nil; page++ {
 		obj, _ := c.fetch(ctx, next)
 		if obj == nil {
 			return
 		}
-		members, _ := obj["Members"].([]any)
+		members := entryList(obj)
 		nl := nextLink(obj)
 		if first {
 			first = false
-			count := intOf(obj["Members@odata.count"])
-			if entryOrder(members) > 0 && count > len(members) && count > maxLogEntries {
+			count = intOf(obj["Members@odata.count"])
+			firstID = memberID(members)
+			if entryOrder(members) >= 0 && count > len(members) && count > maxLogEntries {
 				jump := addQuery(ref, "$skip="+strconv.Itoa(count-maxLogEntries))
+				jumped := false
 				if o2, _ := c.fetch(ctx, jump); o2 != nil {
-					if m2, _ := o2["Members"].([]any); len(m2) > 0 {
+					if m2 := entryList(o2); len(m2) > 0 && memberID(m2) != firstID {
 						members, nl = m2, nextLink(o2)
+						pos = count - maxLogEntries
+						jumped = true
+					}
+				}
+				// iLO 4 ignores $skip and pages with ?page=N instead.
+				if per := len(members); !jumped && per > 0 && strings.Contains(nl, "?page=") {
+					last := (count + per - 1) / per
+					if start := last - maxLogEntries/per + 1; start > 2 {
+						if o2, _ := c.fetch(ctx, nl[:strings.Index(nl, "?page=")]+"?page="+strconv.Itoa(start)); o2 != nil {
+							if m2 := entryList(o2); len(m2) > 0 {
+								members, nl = m2, nextLink(o2)
+								pos = (start - 1) * per
+							}
+						}
 					}
 				}
 			}
+		} else if nl == "" && memberID(members) == firstID {
+			return // $skip ignored: the first page again
 		}
+		pos += len(members)
 		total += len(members)
 		c.fetchLinkOnly(ctx, members)
 		if entryOrder(members) < 0 {
@@ -744,8 +833,22 @@ func (c *rfClient) entries(ctx context.Context, ref string) {
 				return // newest first and already past the window
 			}
 		}
+		if nl == "" && count > pos && len(members) > 0 && skipPages < maxSkipPages {
+			skipPages++
+			nl = addQuery(ref, "$skip="+strconv.Itoa(pos))
+		}
 		next = nl
 	}
+}
+
+// memberID is the @odata.id of the first member of a page ("" if none).
+func memberID(members []any) string {
+	for _, m := range members {
+		if mo, ok := m.(map[string]any); ok {
+			return str(mo, "@odata.id")
+		}
+	}
+	return ""
 }
 
 // fetchLinkOnly reads entries one by one when a collection lists only
@@ -861,13 +964,17 @@ func dig(m map[string]any, keys ...string) any {
 	return v
 }
 
-// link returns the @odata.id of the object at keys.
+// link returns the @odata.id of the object at keys, or its "href" (HPE
+// iLO 4 keeps some links only in the pre-1.0 form {"href": ...}).
 func link(m map[string]any, keys ...string) string {
 	o, _ := dig(m, keys...).(map[string]any)
 	if o == nil {
 		return ""
 	}
-	return str(o, "@odata.id")
+	if id := str(o, "@odata.id"); id != "" {
+		return id
+	}
+	return str(o, "href")
 }
 
 func arrLinks(m map[string]any, key string) []string {
@@ -885,11 +992,39 @@ func arrLinks(m map[string]any, key string) []string {
 
 func memberLinks(coll map[string]any) []string { return arrLinks(coll, "Members") }
 
+// nextLink is the next page of a collection: Members@odata.nextLink, or
+// HPE iLO 4's own paging, "links": {"NextPage": {"page": 2}}, read as
+// "?page=2" (iLO 4 ignores $skip and $top).
 func nextLink(coll map[string]any) string {
 	if n := str(coll, "Members@odata.nextLink"); n != "" {
 		return n
 	}
-	return str(coll, "@odata.nextLink")
+	if n := str(coll, "@odata.nextLink"); n != "" {
+		return n
+	}
+	if p := intOf(dig(coll, "links", "NextPage", "page")); p > 1 {
+		base := str(coll, "links", "self", "href")
+		if base == "" {
+			base = str(coll, "@odata.id")
+		}
+		if i := strings.IndexByte(base, '?'); i >= 0 {
+			base = base[:i]
+		}
+		if base != "" {
+			return base + "?page=" + strconv.Itoa(p)
+		}
+	}
+	return ""
+}
+
+// entryList returns a log page's entries: iLO 4 lists only links in
+// Members and the entries themselves in "Items".
+func entryList(coll map[string]any) []any {
+	if items, _ := coll["Items"].([]any); len(items) > 0 {
+		return items
+	}
+	members, _ := coll["Members"].([]any)
+	return members
 }
 
 func intOf(v any) int {

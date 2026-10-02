@@ -141,7 +141,7 @@ var (
 		Detail: model.T("Windows reported {t} as not ready (event 15) or surprise removed (event 157).", "Windows báo {t} chưa sẵn sàng (sự kiện 15) hoặc bị rút bất ngờ (sự kiện 157)."),
 		Action: model.T("If {t} was not removed on purpose, check its slot/cable and its health; a disk that drops off and comes back is failing.", "Nếu {t} không bị rút có chủ đích, kiểm tra khe/cáp và tình trạng ổ; ổ tự rớt ra rồi nhận lại là ổ sắp hỏng.")}
 	wsReset = &spec{ID: "win_storage_reset", Comp: model.CompDisk, Sev: model.Warn, Decay: true, CritAt: 20,
-		Title:  model.T("Storage {t}: device resets/timeouts (event 129/9)", "Lưu trữ {t}: thiết bị bị reset/timeout (sự kiện 129/9)"),
+		Title:  model.T("Storage {t}: device resets/timeouts (event 129/9)", "Lưu trữ {t}: thiết bị không phản hồi, phải reset (sự kiện 129/9)"),
 		Detail: model.T("The storage driver had to reset a device behind {t} because it stopped responding (each reset stalls I/O for about 30 seconds). USBSTOR/UASPStor are USB disks.", "Driver lưu trữ phải reset thiết bị phía sau {t} vì không phản hồi (mỗi lần reset làm I/O treo khoảng 30 giây). USBSTOR/UASPStor là ổ USB."),
 		Action: wActStor}
 	wsNtfsCorrupt = &spec{ID: "win_ntfs_corruption", Comp: model.CompFilesystem, Sev: model.Warn, CritAt: 5,
@@ -159,14 +159,14 @@ var (
 	wsDump = &spec{ID: "win_crash_dump_problem", Comp: model.CompSystem, Sev: model.Info,
 		Title:  model.T("Windows could not write a crash dump (volmgr 45/46/161/162)", "Windows không ghi được file crash dump (volmgr 45/46/161/162)"),
 		Detail: model.T("Dump creation failed or the dump settings are invalid, so the cause of a blue screen may not be recorded.", "Không tạo được file dump hoặc cấu hình dump không hợp lệ, nên nguyên nhân màn hình xanh có thể không được ghi lại."),
-		Action: model.T("Check System Properties > Startup and Recovery (dump type, page file size on C:, free space).", "Kiểm tra System Properties > Startup and Recovery (loại dump, dung lượng page file trên C:, dung lượng trống).")}
+		Action: model.T("Check System Properties > \"Startup and Recovery\" (dump type, page file size on C:, free space).", "Kiểm tra System Properties > \"Startup and Recovery\" (loại dump, dung lượng page file trên C:, dung lượng trống).")}
 	wsThrottle = &spec{ID: "win_cpu_firmware_throttle", Comp: model.CompThermal, Sev: model.Warn, Min: 5, Below: model.Info, Decay: true,
 		Title:  model.T("CPU speed was limited by the system firmware (Kernel-Processor-Power 37)", "Tốc độ CPU bị firmware giới hạn (Kernel-Processor-Power 37)"),
 		Detail: model.T("Firmware reduced the processor speed, usually because of temperature or a power cap (BIOS power profile, BMC power capping, a failed PSU).", "Firmware đã giảm tốc độ CPU, thường do nhiệt độ hoặc giới hạn công suất (power profile trong BIOS, power capping của BMC, PSU hỏng)."),
 		Action: model.T("Check temperatures, fans and PSUs in the BMC; check the BIOS power profile (set \"Maximum Performance\" on servers) and BMC power capping.", "Kiểm tra nhiệt độ, quạt và nguồn trong BMC; kiểm tra power profile trong BIOS (máy chủ nên đặt \"Maximum Performance\") và power capping của BMC.")}
 	wsLowMem = &spec{ID: "win_low_memory", Comp: model.CompMemory, Sev: model.Warn, Decay: true,
 		Title:  model.T("Windows ran low on virtual memory (Resource-Exhaustion-Detector 2004)", "Windows thiếu bộ nhớ ảo (Resource-Exhaustion-Detector 2004)"),
-		Detail: model.T("RAM plus page file was nearly exhausted. This is a capacity problem, not a hardware fault; the event names the processes that used the most memory.", "RAM cộng page file gần cạn. Đây là thiếu dung lượng, không phải lỗi phần cứng; sự kiện có liệt kê tiến trình dùng nhiều bộ nhớ nhất."),
+		Detail: model.T("RAM plus page file was nearly exhausted. This is a capacity problem, not a hardware fault; the event names the processes that used the most memory.", "RAM cộng page file gần cạn. Đây là vấn đề thiếu dung lượng, không phải lỗi phần cứng; sự kiện có liệt kê tiến trình dùng nhiều bộ nhớ nhất."),
 		Action: model.T("Look at the processes named in the event, limit or fix them, enlarge the page file or add RAM.", "Xem các tiến trình được nêu trong sự kiện, giới hạn hoặc sửa chúng, tăng page file hoặc nâng RAM.")}
 	wsWHEAFatal = &spec{ID: "win_whea_fatal", Comp: model.CompCPU, Sev: model.Crit,
 		Title:  model.T("Fatal hardware error reported by WHEA ({t})", "WHEA báo lỗi phần cứng nghiêm trọng ({t})"),
@@ -270,41 +270,43 @@ func classifyWin(e *winEvent) (*spec, string) {
 }
 
 // Stop codes (Microsoft "Bug check code reference") with what they usually
-// point at. hw=true means the code itself reports a hardware error.
+// point at. hw=true means the code itself reports a hardware error. hint is
+// a complete sentence in both languages (never composed with other words,
+// so it cannot read "usually usually ...").
 var stopCodes = map[uint64]struct {
 	name string
 	hw   bool
 	hint model.Text
 }{
-	0x0A:  {"IRQL_NOT_LESS_OR_EQUAL", false, model.T("usually a driver", "thường do driver")},
-	0x19:  {"BAD_POOL_HEADER", false, model.T("a driver or faulty RAM", "driver hoặc RAM lỗi")},
-	0x1A:  {"MEMORY_MANAGEMENT", false, model.T("faulty RAM or a driver", "RAM lỗi hoặc driver")},
-	0x1E:  {"KMODE_EXCEPTION_NOT_HANDLED", false, model.T("usually a driver", "thường do driver")},
-	0x24:  {"NTFS_FILE_SYSTEM", false, model.T("disk or file system corruption", "lỗi ổ hoặc hỏng filesystem")},
-	0x3B:  {"SYSTEM_SERVICE_EXCEPTION", false, model.T("usually a driver", "thường do driver")},
-	0x50:  {"PAGE_FAULT_IN_NONPAGED_AREA", false, model.T("a driver or faulty RAM", "driver hoặc RAM lỗi")},
-	0x77:  {"KERNEL_STACK_INPAGE_ERROR", false, model.T("the disk or controller holding the page file", "ổ hoặc controller chứa page file")},
-	0x7A:  {"KERNEL_DATA_INPAGE_ERROR", false, model.T("the disk or controller holding the page file", "ổ hoặc controller chứa page file")},
-	0x7B:  {"INACCESSIBLE_BOOT_DEVICE", false, model.T("the boot disk/controller or its driver", "ổ boot/controller hoặc driver của nó")},
-	0x7E:  {"SYSTEM_THREAD_EXCEPTION_NOT_HANDLED", false, model.T("usually a driver", "thường do driver")},
-	0x7F:  {"UNEXPECTED_KERNEL_MODE_TRAP", false, model.T("often hardware (RAM, CPU) or a driver", "thường do phần cứng (RAM, CPU) hoặc driver")},
-	0x80:  {"NMI_HARDWARE_FAILURE", true, model.T("a hardware failure signalled by NMI", "lỗi phần cứng báo qua NMI")},
-	0x9C:  {"MACHINE_CHECK_EXCEPTION", true, model.T("a CPU/memory hardware error", "lỗi phần cứng CPU/RAM")},
-	0x9F:  {"DRIVER_POWER_STATE_FAILURE", false, model.T("a driver", "driver")},
-	0xBE:  {"ATTEMPTED_WRITE_TO_READONLY_MEMORY", false, model.T("usually a driver", "thường do driver")},
-	0xC2:  {"BAD_POOL_CALLER", false, model.T("a driver", "driver")},
-	0xD1:  {"DRIVER_IRQL_NOT_LESS_OR_EQUAL", false, model.T("a driver", "driver")},
-	0xE2:  {"MANUALLY_INITIATED_CRASH", false, model.T("someone forced the crash (keyboard or a BMC NMI)", "có người chủ động gây crash (bàn phím hoặc NMI từ BMC)")},
-	0xED:  {"UNMOUNTABLE_BOOT_VOLUME", false, model.T("the boot disk or file system", "ổ boot hoặc filesystem")},
-	0xEF:  {"CRITICAL_PROCESS_DIED", false, model.T("a system process died (disk errors are a common cause)", "một tiến trình hệ thống bị chết (lỗi ổ là nguyên nhân hay gặp)")},
-	0xF4:  {"CRITICAL_OBJECT_TERMINATION", false, model.T("often the disk/controller of the system volume", "thường do ổ/controller của phân vùng hệ thống")},
-	0x101: {"CLOCK_WATCHDOG_TIMEOUT", false, model.T("a CPU core stopped responding (CPU, firmware or overclock)", "một nhân CPU ngừng phản hồi (CPU, firmware hoặc ép xung)")},
-	0x109: {"CRITICAL_STRUCTURE_CORRUPTION", false, model.T("a driver or faulty RAM", "driver hoặc RAM lỗi")},
-	0x116: {"VIDEO_TDR_FAILURE", false, model.T("the graphics card or its driver", "card đồ họa hoặc driver")},
-	0x124: {"WHEA_UNCORRECTABLE_ERROR", true, model.T("an uncorrectable hardware error (CPU, RAM, PCIe)", "lỗi phần cứng không sửa được (CPU, RAM, PCIe)")},
-	0x133: {"DPC_WATCHDOG_VIOLATION", false, model.T("a driver or storage firmware", "driver hoặc firmware lưu trữ")},
-	0x139: {"KERNEL_SECURITY_CHECK_FAILURE", false, model.T("a driver or faulty RAM", "driver hoặc RAM lỗi")},
-	0x154: {"UNEXPECTED_STORE_EXCEPTION", false, model.T("often the system disk", "thường do ổ hệ thống")},
+	0x0A:  {"IRQL_NOT_LESS_OR_EQUAL", false, model.T("This code usually points to a faulty driver.", "Mã này thường do driver lỗi.")},
+	0x19:  {"BAD_POOL_HEADER", false, model.T("This code usually points to a driver or faulty RAM.", "Mã này thường do driver hoặc RAM lỗi.")},
+	0x1A:  {"MEMORY_MANAGEMENT", false, model.T("This code usually points to faulty RAM or a driver.", "Mã này thường do RAM lỗi hoặc driver.")},
+	0x1E:  {"KMODE_EXCEPTION_NOT_HANDLED", false, model.T("This code usually points to a faulty driver.", "Mã này thường do driver lỗi.")},
+	0x24:  {"NTFS_FILE_SYSTEM", false, model.T("This code usually points to disk errors or file system corruption.", "Mã này thường do lỗi ổ cứng hoặc filesystem bị hỏng.")},
+	0x3B:  {"SYSTEM_SERVICE_EXCEPTION", false, model.T("This code usually points to a faulty driver.", "Mã này thường do driver lỗi.")},
+	0x50:  {"PAGE_FAULT_IN_NONPAGED_AREA", false, model.T("This code usually points to a driver or faulty RAM.", "Mã này thường do driver hoặc RAM lỗi.")},
+	0x77:  {"KERNEL_STACK_INPAGE_ERROR", false, model.T("Windows could not read memory back from the page file: check the disk or controller that holds it.", "Windows không đọc lại được bộ nhớ từ page file: kiểm tra ổ hoặc controller chứa page file.")},
+	0x7A:  {"KERNEL_DATA_INPAGE_ERROR", false, model.T("Windows could not read memory back from the page file: check the disk or controller that holds it.", "Windows không đọc lại được bộ nhớ từ page file: kiểm tra ổ hoặc controller chứa page file.")},
+	0x7B:  {"INACCESSIBLE_BOOT_DEVICE", false, model.T("Windows lost access to the boot disk: check the boot disk, its controller and the storage driver.", "Windows mất truy cập tới ổ boot: kiểm tra ổ boot, controller và driver lưu trữ.")},
+	0x7E:  {"SYSTEM_THREAD_EXCEPTION_NOT_HANDLED", false, model.T("This code usually points to a faulty driver.", "Mã này thường do driver lỗi.")},
+	0x7F:  {"UNEXPECTED_KERNEL_MODE_TRAP", false, model.T("This code often points to hardware (RAM, CPU) or a driver.", "Mã này hay do phần cứng (RAM, CPU) hoặc driver.")},
+	0x80:  {"NMI_HARDWARE_FAILURE", true, model.T("The hardware signalled a failure through an NMI.", "Phần cứng báo lỗi qua ngắt NMI.")},
+	0x9C:  {"MACHINE_CHECK_EXCEPTION", true, model.T("The CPU reported a machine check (CPU or memory hardware error).", "CPU báo machine check (lỗi phần cứng CPU hoặc RAM).")},
+	0x9F:  {"DRIVER_POWER_STATE_FAILURE", false, model.T("A driver did not complete a power state change in time.", "Một driver không chuyển trạng thái nguồn kịp thời.")},
+	0xBE:  {"ATTEMPTED_WRITE_TO_READONLY_MEMORY", false, model.T("This code usually points to a faulty driver.", "Mã này thường do driver lỗi.")},
+	0xC2:  {"BAD_POOL_CALLER", false, model.T("This code points to a faulty driver.", "Mã này do driver lỗi.")},
+	0xD1:  {"DRIVER_IRQL_NOT_LESS_OR_EQUAL", false, model.T("This code points to a faulty driver.", "Mã này do driver lỗi.")},
+	0xE2:  {"MANUALLY_INITIATED_CRASH", false, model.T("Someone forced the crash on purpose (keyboard shortcut or an NMI sent from the BMC).", "Có người chủ động gây crash (tổ hợp phím hoặc lệnh NMI gửi từ BMC).")},
+	0xED:  {"UNMOUNTABLE_BOOT_VOLUME", false, model.T("Windows could not mount the boot volume: check the boot disk and its file system.", "Windows không mount được phân vùng boot: kiểm tra ổ boot và filesystem.")},
+	0xEF:  {"CRITICAL_PROCESS_DIED", false, model.T("A critical system process died; disk errors are a common cause.", "Một tiến trình hệ thống quan trọng bị chết; lỗi ổ cứng là nguyên nhân hay gặp.")},
+	0xF4:  {"CRITICAL_OBJECT_TERMINATION", false, model.T("A critical process ended, often because the disk or controller of the system volume stopped responding.", "Một tiến trình quan trọng bị dừng, thường do ổ hoặc controller của phân vùng hệ thống không phản hồi.")},
+	0x101: {"CLOCK_WATCHDOG_TIMEOUT", false, model.T("A CPU core stopped responding (CPU, firmware or overclocking).", "Một nhân CPU ngừng phản hồi (do CPU, firmware hoặc ép xung).")},
+	0x109: {"CRITICAL_STRUCTURE_CORRUPTION", false, model.T("This code usually points to a driver or faulty RAM.", "Mã này thường do driver hoặc RAM lỗi.")},
+	0x116: {"VIDEO_TDR_FAILURE", false, model.T("The graphics card or its driver stopped responding.", "Card đồ họa hoặc driver của nó ngừng phản hồi.")},
+	0x124: {"WHEA_UNCORRECTABLE_ERROR", true, model.T("The hardware reported an uncorrectable error (CPU, RAM or PCIe).", "Phần cứng báo lỗi không sửa được (CPU, RAM hoặc PCIe).")},
+	0x133: {"DPC_WATCHDOG_VIOLATION", false, model.T("This code usually points to a driver or storage firmware.", "Mã này thường do driver hoặc firmware của thiết bị lưu trữ.")},
+	0x139: {"KERNEL_SECURITY_CHECK_FAILURE", false, model.T("This code usually points to a driver or faulty RAM.", "Mã này thường do driver hoặc RAM lỗi.")},
+	0x154: {"UNEXPECTED_STORE_EXCEPTION", false, model.T("This code often points to the system disk.", "Mã này hay do ổ hệ thống.")},
 }
 
 // bugcheckOf extracts the stop code from 1001's first property
@@ -368,9 +370,21 @@ func windowsEvents(b *collect.Bundle, env model.Env, res *model.Result, facts *F
 		rcov.Reason = cov.Reason
 	}
 	facts.Sources = append(facts.Sources, "eventlog")
+	if cov.State == model.CovRan {
+		if r, readCapped := winCapped(b); !r.IsZero() {
+			cov.State, cov.Reason = model.CovPartial, r
+			if readCapped {
+				rcov.State, rcov.Reason = model.CovPartial, r
+			}
+			cov.Fix = model.T("Run Diagward again with a shorter period, e.g. diagward check --since 2, to cover the most recent days completely.",
+				"Chạy lại Diagward với khoảng thời gian ngắn hơn, ví dụ diagward check --since 2, để kiểm tra đầy đủ các ngày gần nhất.")
+		}
+	}
 
 	gr := newGrouper(env.Now)
 	var marks []*winEvent // 41 / 6008 / 1001
+	times := map[*group][]time.Time{}
+	var usbTimes []time.Time
 	for i := range evs {
 		e := &evs[i]
 		if t, ok := collect.WinTime(e.T); ok {
@@ -392,10 +406,14 @@ func windowsEvents(b *collect.Bundle, env model.Env, res *model.Result, facts *F
 			continue
 		}
 		g := gr.add(sp, target, e.time, e.raw(), true)
-		if sp == wsReset && reUSBStor.MatchString(e.P) {
-			// USB disks (external backup drives) also reset when unplugged or
-			// on a flaky USB port: worth a warning, not an emergency.
-			g.capped, g.capSev = true, model.Warn
+		times[g] = append(times[g], e.time)
+		if reUSBStor.MatchString(e.P) {
+			usbTimes = append(usbTimes, e.time)
+			if sp == wsReset || sp == wsCtrlErr {
+				// USB disks (external backup drives) also reset when unplugged
+				// or on a flaky USB port: worth a warning, not an emergency.
+				g.capped, g.capSev = true, model.Warn
+			}
 		}
 		if g.part == nil && sp.Comp == model.CompDisk && strings.HasPrefix(target, "PhysicalDrive") {
 			g.part = &model.Part{Kind: "disk", Location: target}
@@ -414,6 +432,7 @@ func windowsEvents(b *collect.Bundle, env model.Env, res *model.Result, facts *F
 		vmNote = model.T("This is a virtual machine: hardware errors here usually come from the host or its storage — check the host too.",
 			"Đây là máy ảo: lỗi phần cứng ở đây thường đến từ máy host hoặc hệ thống lưu trữ của host — hãy kiểm tra cả máy host.")
 	}
+	judgeWinDevices(gr.list(), times, usbTimes, readWinInv(b), env.Now)
 	findings, efacts := buildFindings(gr.list(), env.Now, vmNote)
 	res.Findings = append(res.Findings, findings...)
 	facts.Events = append(facts.Events, efacts...)
@@ -501,8 +520,15 @@ func windowsReboots(b *collect.Bundle, env model.Env, marks []*winEvent, res *mo
 		}
 		// Microsoft: "Event ID 41 that includes a nonzero value for the
 		// PowerButtonTimestamp entry" = restarted by holding the power button.
-		if e.ID == 41 && e.prop(5) != "" && e.prop(5) != "0" {
-			cur.powerButton = true
+		// Event data order (learn.microsoft.com, "Event ID 41 The system has
+		// rebooted without cleanly shutting down first"): BugcheckCode,
+		// BugcheckParameter1-4, SleepInProgress, PowerButtonTimestamp, ... so
+		// the timestamp is property 6. Property 5 is SleepInProgress ("false"
+		// on Windows Server 2008 R2, "0" later) and must not be mistaken for it.
+		if e.ID == 41 && strings.EqualFold(e.P, "Microsoft-Windows-Kernel-Power") {
+			if n, err := strconv.ParseUint(e.prop(6), 10, 64); err == nil && n > 0 {
+				cur.powerButton = true
+			}
 		}
 	}
 	// Planned restarts (User32 1074) for context.
@@ -558,7 +584,7 @@ func windowsReboots(b *collect.Bundle, env model.Env, marks []*winEvent, res *mo
 		detail := tf("Windows crashed with stop code %s %d time(s): %s.", "Windows bị màn hình xanh với stop code %s %d lần: %s.",
 			target, len(list), strings.Join(times, ", "))
 		if known {
-			detail = joinText(detail, model.Text{EN: "This code usually points to " + info.hint.EN + ".", VI: "Mã này thường do " + info.hint.VI + "."})
+			detail = joinText(detail, info.hint)
 		}
 		action := model.T("Analyse the dump (C:\\Windows\\MEMORY.DMP or C:\\Windows\\Minidump) with WinDbg: !analyze -v names the faulting driver. Update that driver, the BIOS and firmware. If the same stop code repeats with different drivers, test the RAM and check the BMC event log.",
 			"Phân tích file dump (C:\\Windows\\MEMORY.DMP hoặc C:\\Windows\\Minidump) bằng WinDbg: !analyze -v cho biết driver gây lỗi. Cập nhật driver đó, BIOS và firmware. Nếu cùng stop code lặp lại với các driver khác nhau, kiểm tra RAM và log sự kiện BMC.")
@@ -588,16 +614,17 @@ func windowsReboots(b *collect.Bundle, env model.Env, marks []*winEvent, res *mo
 			btn = model.Tf("%d of them were hard resets with the power button (Kernel-Power 41 PowerButtonTimestamp): the server had probably hung.",
 				"%d lần trong số đó là reset cứng bằng nút nguồn (Kernel-Power 41 PowerButtonTimestamp): nhiều khả năng máy đã bị treo.", buttons)
 		}
+		sev, vmDetail, vmAct := rebootSeverity(env, 0)
 		res.Findings = append(res.Findings, model.Finding{
-			ID: "logs.unexpected_reboot", Component: model.CompSystem, Severity: model.Warn,
+			ID: "logs.unexpected_reboot", Component: model.CompSystem, Severity: sev,
 			Title: tf("Server restarted without a clean shutdown %d time(s) in the last %d days",
 				"Máy chủ khởi động lại mà không tắt máy đúng cách %d lần trong %d ngày qua", len(unexpected), env.SinceDays),
 			Detail: joinText(model.Tf("Kernel-Power 41 / EventLog 6008 at: %s, without a blue-screen record.",
 				"Kernel-Power 41 / EventLog 6008 lúc: %s, không có bản ghi màn hình xanh.", strings.Join(times, ", ")),
 				model.T("Causes: power loss, a PSU fault, overheating, a hard hang reset by someone, or a watchdog/BMC reset.",
-					"Nguyên nhân có thể: mất điện, lỗi bộ nguồn (PSU), quá nhiệt, máy treo cứng và bị reset, hoặc watchdog/BMC reset máy."), btn),
-			Action: model.T("Check the BMC/iDRAC/iLO event log for power, PSU, temperature or watchdog events at those times and the UPS log. If the server hung, configure a full memory dump and an NMI crash (CrashOnNMI) so the next hang leaves a dump.",
-				"Xem log sự kiện BMC/iDRAC/iLO có sự kiện nguồn, PSU, nhiệt độ hoặc watchdog vào các thời điểm đó không, và xem log UPS. Nếu máy bị treo, cấu hình full memory dump và CrashOnNMI để lần treo sau có file dump."),
+					"Nguyên nhân có thể: mất điện, lỗi bộ nguồn (PSU), quá nhiệt, máy treo cứng và bị reset, hoặc watchdog/BMC reset máy."), btn, vmDetail),
+			Action: joinText(vmAct, model.T("Check the BMC/iDRAC/iLO event log for power, PSU, temperature or watchdog events at those times and the UPS log. If the server hung, configure a full memory dump and an NMI crash (CrashOnNMI) so the next hang leaves a dump.",
+				"Xem log sự kiện BMC/iDRAC/iLO có sự kiện nguồn, PSU, nhiệt độ hoặc watchdog vào các thời điểm đó không, và xem log UPS. Nếu máy bị treo, cấu hình full memory dump và CrashOnNMI để lần treo sau có file dump.")),
 			Evidence: units.Evidence(ev, 10),
 		})
 	}

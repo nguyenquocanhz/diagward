@@ -1,0 +1,28 @@
+# source=dmesg boot=1790700000 tz=+0000 max=3000 total=26
+[   19.423017] {3}[Hardware Error]: Hardware error from APEI Generic Hardware Error Source: 514
+[   19.431450] {3}[Hardware Error]: It has been corrected by h/w and requires no further action
+[   19.439874] {3}[Hardware Error]: event severity: corrected
+[   19.445351] {3}[Hardware Error]:  Error 0, type: corrected
+[   19.450829] {3}[Hardware Error]:   section_type: PCIe error
+[   19.456394] {3}[Hardware Error]:   port_type: 0, PCIe end point
+[   19.462303] {3}[Hardware Error]:   version: 0.2
+[   19.466826] {3}[Hardware Error]:   command: 0x0406, status: 0x0010
+[   19.473000] {3}[Hardware Error]:   device_id: 0000:02:00.0
+[   19.473002] {3}[Hardware Error]:   slot: 0
+[   19.473002] {3}[Hardware Error]:   secondary_bus: 0x00
+[   19.473003] {3}[Hardware Error]:   vendor_id: 0x144d, device_id: 0xa824
+[   19.486745] {3}[Hardware Error]:   class_code: 020801
+[   19.486746] {3}[Hardware Error]:   bridge: secondary_status: 0x0000, control: 0x0000
+[   19.486747] {3}[Hardware Error]:  Error 1, type: corrected
+[   19.486748] {3}[Hardware Error]:   section_type: PCIe error
+[   19.486748] {3}[Hardware Error]:   port_type: 0, PCIe end point
+[   19.540556] {3}[Hardware Error]:   version: 0.2
+[   19.540557] {3}[Hardware Error]:   command: 0x0406, status: 0x0010
+[   19.540557] {3}[Hardware Error]:   device_id: 0000:03:00.0
+[   19.540558] {3}[Hardware Error]:   slot: 0
+[   19.540559] {3}[Hardware Error]:   secondary_bus: 0x00
+[   19.540559] {3}[Hardware Error]:   vendor_id: 0x144d, device_id: 0xa824
+[   19.540560] {3}[Hardware Error]:   class_code: 020801
+[   19.540561] {3}[Hardware Error]:   bridge: secondary_status: 0x0000, control: 0x0000
+[   19.540561] {3}[Hardware Error]:  Error 2, type: corrected
+# source=dmesg boot=1790700000 tz=+0000 max=3000 total=0 class=noise

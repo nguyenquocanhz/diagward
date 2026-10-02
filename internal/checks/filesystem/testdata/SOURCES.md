@@ -15,3 +15,14 @@ The Windows "unhealthy / dirty" bundle in `check_test.go` is synthesised from th
 property names and enum values (HealthStatus 0/1/2, OperationalStatus 0xD00D-0xD00F) in
 Microsoft's Storage Management API documentation, in both string and numeric form, because
 the dev machine has no damaged volume and is not elevated.
+
+## Added in the sysnet review
+
+| File | Origin | Licence / notes |
+|---|---|---|
+| `df_zfs_pve_pool96.txt`, `proc_mounts_pve_zfs.txt`, `zpool_list_pve_pool96.txt` | Derived from the real `df -h` and `zpool list` output pasted in forum.proxmox.com thread 139255 ("PVE7: VMs stopping, because Host ZFS is full", https://forum.proxmox.com/threads/pve7-vms-stopping-because-host-zfs-is-full-rpool-root-pve-1.139255/): pool `rpool` 7.25T, CAP 96 %, VMs paused, while df showed `/` (rpool/ROOT/pve-1, 5G reservation) at 52 % and the other datasets at 1 %. The df sizes were converted from the human-readable values to the collector's `df -P -T -B1` layout; the zpool line is the real one, tab-separated as `zpool list -H -o name,size,alloc,free,health,frag,cap` prints it; the /proc/mounts lines follow the OpenZFS mount options format. | Values from a public forum post. |
+| `win_volume_win10_mountpath.json` | Real `filesystem.win_volume` output of the updated `55-filesystem.ps1` (Get-Volume + Win32_Volume Name/SystemVolume/BootVolume) on the Windows 10 dev machine, not elevated. C: is 92 % full and is the boot volume; the recovery partition has no letter (MountPath is its GUID path). | — |
+
+The CSV / mounted-folder / System Reserved volumes in `review_test.go` are synthesised in the
+same shape (Win32_Volume.Name is the mount folder, e.g. `C:\ClusterStorage\Volume1\`, per the
+Win32_Volume documentation); no cluster was available to capture them.

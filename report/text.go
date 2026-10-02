@@ -170,7 +170,7 @@ func (t *textWriter) banner(r *model.Report) {
 	}
 	inner := t.w - 4
 	mark := sevMark(sev, true, t.o.ASCII)
-	if sev == model.Info {
+	if nothingChecked(r) {
 		mark = sevMark(model.Info, false, t.o.ASCII) // nothing checked: "–" / "[--]"
 	}
 	head := mark + "  " + t.tr(Headline(r))
@@ -201,12 +201,16 @@ func (t *textWriter) grid(r *model.Report) {
 	}
 	cells := make([]cell, 0, len(sum))
 	cw := 0
+	anyPartial := false
 	for _, s := range sum {
 		txt := t.tr(compName(s))
 		if n := s.Crit + s.Warn; n > 0 && s.Checked {
 			txt += fmt.Sprintf(" (%d)", n)
 		}
-		c := cell{sevMark(s.Severity, s.Checked, t.o.ASCII), txt, sevStyle(s.Severity, s.Checked)}
+		c := cell{compMark(s, t.o.ASCII), txt, sevStyle(s.Severity, s.Checked)}
+		if isPartial(s) {
+			anyPartial = true
+		}
 		cells = append(cells, c)
 		cw = max(cw, markW+1+strWidth(c.text))
 	}
@@ -239,18 +243,22 @@ func (t *textWriter) grid(r *model.Report) {
 	}
 	var segs []seg
 	segs = append(segs, seg{"  ", ""})
-	for i, x := range []lg{
+	legend := []lg{
 		{model.OK, true, SeverityText(model.OK)},
 		{model.Warn, true, SeverityText(model.Warn)},
 		{model.Crit, true, SeverityText(model.Crit)},
 		{model.Info, true, SeverityText(model.Info)},
-		{model.OK, false, StateText(model.CovSkipped)},
-	} {
+	}
+	for i, x := range legend {
 		if i > 0 {
 			segs = append(segs, seg{"  ", ""})
 		}
 		segs = append(segs, seg{sevMark(x.sev, x.checked, t.o.ASCII) + " " + strings.ToLower(x.word.In(t.lang)), stDim})
 	}
+	if anyPartial {
+		segs = append(segs, seg{"  ", ""}, seg{compMark(model.ComponentSummary{Checked: true, Partial: true}, t.o.ASCII) + " " + StateText(model.CovPartial).In(t.lang), stDim})
+	}
+	segs = append(segs, seg{"  ", ""}, seg{sevMark(model.OK, false, t.o.ASCII) + " " + StateText(model.CovSkipped).In(t.lang), stDim})
 	t.emitWrapped(segs)
 }
 
@@ -445,8 +453,8 @@ func (t *textWriter) coverage(r *model.Report) {
 			if s := t.tr(g.Reason); strings.TrimSpace(s) != "" {
 				t.para(ind, "", s, indent, "")
 			}
-			if s := t.tr(g.Fix); strings.TrimSpace(s) != "" {
-				prose, cmd := splitFix(s)
+			if s := t.tr(g.Fix); strings.TrimSpace(s) != "" || strings.TrimSpace(g.Cmd) != "" {
+				prose, cmd := fixParts(s, g.Cmd)
 				if prose != "" {
 					t.para(ind, "", prose, indent, stDim)
 				}
@@ -658,9 +666,12 @@ func (t *textWriter) footer(r *model.Report) {
 		rule = "-"
 	}
 	t.emit(seg{strings.Repeat(rule, t.w), stDim})
-	hints := []string{t.L("htmlHint"), t.L("langHint")}
-	if !t.o.Verbose {
-		hints = append(hints, t.L("verboseHint"))
+	var hints []string
+	if !t.o.NoHints {
+		hints = []string{t.L("htmlHint"), t.L("langHint")}
+		if !t.o.Verbose {
+			hints = append(hints, t.L("verboseHint"))
+		}
 	}
 	ver := "Diagward"
 	if r.Version != "" {

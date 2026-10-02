@@ -115,7 +115,8 @@ func (c *checker) checkBtrfs() {
 		return
 	}
 	if show != nil && show.Missing != "" {
-		c.cover("raid.btrfs", btrfsName, model.CovSkipped, hint.Missing("btrfs"), installPkg(c.env, "btrfs-progs"))
+		fix, cmd := installPkg(c.env, "btrfs-progs")
+		c.cover("raid.btrfs", btrfsName, model.CovSkipped, hint.Missing("btrfs"), fix, cmd)
 		return
 	}
 	if show != nil && show.Skipped != "" {

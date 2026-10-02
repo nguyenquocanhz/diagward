@@ -193,8 +193,20 @@ func TestNoEDACDriver(t *testing.T) {
 	}
 	b := r740(t, testkit.S("memory.edac", ""), testkit.S("cpu.cpuinfo", "64\tprocessors\n64\tvendor_id=AuthenticAMD\n64\tmodel name=AMD EPYC 7302 16-Core Processor\n"))
 	c = covState(t, run(t, b, testkit.Env(collect.OSLinux)), "memory.ecc", model.CovPartial)
-	if !strings.Contains(c.Reason.EN, "amd64_edac") || strings.Contains(c.Reason.EN, "skx") {
-		t.Fatalf("reason %q", c.Reason.EN)
+	if !strings.Contains(c.Reason.EN, "amd64_edac") || strings.Contains(c.Reason.EN, "skx") || c.Cmd != "modprobe amd64_edac" {
+		t.Fatalf("reason %q cmd %q", c.Reason.EN, c.Cmd)
+	}
+	// Known Xeon model (Cascade Lake, family 6 model 85): one command.
+	b = r740(t, testkit.S("memory.edac", ""), testkit.S("cpu.cpuinfo", intelCPU+"40\tcpu family=6\n40\tmodel=85\n"))
+	c = covState(t, run(t, b, testkit.Env(collect.OSLinux)), "memory.ecc", model.CovPartial)
+	if c.Cmd != "modprobe skx_edac" || !strings.Contains(c.Fix.VI, "skx_edac") || strings.Contains(c.Fix.EN, "modprobe") {
+		t.Fatalf("cmd %q fix %q", c.Cmd, c.Fix.EN)
+	}
+	// lscpu JSON (util-linux 2.38+ nesting) of a Sapphire Rapids CPU.
+	lj := `{"lscpu":[{"field":"Vendor ID:","data":"GenuineIntel","children":[{"field":"Model name:","data":"Intel(R) Xeon(R) Gold 6430","children":[{"field":"CPU family:","data":"6"},{"field":"Model:","data":"143"}]}]}]}`
+	b = r740(t, testkit.S("memory.edac", ""), testkit.S("cpu.cpuinfo", ""), testkit.S("cpu.lscpu_json", lj))
+	if c = covState(t, run(t, b, testkit.Env(collect.OSLinux)), "memory.ecc", model.CovPartial); c.Cmd != "modprobe i10nm_edac" {
+		t.Fatalf("cmd %q", c.Cmd)
 	}
 }
 
@@ -265,6 +277,100 @@ func TestCapacityMissing(t *testing.T) {
 	f := must(t, res, "memory.capacity_missing", model.Warn)
 	if !strings.Contains(f.Title.EN, "256 GiB installed") {
 		t.Fatalf("title %q", f.Title.EN)
+	}
+	// Without EDAC the same gap (one of 16 DIMMs) is still a Warn.
+	res = run(t, r740(t, testkit.S("memory.meminfo", testkit.Read(t, "meminfo_r740_one_dimm_missing.txt")), testkit.S("memory.edac", "")), testkit.Env(collect.OSLinux))
+	must(t, res, "memory.capacity_missing", model.Warn)
+}
+
+// skxDump synthesizes a skx_edac sysfs dump with n healthy 16 GiB DIMMs.
+func skxDump(n int) string {
+	var b strings.Builder
+	for i := 0; i < n; i++ {
+		mc, d := i/6, i%6
+		if d == 0 {
+			fmt.Fprintf(&b, "/sys/devices/system/edac/mc/mc%d/mc_name=Skylake Socket#%d IMC#%d\n/sys/devices/system/edac/mc/mc%d/seconds_since_reset=864000\n/sys/devices/system/edac/mc/mc%d/ce_count=0\n/sys/devices/system/edac/mc/mc%d/ue_count=0\n", mc, mc/2, mc%2, mc, mc, mc)
+		}
+		p := fmt.Sprintf("/sys/devices/system/edac/mc/mc%d/dimm%d/", mc, d)
+		fmt.Fprintf(&b, "%sdimm_label=CPU_SrcID#%d_MC#%d_Chan#%d_DIMM#0\n%ssize=16384\n%sdimm_mem_type=Registered-DDR4\n%sdimm_ce_count=0\n%sdimm_ue_count=0\n", p, mc/2, mc%2, d, p, p, p, p)
+	}
+	return b.String()
+}
+
+// meminfoTotal is /proc/meminfo with MemTotal kB and plenty available.
+func meminfoTotal(kb uint64) string {
+	return fmt.Sprintf("MemTotal:       %d kB\nMemFree:        %d kB\nMemAvailable:   %d kB\nSwapTotal:      4194300 kB\nSwapFree:       4194300 kB\n", kb, kb/2, kb/2)
+}
+
+func TestMirroringIsNotAMissingDIMM(t *testing.T) {
+	// 16 x 16 GiB in full mirroring mode: the OS sees half, minus the usual
+	// firmware/kernel reservations (here 125.7 of 128 GiB).
+	half := meminfoTotal(131800000)
+	// The memory controller has all 16 DIMMs: certain, nothing to replace.
+	res := run(t, r740(t, testkit.S("memory.meminfo", half), testkit.S("memory.edac", skxDump(16))), testkit.Env(collect.OSLinux))
+	f := must(t, res, "memory.capacity_reserved", model.Info)
+	if !strings.Contains(f.Detail.EN, "all 16 DIMMs") || !strings.Contains(f.Action.VI, "Memory Operating Mode") {
+		t.Fatalf("%q / %q", f.Detail.EN, f.Action.VI)
+	}
+	if testkit.Find(res, "memory.capacity_missing") != nil {
+		t.Fatal("no missing-capacity finding with every DIMM in use")
+	}
+	// No native EDAC driver: ambiguous, Info with the BIOS check first.
+	res = run(t, r740(t, testkit.S("memory.meminfo", half), testkit.S("memory.edac", "")), testkit.Env(collect.OSLinux))
+	f = must(t, res, "memory.capacity_missing", model.Info)
+	if !strings.Contains(f.Detail.EN, "mirroring") {
+		t.Fatal(f.Detail.EN)
+	}
+	// The memory controller sees only 8 of 16: DIMMs are really missing.
+	res = run(t, r740(t, testkit.S("memory.meminfo", half), testkit.S("memory.edac", skxDump(8))), testkit.Env(collect.OSLinux))
+	f = must(t, res, "memory.capacity_missing", model.Warn)
+	if !strings.Contains(f.Detail.EN, "uses only 8") || !strings.Contains(f.Detail.VI, "chỉ dùng 8 thanh") {
+		t.Fatal(f.Detail.EN)
+	}
+}
+
+func TestOptaneAppDirect(t *testing.T) {
+	// Real Supermicro SYS-1029U-TRT: 12 x 32 GB DRAM + 8 x 126 GB Optane
+	// PMem in App Direct mode ("Volatile Size: None"). The OS sees only the
+	// DRAM (synthesized MemTotal ~376.7 GiB of 384 GiB).
+	b := r740(t, testkit.S("memory.dmidecode", testkit.Read(t, "dmidecode_memory_supermicro_1029u_optane.txt")),
+		testkit.S("memory.meminfo", meminfoTotal(395000000)), testkit.S("memory.edac", ""))
+	res := run(t, b, testkit.Env(collect.OSLinux))
+	for _, id := range []string{"memory.capacity_missing", "memory.mixed_dimms"} {
+		if f := testkit.Find(res, id); f != nil {
+			t.Errorf("PMem is not missing or mismatched RAM: %s %q", id, f.Detail.EN)
+		}
+	}
+	f := res.Facts.(*Facts)
+	pm := 0
+	for _, d := range f.DIMMs {
+		if d.PMem {
+			pm++
+			if d.Type != "Optane PMem" || d.VolatileBytes != 0 || d.SizeBytes != 129408<<20 {
+				t.Fatalf("%+v", d)
+			}
+		}
+	}
+	if pm != 8 || f.ECC != "ecc" {
+		t.Fatalf("pmem %d ecc %s", pm, f.ECC)
+	}
+	// A real missing DRAM DIMM is still found next to PMem.
+	b = r740(t, testkit.S("memory.dmidecode", testkit.Read(t, "dmidecode_memory_supermicro_1029u_optane.txt")),
+		testkit.S("memory.meminfo", meminfoTotal(360000000)), testkit.S("memory.edac", ""))
+	must(t, run(t, b, testkit.Env(collect.OSLinux)), "memory.capacity_missing", model.Warn)
+}
+
+func TestNonSystemArrayIgnored(t *testing.T) {
+	// A flash array's device (Use: Flash Memory) is not a DIMM.
+	flash := "Handle 0x0100, DMI type 16, 23 bytes\nPhysical Memory Array\n\tLocation: System Board Or Motherboard\n\tUse: Flash Memory\n\tError Correction Type: None\n\tMaximum Capacity: 16 MB\n\tNumber Of Devices: 1\n\n" +
+		"Handle 0x0101, DMI type 17, 40 bytes\nMemory Device\n\tArray Handle: 0x0100\n\tTotal Width: 8 bits\n\tData Width: 8 bits\n\tSize: 16 MB\n\tForm Factor: Chip\n\tLocator: SPI\n\tType: Flash\n\n"
+	b := r740(t, testkit.S("memory.dmidecode", withSerials(testkit.Read(t, "dmidecode_memory_dell_r740.txt"))+"\n"+flash))
+	res := run(t, b, testkit.Env(collect.OSLinux))
+	if f := res.Facts.(*Facts); len(f.DIMMs) != 24 || f.ECC != "ecc" {
+		t.Fatalf("dimms %d ecc %s", len(f.DIMMs), f.ECC)
+	}
+	if testkit.Find(res, "memory.mixed_dimms") != nil {
+		t.Fatal("flash chip counted as a DIMM")
 	}
 }
 
@@ -392,6 +498,14 @@ func TestMemtest(t *testing.T) {
 	if testkit.Find(res, "memory.memtest_failed") != nil {
 		t.Fatal("a timeout is not a failure")
 	}
+	// Killed by a signal after 40 s of a 900 s limit: the OOM killer, not
+	// the time limit.
+	sec = testkit.RC("memory.memtest", 137, strings.Replace(testkit.Read(t, "memtest_timeout.txt"), "diagward: rc=124", "diagward: rc=137", 1), "")
+	sec.MS = 40000
+	res = run(t, r740(t, sec), env)
+	if f := must(t, res, "memory.memtest_incomplete", model.Info); !strings.Contains(f.Detail.EN, "OOM killer") || !strings.Contains(f.Title.VI, "40 giây") {
+		t.Fatalf("%q / %q", f.Title.VI, f.Detail.EN)
+	}
 
 	for reason, state := range map[string]string{"disabled": model.CovSkipped, "low-memory": model.CovSkipped, "not-root": model.CovSkipped, "container": model.CovSkipped} {
 		c := covState(t, run(t, r740(t, testkit.Skipped("memory.memtest", reason)), env), "memory.memtest", state)
@@ -400,8 +514,24 @@ func TestMemtest(t *testing.T) {
 		}
 	}
 	c := covState(t, run(t, r740(t, testkit.Missing("memory.memtest", "memtester")), env), "memory.memtest", model.CovSkipped)
-	if !strings.Contains(c.Fix.EN, "epel-release") || !strings.Contains(c.Fix.EN, "memtester") {
-		t.Fatalf("fix %q", c.Fix.EN)
+	if !strings.Contains(c.Fix.EN, "EPEL") || c.Cmd != "dnf install -y epel-release && dnf install -y memtester" {
+		t.Fatalf("fix %q cmd %q", c.Fix.EN, c.Cmd)
+	}
+	// Not requested: the coverage names the real CLI flag.
+	c = covState(t, run(t, r740(t, testkit.Skipped("memory.memtest", "disabled")), env), "memory.memtest", model.CovSkipped)
+	if c.Cmd != "diagward check --memtest 2G" || strings.Contains(c.Fix.EN, "diagward check") {
+		t.Fatalf("cmd %q fix %q", c.Cmd, c.Fix.EN)
+	}
+	user := env
+	user.Root = false
+	c = covState(t, run(t, r740(t, testkit.Skipped("memory.memtest", "disabled")), user), "memory.memtest", model.CovSkipped)
+	if c.Cmd != "sudo diagward check --memtest 2G" {
+		t.Fatalf("cmd %q", c.Cmd)
+	}
+	// Too little free RAM: a size that fits (a quarter of MemAvailable).
+	c = covState(t, run(t, r740(t, testkit.Skipped("memory.memtest", "low-memory"), testkit.S("memory.meminfo", meminfoTotal(8388608))), env), "memory.memtest", model.CovSkipped)
+	if c.Cmd != "diagward check --memtest 1024M" {
+		t.Fatalf("cmd %q", c.Cmd)
 	}
 	sec = testkit.RC("memory.memtest", 1, "diagward: size=1G\nmemtester version 4.5.1 (64-bit)\nwant 1024MB (1073741824 bytes)\ndiagward: rc=1\n", "failed to allocate memory")
 	covState(t, run(t, r740(t, sec), env), "memory.memtest", model.CovFailed)
@@ -485,8 +615,22 @@ func TestWindowsLaptopRealData(t *testing.T) {
 		testkit.S("memory.win_pagefile", testkit.Read(t, "win_pagefile_laptop.json")),
 		testkit.S("memory.win_memdiag", "[]"))
 	res := run(t, b, testkit.Env(collect.OSWindows))
-	must(t, res, "memory.no_ecc", model.Info)
-	must(t, res, "memory.mixed_dimms", model.Info)
+	ne := must(t, res, "memory.no_ecc", model.Info)
+	mx := must(t, res, "memory.mixed_dimms", model.Info)
+	// Vietnamese texts must not fall back to English sentences.
+	for _, vi := range []string{ne.Detail.VI, mx.Detail.VI} {
+		for _, en := range []string{"Error correction type", "modules are", "without ECC bits", "part numbers ", "sizes ", "speeds "} {
+			if strings.Contains(vi, en) {
+				t.Errorf("English %q in VI text: %q", en, vi)
+			}
+		}
+	}
+	if !strings.Contains(ne.Detail.VI, "không có bit ECC") || !strings.Contains(mx.Detail.VI, "mã linh kiện") {
+		t.Fatalf("%q / %q", ne.Detail.VI, mx.Detail.VI)
+	}
+	if c := covState(t, res, "memory.memtest", model.CovSkipped); c.Cmd != "mdsched.exe" {
+		t.Fatalf("cmd %q", c.Cmd)
+	}
 	must(t, res, "memory.speed_below_rated", model.Info)
 	must(t, res, "memory.usage_ok", model.OK)
 	if d := res.Facts.(*Facts).DIMMs; d[1].Manufacturer != "Lexar" || d[0].PartNumber != "HMA81GS6DJR8N-XN" || d[0].FormFactor != "SODIMM" {

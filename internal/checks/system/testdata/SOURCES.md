@@ -23,3 +23,7 @@ Synthetic bundles inside `check_test.go` (load, PSI, /proc/stat, taint values, W
 samples) follow the formats documented in proc(5), Documentation/accounting/psi.rst and
 Documentation/admin-guide/tainted-kernels.rst, and the Win32_PerfFormattedData_* JSON shape
 captured in `win10.json`.
+
+The Supermicro placeholder record in `review_test.go` (`TestPlaceholderSerials`) is synthesised
+in dmidecode's format with the default strings AMI Aptio firmware leaves in SMBIOS ("To be
+filled by O.E.M", "Default string", "0123456789"), as seen in many linuxhw/DMI dumps.

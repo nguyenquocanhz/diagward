@@ -21,10 +21,14 @@ func arcLDClass(s string) string {
 	switch {
 	case l == "optimal":
 		return stOK
-	case strings.Contains(l, "rebuild"), strings.Contains(l, "impacted"), strings.Contains(l, "building"):
+	case strings.Contains(l, "rebuild"), strings.Contains(l, "building"):
 		return stRebuilding
 	case strings.Contains(l, "degraded"), strings.Contains(l, "suboptimal"):
 		return stDegraded
+	case strings.Contains(l, "impacted"):
+		// Microchip: "Impacted" needs a Verify with Fix to return to
+		// Optimal; it is not a rebuild and no disk is missing.
+		return stVerify
 	case strings.Contains(l, "fail"), strings.Contains(l, "offline"):
 		return stFailed
 	}
@@ -141,8 +145,9 @@ func parseArcconf(s, id string) *Controller {
 			case k == "Size":
 				vol.Size = v
 			case k == "Failed stripes":
-				if !strings.EqualFold(v, "No") {
-					vol.Progress = strings.TrimSpace(vol.Progress + " failed stripes: " + v)
+				if !strings.EqualFold(v, "No") && v != "" {
+					vol.Errors = "failed stripes: " + v
+					ct.evidence = append(ct.evidence, vol.ID+" Failed stripes: "+v)
 				}
 			case arcSegRe.MatchString(k) || strings.HasPrefix(k, "Segment") || strings.HasPrefix(k, "Group"):
 				f := strings.Fields(v)
