@@ -52,6 +52,8 @@ func (f *fakeRunner) run(ctx context.Context, env []string, name string, args ..
 		return []byte(fixture("fru_dell_r640.txt")), nil, 0, nil
 	case cmd == "lan print":
 		return []byte("IP Address              : 10.0.0.50\nSNMP Community String   : TopSecret#$\nMAC Address             : 00:15:17:8f:48:32\n"), nil, 0, nil
+	case cmd == "time get":
+		return []byte("10/01/2026 22:14:05\n"), nil, 0, nil
 	case cmd == "sel elist":
 		var sb strings.Builder
 		for i := 1; i <= f.selLines; i++ {
@@ -89,11 +91,11 @@ func TestIPMICommandsPasswordOnlyInEnv(t *testing.T) {
 		if !strings.HasPrefix(line, "-I lanplus -H 10.0.0.50 -p 6230 -U ADMIN -E ") {
 			t.Errorf("args %q", line)
 		}
-		if len(c.env) != 1 || c.env[0] != "IPMI_PASSWORD="+o.Password {
+		if len(c.env) != 2 || c.env[0] != "LC_ALL=C" || c.env[1] != "IPMI_PASSWORD="+o.Password {
 			t.Errorf("env %v", c.env)
 		}
 	}
-	want := map[string]string{"ipmi.sdr": "sdr elist", "ipmi.sel_info": "sel info", "ipmi.sel": "sel elist", "ipmi.chassis": "chassis status",
+	want := map[string]string{"ipmi.sdr": "sdr elist", "ipmi.sel_info": "sel info", "ipmi.sel_time": "sel time get", "ipmi.sel": "sel elist", "ipmi.chassis": "chassis status",
 		"ipmi.mc": "mc info", "ipmi.fru": "fru print", "ipmi.lan": "lan print", "ipmi.power": "dcmi power reading"}
 	for sec, cmd := range want {
 		if b.Get(sec) == nil {
@@ -136,7 +138,7 @@ func TestIPMINoPasswordNoUser(t *testing.T) {
 		t.Fatal(err)
 	}
 	line := strings.Join(fr.calls[0].args, " ")
-	if line != "-I lanplus -H bmc.lan mc info" || len(fr.calls[0].env) != 0 {
+	if line != "-I lanplus -H bmc.lan mc info" || len(fr.calls[0].env) != 1 || fr.calls[0].env[0] != "LC_ALL=C" {
 		t.Errorf("args %q env %v", line, fr.calls[0].env)
 	}
 }
@@ -206,5 +208,49 @@ func TestRealExecRunner(t *testing.T) {
 	out, _, rc, err := execRunner(context.Background(), []string{"IPMI_PASSWORD=abc"}, name, args...)
 	if err != nil || rc != 3 || string(out) != "abc" {
 		t.Errorf("out %q rc %d err %v", out, rc, err)
+	}
+}
+
+// The BMC clock is read before the SEL, and the ipmi domain gets it under
+// the in-band section name.
+func TestIPMISelTimeBeforeSEL(t *testing.T) {
+	fr := &fakeRunner{selLines: 2}
+	useRunner(t, fr)
+	b, err := Collect(context.Background(), Options{Host: "10.0.0.50", Protocol: "ipmi", User: "ADMIN", Password: "Sup3r-S3cret!"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	iTime, iSEL := -1, -1
+	for i, c := range fr.calls {
+		switch strings.Join(c.args[len(c.args)-3:], " ") {
+		case "sel time get":
+			iTime = i
+		}
+		if strings.HasSuffix(strings.Join(c.args, " "), " sel elist") {
+			iSEL = i
+		}
+	}
+	if iTime < 0 || iSEL < 0 || iTime > iSEL {
+		t.Errorf("sel time get at %d, sel elist at %d", iTime, iSEL)
+	}
+	if s := b.Get("ipmi.sel_time"); s == nil || !s.Ran() || strings.TrimSpace(s.Out) != "10/01/2026 22:14:05" {
+		t.Errorf("sel_time: %+v", s)
+	}
+}
+
+// Collect's errors carry an English and a Vietnamese message; errors.Is
+// still works and Error() is the English one.
+func TestIPMIErrorsTranslated(t *testing.T) {
+	fr := &fakeRunner{failMC: "Error: Unable to establish IPMI v2 / RMCP+ session\n"}
+	useRunner(t, fr)
+	_, err := Collect(context.Background(), Options{Host: "10.0.0.50", Protocol: "ipmi", User: "ADMIN", Password: "wrong-pass"})
+	m := Message(err)
+	if !errors.Is(err, ErrNoProtocol) || m.EN != err.Error() || !strings.Contains(m.VI, "IPMI qua LAN tới 10.0.0.50 không thành công") ||
+		!strings.HasPrefix(m.VI, "không đọc được BMC") {
+		t.Errorf("message: %q / %q", m.EN, m.VI)
+	}
+	var e *Error
+	if !errors.As(err, &e) || e.Kind != ErrNoProtocol {
+		t.Errorf("type: %T %v", err, err)
 	}
 }

@@ -11,7 +11,10 @@
 #                        ",<type>" only when the type carries a controller
 #                        address, e.g. disk.smart:/dev/bus/0,megaraid,3)
 #                        (HPE Smart Array drives found by probing -d cciss,N
-#                        appear as disk.smart:/dev/sdX,cciss,N)
+#                        appear as disk.smart:/dev/sdX,cciss,N; Adaptec
+#                        aacraid disks as disk.smart:/dev/sdX,aacraid,H,L,ID)
+#   disk.aacraid         aacraid probe summary: host, controller number, whether
+#                        /dev/aacH exists, hidden disks (target:lun)
 #   disk.smartd          smartd service / process state and its config lines
 #   disk.bench           dd write/read test, only when DW_BENCH_DIR is set
 #
@@ -77,6 +80,65 @@ _dk_smart() {
 	cat "$DW_T/dk_se" >&2
 	rm -f "$DW_T/dk_s" "$DW_T/dk_se"
 	return "$_dk_rc"
+}
+
+# _dk_aacraid - S.M.A.R.T. of the disks behind Adaptec/Microchip controllers
+# (aacraid driver) in RAID mode, which --scan-open does not list.
+#
+# With the driver default expose_physicals=-1 every physical disk is a hidden
+# SCSI device (no sd node) on channel <firmware bus>+1 (drivers/scsi/aacraid:
+# aac_phys_to_logical, no_uld_attach). smartctl reads them with
+# -d aacraid,H,L,ID (smartctl(8)): H is the controller number, which is the
+# minor of /dev/aacH and the SCSI host's unique_id (linit.c: aac->id =
+# shost->unique_id), L the LUN and ID the target. smartctl always sends to
+# firmware bus 0 (os_linux.cpp: "channel is 0 always"), so only the disks on
+# Linux channel 1 can be read. The device name is not used for I/O; the
+# host's logical volume is passed. smartctl would create a missing /dev/aacH
+# node (mknod), which is a change to the system: the probe only runs when
+# the node already exists (arcconf creates it, as does an earlier smartctl
+# run), and otherwise records why in disk.aacraid. At most 64 disks.
+_dk_aacraid() {
+	_dk_an=0
+	: >"$DW_T/dk_aac"
+	for _dk_hp in /sys/class/scsi_host/host*; do
+		[ "$(cat "$_dk_hp/proc_name" 2>/dev/null)" = aacraid ] || continue
+		_dk_hn=${_dk_hp##*/host}
+		_dk_uid=$(cat "$_dk_hp/unique_id" 2>/dev/null)
+		case $_dk_uid in '' | *[!0-9]*) continue ;; esac
+		_dk_hidden=""
+		for _dk_sd in /sys/bus/scsi/devices/"$_dk_hn":1:*; do
+			[ "$(cat "$_dk_sd/type" 2>/dev/null)" = 0 ] || continue
+			[ -d "$_dk_sd/block" ] && continue # exposed (JBOD/raw): already scanned
+			_dk_a=${_dk_sd##*/}
+			_dk_t=${_dk_a#*:*:}
+			_dk_hidden="$_dk_hidden ${_dk_t%%:*}:${_dk_t#*:}"
+		done
+		[ -n "$_dk_hidden" ] || continue
+		_dk_dev=""
+		for _dk_b in /sys/block/sd*; do
+			_dk_h=$(readlink -f "$_dk_b/device" 2>/dev/null)
+			_dk_h=${_dk_h##*/}
+			if [ "${_dk_h%%:*}" = "$_dk_hn" ]; then
+				_dk_dev="/dev/${_dk_b##*/}"
+				break
+			fi
+		done
+		if [ ! -c "/dev/aac$_dk_uid" ]; then
+			echo "host=$_dk_hn aac=$_dk_uid node=missing disks=${_dk_hidden# }" >>"$DW_T/dk_aac"
+			continue
+		fi
+		[ -n "$_dk_dev" ] || _dk_dev="/dev/aac$_dk_uid"
+		echo "host=$_dk_hn aac=$_dk_uid node=present disks=${_dk_hidden# }" >>"$DW_T/dk_aac"
+		for _dk_tl in $_dk_hidden; do
+			_dk_an=$((_dk_an + 1))
+			[ "$_dk_an" -gt 64 ] && break 2
+			_dk_ty="aacraid,$_dk_uid,${_dk_tl#*:},${_dk_tl%%:*}"
+			dw_fn "disk.smart:$_dk_dev,$_dk_ty" _dk_smart "$_dk_dev" "$_dk_ty"
+		done
+	done
+	[ -s "$DW_T/dk_aac" ] && dw_file disk.aacraid "$DW_T/dk_aac"
+	rm -f "$DW_T/dk_aac"
+	return 0
 }
 
 _dk_scan_out() {
@@ -148,6 +210,9 @@ else
 					_dk_i=$((_dk_i + 1))
 				done
 			done
+		fi
+		if ! grep -q 'aacraid,' "$DW_T/dk_scan" 2>/dev/null; then
+			_dk_aacraid
 		fi
 		rm -f "$DW_T/dk_scan" "$DW_T/dk_scan_e"
 	fi

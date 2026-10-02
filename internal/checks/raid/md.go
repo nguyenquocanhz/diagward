@@ -427,14 +427,16 @@ func (c *checker) analyzeMD(a *MDArray) {
 	if a.ReadOnly != "" {
 		state += " (" + a.ReadOnly + ")"
 	}
-	progress := ""
+	var progress model.Text
 	if a.SyncOp != "" {
-		progress = a.SyncOp + " " + fmtPct(a.SyncPct)
+		progress = stateCell(a.SyncOp + " " + fmtPct(a.SyncPct))
 		if a.Finish != "" {
-			progress += ", ETA " + mdETA(a.Finish).EN
+			eta := mdETA(a.Finish)
+			progress.EN += ", ETA " + eta.EN
+			progress.VI += ", còn " + eta.VI
 		}
 	} else if a.Pending != "" {
-		progress = a.Pending
+		progress = stateCell(a.Pending)
 	}
 	typ := a.Level
 	if a.Container {

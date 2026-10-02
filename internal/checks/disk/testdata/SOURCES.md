@@ -81,3 +81,10 @@ as published.
 | `TestBMCVirtualMediaIgnored` | iDRAC virtual devices `ID_VENDOR=iDRAC`, `ID_MODEL=LCDRIVE` / `Virtual_Floppy` as reported in Red Hat bugzilla 1111693 (https://bugzilla.redhat.com/show_bug.cgi?id=1111693); lsblk JSON and the "open failed: No medium found" scan lines synthesised in the formats above |
 | `TestWindowsNVMeMatchedByEUI64` | JSON keys `nvme_namespaces[0].eui64.{oui,ext_id}` from smartmontools `nvmeprint.cpp`; EUI-64 0026b7 3840825615 taken from the real Windows serial in `win_physical.json` |
 | `TestCSMISectionName` | `/dev/csmi0,1 -d ata` scan line synthesised from smartctl's Windows device naming (`/dev/csmi[0-9],N`, smartctl(8) "Windows" device list) |
+
+## Adaptec/Microchip aacraid probe (added 2026-10-03)
+
+| File / test | Origin |
+|---|---|
+| `aacraid_open_failed_wsl.json` | Own capture, smartmontools 7.5 in WSL2 (no Adaptec controller): `smartctl -x -j -n standby -d aacraid,0,0,2 /dev/sda` → "aac entry not found in /proc/devices", exit 2. Confirms smartctl accepts the collector's `-d aacraid,H,L,ID` argument. |
+| `TestAacraidPassthrough` | Section names as the collector writes them; the drive contents are the real ATA fixtures above (a SATA disk behind aacraid is read through SAT, `-d sat,auto+aacraid` per smartctl(8)). lsblk row synthesised (Adaptec logical volume on host 6). The H,L,ID numbering follows smartctl(8) (`aacraid,H,L,ID`), smartmontools `os_linux.cpp` (`/dev/aacH`, SRB channel always 0) and the kernel driver (`drivers/scsi/aacraid/linit.c`: `aac->id = shost->unique_id`, hidden physical disks on channel bus+1). No real output from an Adaptec controller was available. |

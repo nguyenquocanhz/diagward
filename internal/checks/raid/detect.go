@@ -19,6 +19,39 @@ type DetectedHW struct {
 
 var perccliSoftRe = regexp.MustCompile(`(?i)PERC S\d`)
 
+// mpi3Tool returns "storcli2" or "perccli2" for a Broadcom MPI3 controller
+// (mpi3mr driver: MegaRAID 9600/9700, Dell PERC 12 such as H965i, H765i,
+// H365i, H975i), "" for anything else or for the HBA personalities of the
+// same chips (eHBA 9600/9700, Dell HBA465), which have no RAID volumes.
+// Device IDs are the ones the Linux mpi3mr driver binds
+// (drivers/scsi/mpi3mr/mpi/mpi30_cnfg.h: SAS4116 0x00a5, SAS5116 MPI 0x00b3,
+// SAS5116 MPI management 0x00b5); names from the PCI ID database.
+func mpi3Tool(vendor, device, subvendor, class, driver, name string) string {
+	v := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(vendor)), "0x")
+	dev := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(device)), "0x")
+	sv := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(subvendor)), "0x")
+	n := strings.ToLower(name)
+	isMPI3 := strings.EqualFold(strings.TrimSpace(driver), "mpi3mr") ||
+		(v == "1000" && (dev == "00a5" || dev == "00b3" || dev == "00b5"))
+	if !isMPI3 {
+		return ""
+	}
+	raidName := strings.Contains(n, "megaraid") || strings.Contains(n, "perc h") || strings.Contains(n, "raid")
+	switch {
+	case strings.Contains(n, "hba") && !raidName:
+		return "" // eHBA 9600-16i, HBA465i, ThinkSystem 450W-16e HBA
+	case raidName, class == "", strings.HasPrefix(strings.ToLower(class), "0x0104"):
+	default:
+		// No name to go by and not a RAID-class function: most likely the
+		// eHBA personality (SAS class 0x0107).
+		return ""
+	}
+	if sv == "1028" || strings.Contains(n, "perc") || strings.Contains(n, "dell") {
+		return "perccli2"
+	}
+	return "storcli2"
+}
+
 // classifyController returns the CLI for a storage controller, or "" when
 // it is not a hardware RAID controller Diagward knows (AHCI, HBAs in IT
 // mode, virtual controllers, software RAID such as Intel RST or PERC S1x0).
@@ -76,7 +109,10 @@ func (c *checker) detectControllers() []DetectedHW {
 			if name == "" {
 				name = "PCI " + kv["vendor"] + ":" + kv["device"]
 			}
-			tool := classifyController(kv["vendor"], kv["subsystem_vendor"], kv["class"], kv["driver"], name)
+			tool := mpi3Tool(kv["vendor"], kv["device"], kv["subsystem_vendor"], kv["class"], kv["driver"], name)
+			if tool == "" && kv["driver"] != "mpi3mr" {
+				tool = classifyController(kv["vendor"], kv["subsystem_vendor"], kv["class"], kv["driver"], name)
+			}
 			if tool == "" || seen[kv["slot"]] {
 				continue
 			}
@@ -94,7 +130,10 @@ func (c *checker) detectControllers() []DetectedHW {
 		if collect.DecodeJSON(s.Out, &rows) == nil {
 			for _, r := range rows {
 				ven, sub := pnpIDs(r.PNPDeviceID)
-				tool := classifyController(ven, sub, "", r.DriverName, r.Name)
+				tool := mpi3Tool(ven, pnpDevice(r.PNPDeviceID), sub, "", r.DriverName, r.Name)
+				if tool == "" && !isMPI3PNP(r.PNPDeviceID) {
+					tool = classifyController(ven, sub, "", r.DriverName, r.Name)
+				}
 				if tool == "" || seen[r.PNPDeviceID] {
 					continue
 				}
@@ -109,6 +148,22 @@ func (c *checker) detectControllers() []DetectedHW {
 var pciIDSuffix = regexp.MustCompile(`\s*\[[0-9a-fA-F]{4}\]\s*$`)
 
 func stripPCIIDs(s string) string { return strings.TrimSpace(pciIDSuffix.ReplaceAllString(s, "")) }
+
+// pnpDevice extracts the PCI device ID from a Windows PnP device ID.
+func pnpDevice(id string) string {
+	up := strings.ToUpper(id)
+	if i := strings.Index(up, "DEV_"); i >= 0 && len(up) >= i+8 {
+		return strings.ToLower(up[i+4 : i+8])
+	}
+	return ""
+}
+
+// isMPI3PNP tells a Broadcom MPI3 device (an eHBA when mpi3Tool said "")
+// so that the generic MegaRAID rules do not claim it for storcli.
+func isMPI3PNP(id string) bool {
+	ven, _ := pnpIDs(id)
+	return mpi3Tool(ven, pnpDevice(id), "", "0x0104", "", "") != ""
+}
 
 // pnpIDs extracts the PCI vendor and subsystem vendor from a Windows PnP
 // device ID ("PCI\VEN_1000&DEV_005D&SUBSYS_1F471028&REV_02\...").

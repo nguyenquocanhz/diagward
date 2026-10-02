@@ -23,6 +23,7 @@ import (
 	"github.com/nguyenquocanhz/diagward/collect"
 	"github.com/nguyenquocanhz/diagward/diag"
 	"github.com/nguyenquocanhz/diagward/internal/install"
+	"github.com/nguyenquocanhz/diagward/internal/notify"
 	"github.com/nguyenquocanhz/diagward/model"
 )
 
@@ -56,6 +57,8 @@ type app struct {
 	goos           string
 	con            consoleState
 	lang           string
+	// langExplicit: --lang was given (it then beats the notify config).
+	langExplicit bool
 
 	isTerm       func(f any) bool
 	termWidth    func(f any) int
@@ -68,6 +71,8 @@ type app struct {
 	now          func() time.Time
 	exeDir       func() string
 	consoleCount func() (uint32, error)
+	hostname     func() (string, error)
+	notifyOpts   notify.Options // retries and TLS for notifications (tests shorten them)
 
 	in *bufio.Reader
 }
@@ -91,6 +96,7 @@ func newApp(con consoleState) *app {
 		now:          time.Now,
 		exeDir:       exeDir,
 		consoleCount: consoleProcessCount,
+		hostname:     os.Hostname,
 	}
 }
 
@@ -100,6 +106,7 @@ func (a *app) main(args []string) int {
 	if l, ok := preScanLang(args); ok {
 		if v, err := parseLang(l); err == nil {
 			a.lang = v
+			a.langExplicit = true
 		}
 	}
 	if len(args) == 0 {
@@ -120,6 +127,8 @@ func (a *app) main(args []string) int {
 		return a.cmdBMC(rest)
 	case "install-tools":
 		return a.cmdInstall(rest)
+	case "notify-test":
+		return a.cmdNotifyTest(rest)
 	case "version", "--version", "-version":
 		a.printVersion()
 		return exitOK

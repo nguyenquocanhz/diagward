@@ -175,10 +175,112 @@ type Table struct {
 }
 
 // Row is one table row. Status colours the row; Cells align with Columns.
+//
+// Cells are in English, or language-neutral (numbers, device names, model
+// and serial strings). VI, when set, holds the Vietnamese version of every
+// cell (same length as Cells); it is left out when no cell has words to
+// translate. Build rows with NewRow and read them with CellsIn or Cell;
+// consumers that only know Cells keep working (they see English).
 type Row struct {
 	Status Severity `json:"status"`
 	Cells  []string `json:"cells"`
+	VI     []string `json:"vi,omitempty"`
 }
+
+// NewRow builds a row. Each cell is a string (the same in both languages)
+// or a Text (English and Vietnamese); any other value is formatted with
+// fmt.Sprint. VI is set only when some cell differs between the languages.
+func NewRow(status Severity, cells ...any) Row {
+	r := Row{Status: status, Cells: make([]string, 0, len(cells))}
+	for _, c := range cells {
+		r.Add(c)
+	}
+	return r
+}
+
+// cellText turns a NewRow cell into a Text with both languages filled.
+func cellText(v any) Text {
+	switch c := v.(type) {
+	case nil:
+		return Text{}
+	case string:
+		return Text{EN: c, VI: c}
+	case Text:
+		return Text{EN: c.In("en"), VI: c.In("vi")}
+	case *Text:
+		if c == nil {
+			return Text{}
+		}
+		return Text{EN: c.In("en"), VI: c.In("vi")}
+	}
+	s := fmt.Sprint(v)
+	return Text{EN: s, VI: s}
+}
+
+// Add appends a cell (string or Text, as in NewRow).
+func (r *Row) Add(v any) {
+	t := cellText(v)
+	r.Cells = append(r.Cells, t.EN)
+	if r.VI != nil || t.VI != t.EN {
+		r.fillVI()
+		r.VI[len(r.VI)-1] = t.VI
+	}
+}
+
+// SetCell replaces cell i (string or Text); it does nothing when i is out
+// of range.
+func (r *Row) SetCell(i int, v any) {
+	if i < 0 || i >= len(r.Cells) {
+		return
+	}
+	t := cellText(v)
+	r.Cells[i] = t.EN
+	if r.VI != nil || t.VI != t.EN {
+		r.fillVI()
+		r.VI[i] = t.VI
+	}
+}
+
+// fillVI makes VI as long as Cells, copying the cells it lacks (those are
+// language-neutral).
+func (r *Row) fillVI() {
+	if len(r.VI) > len(r.Cells) {
+		r.VI = r.VI[:len(r.Cells)]
+	}
+	for i := len(r.VI); i < len(r.Cells); i++ {
+		r.VI = append(r.VI, r.Cells[i])
+	}
+}
+
+// Cell returns cell i in lang ("vi" or "en"), or "" when there is no such
+// cell. A Vietnamese cell falls back to the English one when VI is absent,
+// shorter, or empty at i.
+func (r Row) Cell(i int, lang string) string {
+	if i < 0 || i >= len(r.Cells) {
+		return ""
+	}
+	if isVI(lang) && i < len(r.VI) && r.VI[i] != "" {
+		return r.VI[i]
+	}
+	return r.Cells[i]
+}
+
+// CellsIn returns the cells in lang ("vi" or "en").
+func (r Row) CellsIn(lang string) []string {
+	if !isVI(lang) || len(r.VI) == 0 {
+		return r.Cells
+	}
+	out := make([]string, len(r.Cells))
+	for i := range r.Cells {
+		out[i] = r.Cell(i, lang)
+	}
+	return out
+}
+
+// CellText returns cell i in both languages.
+func (r Row) CellText(i int) Text { return Text{EN: r.Cell(i, "en"), VI: r.Cell(i, "vi")} }
+
+func isVI(lang string) bool { return strings.HasPrefix(strings.ToLower(lang), "vi") }
 
 // Coverage states, so a report never implies that something was checked
 // when it was not.
@@ -246,12 +348,73 @@ type HostInfo struct {
 	Serial   string    `json:"serial,omitempty"` // chassis/system serial (service tag)
 	BIOS     string    `json:"bios,omitempty"`   // "2.12.2 (2021-07-09)"
 	Board    string    `json:"board,omitempty"`
-	CPU      string    `json:"cpu,omitempty"` // "2 × Intel Xeon Silver 4214 (24 cores, 48 threads)"
+	CPU      string    `json:"cpu,omitempty"` // "2 × Intel Xeon Silver 4214 (24 cores, 48 threads)" (English; see CPUText)
 	MemBytes uint64    `json:"memBytes,omitempty"`
 	Uptime   float64   `json:"uptime,omitempty"` // seconds
 	BootTime time.Time `json:"bootTime,omitzero"`
 	Virtual  string    `json:"virtual,omitempty"`
 	BMC      string    `json:"bmc,omitempty"` // BMC address or firmware, when known
+	// The parts of the CPU line, so it can be written in either language:
+	// CPUModel "Intel Xeon Silver 4214", Sockets 2, Cores 24 (all sockets),
+	// Threads 48. Zero when unknown.
+	CPUModel string `json:"cpuModel,omitempty"`
+	Sockets  int    `json:"sockets,omitempty"`
+	Cores    int    `json:"cores,omitempty"`
+	Threads  int    `json:"threads,omitempty"`
+}
+
+// SetCPU fills the CPU line and its parts.
+func (h *HostInfo) SetCPU(model string, sockets, cores, threads int) {
+	h.CPUModel, h.Sockets, h.Cores, h.Threads = model, sockets, cores, threads
+	h.CPU = CPUSummary(model, sockets, cores, threads).EN
+}
+
+// CPUText is the CPU line in both languages. Reports written before the
+// parts existed only have CPU, which is then used for both.
+func (h HostInfo) CPUText() Text {
+	if h.CPUModel == "" && h.Cores == 0 && h.Threads == 0 {
+		return Text{EN: h.CPU, VI: h.CPU}
+	}
+	return CPUSummary(h.CPUModel, h.Sockets, h.Cores, h.Threads)
+}
+
+// CPUSummary formats "2 × Intel Xeon Silver 4214 (24 cores, 48 threads)" /
+// "2 × Intel Xeon Silver 4214 (24 nhân, 48 luồng)". Cores and threads are
+// totals over all sockets; zero values are left out. It returns an empty
+// Text when nothing is known.
+func CPUSummary(model string, sockets, cores, threads int) Text {
+	if model == "" && cores <= 0 && threads <= 0 {
+		return Text{}
+	}
+	var en, vi []string
+	if cores > 0 {
+		en = append(en, plural(cores, "core", "cores"))
+		vi = append(vi, fmt.Sprintf("%d nhân", cores))
+	}
+	if threads > 0 {
+		en = append(en, plural(threads, "thread", "threads"))
+		vi = append(vi, fmt.Sprintf("%d luồng", threads))
+	}
+	s := model
+	if s == "" {
+		s = "CPU"
+	}
+	if sockets > 1 {
+		s = fmt.Sprintf("%d × %s", sockets, s)
+	}
+	t := Text{EN: s, VI: s}
+	if len(en) > 0 {
+		t.EN += " (" + strings.Join(en, ", ") + ")"
+		t.VI += " (" + strings.Join(vi, ", ") + ")"
+	}
+	return t
+}
+
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return fmt.Sprintf("%d %s", n, many)
 }
 
 // ComponentSummary is the worst severity and the finding counts per component.

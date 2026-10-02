@@ -24,6 +24,7 @@ import (
 type checkOpts struct {
 	out outOpts
 	col colOpts
+	ntf notifyOpts
 }
 
 func (a *app) parseCheck(args []string) (*checkOpts, error) {
@@ -37,12 +38,16 @@ func (a *app) parseCheck(args []string) (*checkOpts, error) {
 	fs.StringVar(&o.col.benchSize, "bench-mb", "", "")
 	fs.StringVar(&o.col.memtest, "memtest", "", "")
 	fs.IntVar(&o.col.timeout, "timeout", 0, "")
+	addNotifyFlags(fs, &o.ntf, true)
 	pos, err := parseArgs(fs, args)
 	if err != nil {
 		return nil, err
 	}
 	if len(pos) > 0 {
 		return nil, unexpectedArg(pos[0])
+	}
+	if err := o.ntf.validate(a.getenv); err != nil {
+		return nil, err
 	}
 	return o, o.validate()
 }
@@ -105,6 +110,10 @@ func (a *app) cmdCheck(args []string, doubleClick bool) int {
 	if !a.checkTestFlags(o, diagOut) {
 		return exitError
 	}
+	ntf, ok := a.loadNotify(o.ntf, diagOut)
+	if !ok {
+		return exitError
+	}
 	if !o.out.quiet {
 		a.privilegeNote(diagOut)
 	}
@@ -129,6 +138,9 @@ func (a *app) cmdCheck(args []string, doubleClick bool) int {
 	}
 	rep := diag.Analyze(b)
 	rc := a.emit(rep, &o.out, saved, cerr != nil || incomplete(b))
+	if ntf != nil {
+		a.notifyAfterCheck(ntf, rep, cerr != nil || incomplete(b), o.out.quiet, diagOut)
+	}
 	if doubleClick && rc == exitOK && o.out.html != "" && o.out.html != "-" {
 		if err := a.openBrowser(o.out.html); err != nil {
 			fmt.Fprintf(diagOut, a.t("Open the report yourself: %s\n", "Hãy tự mở báo cáo: %s\n"), o.out.html)

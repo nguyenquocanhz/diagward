@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/nguyenquocanhz/diagward/collect"
+	"github.com/nguyenquocanhz/diagward/model"
 )
 
 const redacted = "***"
@@ -92,25 +93,20 @@ func scrubError(err error, user, pass string) error {
 	if err == nil {
 		return nil
 	}
-	msg := scrubText(err.Error(), "", pass, "")
-	if msg == err.Error() {
+	full := Message(err)
+	msg := model.T(scrubText(full.EN, "", pass, ""), scrubText(full.VI, "", pass, ""))
+	if msg == full && scrubText(err.Error(), "", pass, "") == err.Error() {
 		return err // nothing to hide: keep the chain for errors.Is
 	}
+	// Keep the sentinel and both languages; drop the cause, whose text may
+	// hold the secret.
 	for _, target := range []error{ErrAuth, ErrNoProtocol, ErrAddress, ErrRedfishUnavailable} {
 		if errors.Is(err, target) {
-			return &scrubbedError{msg: msg, target: target}
+			return &Error{Kind: target, Msg: msg}
 		}
 	}
-	return errors.New(msg)
+	return &Error{Msg: msg}
 }
-
-type scrubbedError struct {
-	msg    string
-	target error
-}
-
-func (e *scrubbedError) Error() string { return e.msg }
-func (e *scrubbedError) Unwrap() error { return e.target }
 
 // snmpRe matches the SNMP community line of "ipmitool lan print", a shared
 // secret that has no diagnostic value.

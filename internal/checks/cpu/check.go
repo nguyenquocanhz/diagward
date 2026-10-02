@@ -407,21 +407,21 @@ func (c *linuxCheck) inventoryTable(ci cpuinfoSummary, procs []Processor) {
 		if p.Cores > 0 {
 			cores = fmt.Sprintf("%d/%d", firstPos(p.CoresEnabled, p.Cores), p.Cores)
 		}
-		t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{
-			p.Socket, p.Model, p.Status, cores, itoa(p.Threads), speeds(p.CurrentMHz, p.MaxMHz), p.Serial,
-		}})
+		t.Rows = append(t.Rows, model.NewRow(st,
+			p.Socket, p.Model, statusCell(p.Status), cores, itoa(p.Threads), speeds(p.CurrentMHz, p.MaxMHz), p.Serial,
+		))
 	}
 	if len(procs) == 0 {
 		// Without dmidecode: one row per physical package from /proc/cpuinfo.
 		ids := ci.sorted("physical id")
 		sort.Strings(ids)
 		for _, id := range ids {
-			t.Rows = append(t.Rows, model.Row{Cells: []string{
-				"physical id " + id, c.facts.Model, "online", first(ci.sorted("cpu cores")), itoa(ci.Values["physical id"][id]), "", "",
-			}})
+			t.Rows = append(t.Rows, model.NewRow(model.OK,
+				model.T("physical id "+id, "socket "+id+" (physical id)"), c.facts.Model, statusCell("online"), first(ci.sorted("cpu cores")), itoa(ci.Values["physical id"][id]), "", "",
+			))
 		}
 		if len(ids) == 0 && c.facts.Model != "" {
-			t.Rows = append(t.Rows, model.Row{Cells: []string{"-", c.facts.Model, "online", "", itoa(c.facts.Logical), "", ""}})
+			t.Rows = append(t.Rows, model.NewRow(model.OK, "-", c.facts.Model, statusCell("online"), "", itoa(c.facts.Logical), "", ""))
 		}
 	}
 	if hidden > 0 {
@@ -878,9 +878,9 @@ func (c *linuxCheck) throttle() {
 			ev = append(ev, fmt.Sprintf("%s: package_throttle_count=%d package_throttle_total_time_ms=%d max core_throttle_count=%d max core_throttle_total_time_ms=%d (%d/%d CPUs)",
 				pkgName(id), p.PackageEvents, p.PackageTimeMS, p.CoreEventsMax, p.CoreTimeMSMax, p.CPUsAffected, p.CPUs))
 		}
-		t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{
-			pkgName(id), units.Thousands(p.PackageEvents), msText(p.PackageTimeMS), units.Thousands(p.CoreEventsMax), msText(p.CoreTimeMSMax), fmt.Sprintf("%d/%d", p.CPUsAffected, p.CPUs),
-		}})
+		t.Rows = append(t.Rows, model.NewRow(st,
+			pkgName(id), units.Count(p.PackageEvents), msText(p.PackageTimeMS), units.Count(p.CoreEventsMax), msText(p.CoreTimeMSMax), fmt.Sprintf("%d/%d", p.CPUsAffected, p.CPUs),
+		))
 		worstTime = max(worstTime, p.PackageTimeMS, p.CoreTimeMSMax)
 		worstCount = max(worstCount, p.PackageEvents, p.CoreEventsMax)
 	}
@@ -917,7 +917,7 @@ func (c *linuxCheck) throttle() {
 	}
 	timeEN, timeVI := "", ""
 	if worstTime > 0 {
-		timeEN, timeVI = ", for up to "+msText(worstTime)+" in total", ", tổng thời gian giảm xung tới "+msText(worstTime)
+		timeEN, timeVI = ", for up to "+msText(worstTime).EN+" in total", ", tổng thời gian giảm xung tới "+msText(worstTime).VI
 	}
 	tgt := pkgName(hot[0].Package)
 	if len(hot) > 1 {
@@ -1143,16 +1143,41 @@ func pkgName(id int) string {
 	return fmt.Sprintf("package %d", id)
 }
 
-func msText(ms uint64) string {
+func msText(ms uint64) model.Text {
 	if ms == 0 {
-		return ""
+		return model.Text{}
 	}
 	d := time.Duration(ms) * time.Millisecond
 	if d < time.Minute {
-		return fmt.Sprintf("%.1f s", d.Seconds())
+		s := fmt.Sprintf("%.1f", d.Seconds())
+		return model.T(s+" s", strings.Replace(s, ".", ",", 1)+" giây")
 	}
-	return fmt.Sprintf("%.0f min", d.Minutes())
+	return model.Tf("%.0f min", "%.0f phút", d.Minutes())
 }
+
+// cpuWords is Vietnamese for processor states: dmidecode "Status" ("Populated,
+// Enabled", SMBIOS type 4 CPU Status) and Win32_Processor CpuStatus / Status.
+var cpuWords = map[string]string{
+	"populated":                           "có lắp",
+	"unpopulated":                         "trống",
+	"disabled by user":                    "bị tắt trong BIOS setup",
+	"disabled by bios":                    "bị BIOS tắt (lỗi POST)",
+	"cpu enabled":                         "đang bật",
+	"cpu disabled by user via bios setup": "bị tắt trong BIOS setup",
+	"cpu disabled by bios (post error)":   "bị BIOS tắt (lỗi POST)",
+	"cpu is idle":                         "rảnh",
+	"pred fail":                           "sắp hỏng",
+	"nonrecover":                          "lỗi không phục hồi",
+	"no contact":                          "mất liên lạc",
+	"lost comm":                           "mất liên lạc",
+	"stressed":                            "quá tải",
+	"starting":                            "đang khởi động",
+	"stopping":                            "đang dừng",
+	"service":                             "đang bảo trì",
+}
+
+// statusCell is a processor status for the table, in both languages.
+func statusCell(s string) model.Text { return units.Words(s, cpuWords) }
 
 // mceTarget names the CPUs/sockets involved: "socket 1", "CPU 12",
 // "sockets 0,1".

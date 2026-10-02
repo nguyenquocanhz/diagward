@@ -104,6 +104,12 @@ DIAGWARD_BMC_PASSWORD=... diagward bmc idrac-srv01.lan --user root --insecure
 1 (warning), 2 (critical) or 3 (error), so it drops into cron, Nagios or
 Zabbix as is.
 
+**Alerts from the server itself.** Run it from cron, a systemd timer or Task
+Scheduler with `--notify-config /etc/diagward/notify.conf` and it messages
+**Telegram, Zalo Bot, Slack, Discord, a webhook or e-mail** — only when
+something changes (a new or worse problem, or a recovery). `diagward
+notify-test` checks the setup. See [docs/notify.md](docs/notify.md).
+
 **Active tests (opt-in).** `--bench /var/tmp` writes and reads back a test
 file to measure disk speed; `--memtest 2G` runs `memtester`. Both add load:
 run them in a maintenance window.
@@ -189,6 +195,7 @@ sudo diagward --lang vi
 | Máy treo, không vào được hệ điều hành | `diagward bmc <IP iDRAC/iLO> --user root` |
 | Đo tốc độ ổ / test RAM (giờ bảo trì) | `sudo diagward check --bench /var/tmp` · `sudo diagward check --memtest 2G` |
 | Giám sát định kỳ (cron, Zabbix) | `diagward check -q` (mã thoát 0/1/2/3) |
+| Tự báo lỗi qua Telegram, Zalo Bot, Slack, Discord, email (chạy bằng cron) | `diagward check -q --notify-config /etc/diagward/notify.conf` — xem [docs/notify.md](docs/notify.md) |
 
 Đặt `DIAGWARD_LANG=vi` để luôn dùng tiếng Việt.
 

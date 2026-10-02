@@ -474,9 +474,9 @@ func eventTable(id string, title model.Text, facts []EventFact, note model.Text)
 		Note: note,
 	}
 	for _, f := range facts {
-		t.Rows = append(t.Rows, model.Row{Status: f.Severity, Cells: []string{
-			f.Rule, f.Component, f.Target, fmt.Sprint(f.Count), fmt.Sprint(f.Recent), fmtTime(f.First), fmtTime(f.Last),
-		}})
+		t.Rows = append(t.Rows, model.NewRow(f.Severity,
+			ruleName(f.Rule), model.ComponentName(f.Component), targetCell(f.Target), fmt.Sprint(f.Count), fmt.Sprint(f.Recent), fmtTime(f.First), fmtTime(f.Last),
+		))
 	}
 	return t
 }

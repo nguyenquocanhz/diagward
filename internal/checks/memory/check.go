@@ -1299,15 +1299,15 @@ func (s *state) tables(edac bool) {
 					hidden++
 					continue
 				}
-				t.Rows = append(t.Rows, model.Row{Status: model.OK, Cells: []string{d.Name(), "", "", "", "", "", "", "", "", "empty"}})
+				t.Rows = append(t.Rows, model.NewRow(model.OK, d.Name(), "", "", "", "", "", "", "", "", model.T("empty", "trống")))
 				continue
 			}
-			st, txt := model.OK, "ok"
+			st, txt := model.OK, model.T("ok", "ổn")
 			switch {
 			case d.UE > 0:
-				st, txt = model.Crit, "uncorrected errors"
+				st, txt = model.Crit, model.T("uncorrected errors", "lỗi không sửa được")
 			case d.CE > 0:
-				st, txt = model.Info, "corrected errors"
+				st, txt = model.Info, model.T("corrected errors", "có lỗi đã sửa")
 			}
 			for _, f := range s.res.Findings {
 				if f.Part != nil && f.Part.Kind == "dimm" && f.Part.Serial == d.Serial && f.Part.Location == dimmPart(d).Location && f.Severity > st {
@@ -1322,9 +1322,9 @@ func (s *state) tables(edac bool) {
 			case d.SpeedMT > 0:
 				sp = strconv.Itoa(d.SpeedMT)
 			}
-			t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{
-				d.Name(), iec(d.SizeBytes), typ, sp, d.Manufacturer, d.PartNumber, d.Serial, cnt(d.CE), cnt(d.UE), txt,
-			}})
+			t.Rows = append(t.Rows, model.NewRow(st,
+				d.Name(), iec(d.SizeBytes), units.Words(typ), sp, d.Manufacturer, d.PartNumber, d.Serial, cnt(d.CE), cnt(d.UE), txt,
+			))
 		}
 		if hidden > 0 {
 			t.Note = model.Tf("%d empty virtual slot(s) not shown.", "Ẩn %d khe RAM ảo trống.", hidden)
@@ -1355,7 +1355,7 @@ func (s *state) tables(edac bool) {
 				if d.SizeMB > 0 {
 					size = units.IEC(uint64(d.SizeMB) << 20)
 				}
-				t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{ctl, d.Name(), d.Location, size, cnt(d.CE), cnt(d.UE)}})
+				t.Rows = append(t.Rows, model.NewRow(st, ctl, d.Name(), edacLocation(d.Location), size, cnt(d.CE), cnt(d.UE)))
 			}
 			if len(mc.DIMMs) == 0 || mc.CENoInfo > 0 || mc.UENoInfo > 0 {
 				st := model.OK
@@ -1363,11 +1363,11 @@ func (s *state) tables(edac bool) {
 					st = model.Crit
 				}
 				ce, ue := mc.CENoInfo, mc.UENoInfo
-				label := "(DIMM unknown)"
+				label := model.T("(DIMM unknown)", "(không rõ thanh RAM)")
 				if len(mc.DIMMs) == 0 {
-					ce, ue, label = mc.CE, mc.UE, "(whole controller)"
+					ce, ue, label = mc.CE, mc.UE, model.T("(whole controller)", "(cả bộ điều khiển)")
 				}
-				t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{ctl, label, "", "", cnt(ce), cnt(ue)}})
+				t.Rows = append(t.Rows, model.NewRow(st, ctl, label, "", "", cnt(ce), cnt(ue)))
 			}
 		}
 		s.res.Tables = append(s.res.Tables, t)
@@ -1391,10 +1391,18 @@ func (s *state) summaryTable() {
 		Title:   model.T("Memory summary", "Tổng quan bộ nhớ"),
 		Columns: []model.Text{model.T("Item", "Mục"), model.T("Value", "Giá trị")},
 	}
-	row := func(k model.Text, v string, st model.Severity) {
-		if v != "" {
-			t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{k.EN + " / " + k.VI, v}})
+	row := func(k model.Text, v any, st model.Severity) {
+		switch x := v.(type) {
+		case string:
+			if x == "" {
+				return
+			}
+		case model.Text:
+			if x.IsZero() {
+				return
+			}
 		}
+		t.Rows = append(t.Rows, model.NewRow(st, k, v))
 	}
 	pop, slots := 0, 0
 	for _, d := range s.dimms {
@@ -1410,21 +1418,21 @@ func (s *state) summaryTable() {
 	}
 	slots = max(slots, arraySlots)
 	if pop > 0 && !s.virtual {
-		row(model.T("Installed", "Đã lắp"), fmt.Sprintf("%s, %d/%d slots", iec(f.InstalledBytes), pop, slots), model.OK)
+		row(model.T("Installed", "Đã lắp"), model.Tf("%s, %d/%d slots", "%s, %d/%d khe", iec(f.InstalledBytes), pop, slots), model.OK)
 	}
 	row(model.T("Visible to the OS", "Hệ điều hành thấy"), iec(f.VisibleBytes), model.OK)
 	if f.VisibleBytes > 0 {
 		row(model.T("Available", "Còn trống"), fmt.Sprintf("%s (%.0f%%)", units.IEC(f.AvailableBytes), pct(f.AvailableBytes, f.VisibleBytes)), model.OK)
 	}
 	if f.SwapTotal > 0 {
-		row(model.T("Swap / page file used", "Swap / page file đang dùng"), fmt.Sprintf("%s of %s", units.IEC(f.SwapUsed), units.IEC(f.SwapTotal)), model.OK)
+		row(model.T("Swap / page file used", "Swap / page file đang dùng"), model.Tf("%s of %s", "%s trên %s", units.IEC(f.SwapUsed), units.IEC(f.SwapTotal)), model.OK)
 	}
 	if !s.virtual && s.eccShort != "" {
-		row(model.T("Error correction", "Sửa lỗi (ECC)"), s.eccShort, model.OK)
+		row(model.T("Error correction", "Sửa lỗi (ECC)"), eccCell(s.eccShort), model.OK)
 	}
 	for i, a := range s.arrays {
 		if a.MaxCapacity != "" && !s.virtual {
-			row(model.Tf("Max capacity (array %d)", "Dung lượng tối đa (mảng %d)", i+1), fmt.Sprintf("%s, %d slots", a.MaxCapacity, a.Devices), model.OK)
+			row(model.Tf("Max capacity (array %d)", "Dung lượng tối đa (mảng %d)", i+1), model.Tf("%s, %d slots", "%s, %d khe", a.MaxCapacity, a.Devices), model.OK)
 		}
 	}
 	if len(f.EDAC) > 0 {
@@ -1440,6 +1448,29 @@ func (s *state) summaryTable() {
 	if len(t.Rows) > 0 {
 		s.res.Tables = append(s.res.Tables, t)
 	}
+}
+
+// eccCell is the error-correction value of the summary table (SMBIOS
+// "Error Correction Type": "Multi-bit ECC", "None", "CRC"...) in both
+// languages.
+func eccCell(s string) model.Text {
+	if rest, ok := strings.CutPrefix(s, "None ("); ok {
+		return model.T(s, "Không có ("+rest)
+	}
+	return units.Words(s, map[string]string{
+		"multi-bit ecc":  "ECC đa bit",
+		"single-bit ecc": "ECC một bit",
+		"ecc + non-ecc":  "lẫn ECC và không ECC",
+		"none":           "không có",
+		"parity":         "parity",
+	})
+}
+
+// edacLocation is an EDAC dimm_location ("channel 0 slot 0", "branch 0
+// channel 1 slot 0", "csrow 2 channel 0") in both languages.
+func edacLocation(s string) model.Text {
+	r := strings.NewReplacer("channel", "kênh", "slot", "khe", "branch", "nhánh")
+	return model.T(s, r.Replace(s))
 }
 
 func shortDetail(td string) string {

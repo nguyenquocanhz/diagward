@@ -1022,16 +1022,16 @@ func nicTable(nics []NIC, bonds []Bond, status map[string]model.Severity, res *m
 	}
 	for i := range nics {
 		n := &nics[i]
-		link := "?"
+		link := model.T("?", "?")
 		switch {
 		case n.Disabled:
-			link = "disabled"
+			link = model.T("disabled", "đã tắt")
 		case n.linkUp():
-			link = "up"
+			link = model.T("up", "có link")
 		case n.linkDown():
-			link = "down"
+			link = model.T("down", "mất link")
 			if !n.CarriesIP && !n.BondSlave && n.Configured == "" {
-				link = "down (unused)"
+				link = model.T("down (unused)", "mất link (không dùng)")
 			}
 		}
 		sd := ""
@@ -1052,13 +1052,13 @@ func nicTable(nics []NIC, bonds []Bond, status map[string]model.Severity, res *m
 		if n.CarrierChanges != nil {
 			flaps = fmt.Sprint(*n.CarrierChanges)
 		}
-		ip := strings.Join(n.IPs, ", ")
-		if ip == "" && n.CarriesIP {
-			ip = "(via " + firstNonEmpty(n.Master, "upper interface") + ")"
+		ip := model.T(strings.Join(n.IPs, ", "), strings.Join(n.IPs, ", "))
+		if ip.EN == "" && n.CarriesIP {
+			ip = model.T("(via "+firstNonEmpty(n.Master, "upper interface")+")", "(qua "+firstNonEmpty(n.Master, "giao diện cấp trên")+")")
 		}
-		t.Rows = append(t.Rows, model.Row{Status: status[n.Name], Cells: []string{
+		t.Rows = append(t.Rows, model.NewRow(status[n.Name],
 			n.Name, drv, link, sd, n.Master, ip, errs, flaps,
-		}})
+		))
 	}
 	res.Tables = append(res.Tables, t)
 }

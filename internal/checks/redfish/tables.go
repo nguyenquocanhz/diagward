@@ -37,13 +37,13 @@ func (c *checker) tables() {
 	f := c.facts
 	if len(f.Temperatures) > 0 {
 		t := model.Table{ID: domain + ".temperatures", Title: model.T("Temperatures (BMC)", "Nhiệt độ (BMC)"),
-			Columns: cols("Sensor", "Cảm biến", "Reading", "Số đo", "Warning at", "Ngưỡng cảnh báo", "Critical at", "Ngưỡng nguy hiểm", "Status", "Trạng thái")}
+			Columns: cols("Sensor", "Cảm biến", "Reading", "Số đo", "Warning at", "Ngưỡng cảnh báo", "Critical at", "Ngưỡng tới hạn", "Status", "Trạng thái")}
 		for _, s := range f.Temperatures {
 			crit := s.Crit
 			if crit == nil {
 				crit = s.Fatal
 			}
-			t.Rows = append(t.Rows, model.Row{Status: s.Severity, Cells: []string{dash(s.Name), fmtNum(s.Reading, "°C"), fmtLimit(s.Warn, "°C"), fmtLimit(crit, "°C"), s.Status.Text()}})
+			t.Rows = append(t.Rows, model.NewRow(s.Severity, dash(s.Name), fmtNum(s.Reading, "°C"), fmtLimit(s.Warn, "°C"), fmtLimit(crit, "°C"), statusCell(s.Status.Text())))
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
@@ -55,7 +55,7 @@ func (c *checker) tables() {
 			if unit == "Percent" {
 				unit = "%"
 			}
-			t.Rows = append(t.Rows, model.Row{Status: s.Severity, Cells: []string{dash(s.Name), fmtNum(s.Reading, unit), fmtLimit(s.LowerCrit, unit), s.Status.Text()}})
+			t.Rows = append(t.Rows, model.NewRow(s.Severity, dash(s.Name), fmtNum(s.Reading, unit), fmtLimit(s.LowerCrit, unit), statusCell(s.Status.Text())))
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
@@ -63,7 +63,7 @@ func (c *checker) tables() {
 		t := model.Table{ID: domain + ".psus", Title: model.T("Power supplies (BMC)", "Bộ nguồn (BMC)"),
 			Columns: cols("PSU", "Nguồn", "Model", "Model", "Serial", "Serial", "Capacity", "Công suất", "Input", "Điện vào", "Output", "Đang cấp", "Status", "Trạng thái")}
 		for _, p := range f.PSUs {
-			t.Rows = append(t.Rows, model.Row{Status: p.Severity, Cells: []string{dash(p.Name), dash(first(p.Model, p.Part)), dash(p.Serial), fmtLimit(p.CapacityW, "W"), fmtNum(p.InputV, "V"), fmtNum(p.OutputW, "W"), p.Status.Text()}})
+			t.Rows = append(t.Rows, model.NewRow(p.Severity, dash(p.Name), dash(first(p.Model, p.Part)), dash(p.Serial), fmtLimit(p.CapacityW, "W"), fmtNum(p.InputV, "V"), fmtNum(p.OutputW, "W"), statusCell(p.Status.Text())))
 		}
 		if f.PowerWatts != nil {
 			t.Note = model.Tf("Server power draw: %s", "Công suất server đang tiêu thụ: %s", fmtNum(f.PowerWatts, "W"))
@@ -90,7 +90,7 @@ func (c *checker) tables() {
 			if d.FailurePredicted != nil && *d.FailurePredicted {
 				st += ", failure predicted"
 			}
-			t.Rows = append(t.Rows, model.Row{Status: d.Severity, Cells: []string{dash(driveName(d)), dash(d.Model), dash(d.Serial), size, dash(typ), life, st}})
+			t.Rows = append(t.Rows, model.NewRow(d.Severity, dash(driveName(d)), dash(d.Model), dash(d.Serial), size, dash(typ), life, statusCell(st)))
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
@@ -112,19 +112,19 @@ func (c *checker) tables() {
 					st += fmt.Sprintf(" %.0f%%", *v.RebuildPct)
 				}
 			}
-			t.Rows = append(t.Rows, model.Row{Status: v.Severity, Cells: []string{dash(first(v.Name, v.ID)), dash(v.RAID), size, st}})
+			t.Rows = append(t.Rows, model.NewRow(v.Severity, dash(first(v.Name, v.ID)), dash(v.RAID), size, statusCell(st)))
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
 	if len(f.DIMMs) > 0 {
 		t := model.Table{ID: domain + ".dimms", Title: model.T("Memory modules (BMC)", "Thanh RAM (BMC)"),
-			Columns: cols("Slot", "Khe", "Size", "Dung lượng", "Type", "Loại", "Vendor", "Hãng", "Part number", "Part number", "Serial", "Serial", "Status", "Trạng thái")}
+			Columns: cols("Slot", "Khe", "Size", "Dung lượng", "Type", "Loại", "Vendor", "Hãng", "Part number", "Mã linh kiện", "Serial", "Serial", "Status", "Trạng thái")}
 		for _, d := range f.DIMMs {
 			size := "-"
 			if d.CapacityMiB > 0 {
 				size = units.IEC(uint64(d.CapacityMiB) << 20)
 			}
-			t.Rows = append(t.Rows, model.Row{Status: d.Severity, Cells: []string{dash(d.Slot), size, dash(d.Type), dash(d.Manufacturer), dash(d.PartNumber), dash(d.Serial), d.Status.Text()}})
+			t.Rows = append(t.Rows, model.NewRow(d.Severity, dash(d.Slot), size, dash(d.Type), dash(d.Manufacturer), dash(d.PartNumber), dash(d.Serial), statusCell(d.Status.Text())))
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
@@ -143,8 +143,31 @@ func (c *checker) tables() {
 			case g.Cleared:
 				raw += " (recovered)"
 			}
-			t.Rows = append(t.Rows, model.Row{Status: g.Severity, Cells: []string{raw, last, strconv.Itoa(g.Count), dash(g.Log), dash(g.MessageID), dash(g.Message)}})
+			t.Rows = append(t.Rows, model.NewRow(g.Severity, statusCell(raw), last, strconv.Itoa(g.Count), dash(g.Log), dash(g.MessageID), dash(g.Message)))
 		}
 		c.res.Tables = append(c.res.Tables, t)
 	}
 }
+
+// redfishPhrases translates Redfish Status values (Health, State,
+// Resource.v1 "State" enum), RAID states and the words the tables add.
+var redfishPhrases = units.NewPhrases(map[string]string{
+	"standbyoffline":     "dự phòng, đang tắt",
+	"standbyspare":       "dự phòng (spare)",
+	"intest":             "đang kiểm tra",
+	"starting":           "đang khởi động",
+	"unavailableoffline": "không sẵn sàng",
+	"deferring":          "đang hoãn",
+	"quiesced":           "tạm dừng",
+	"updating":           "đang cập nhật",
+	"qualified":          "đạt chuẩn",
+	"degraded":           "suy giảm",
+	"failure predicted":  "báo sắp hỏng",
+	"repaired":           "đã sửa",
+	"ready":              "sẵn sàng",
+	"non-raid":           "không RAID",
+	"foreign":            "foreign",
+	"blocked":            "bị chặn",
+})
+
+func statusCell(s string) model.Text { return redfishPhrases.Text(s) }

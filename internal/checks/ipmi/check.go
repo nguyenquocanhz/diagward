@@ -456,16 +456,23 @@ func (c *checker) sdrTables() {
 			hidden++
 			continue
 		}
-		rows = append(rows, model.Row{Status: sn.Severity, Cells: []string{sn.Name, sn.Class, firstNonEmpty(sn.Reading, "—"), sn.Status}})
+		rows = append(rows, model.NewRow(sn.Severity, sn.Name, cellText(sn.Class), cellText(firstNonEmpty(sn.Reading, "—")), cellText(sn.Status)))
 	}
 	if len(rows) > 0 {
+		note := model.T("Status: ok; lnc/unc = warning; lcr/ucr = critical; lnr/unr = non-recoverable.",
+			"Trạng thái: ổn (ok); lnc/unc = cảnh báo; lcr/ucr = tới hạn; lnr/unr = không phục hồi.")
+		if hidden > 0 {
+			note = model.Text{
+				EN: fmt.Sprintf("%d sensors without a reading (absent parts, disabled sensors) are not listed. ", hidden) + note.EN,
+				VI: fmt.Sprintf("Không liệt kê %d cảm biến không có số đo (linh kiện không lắp, cảm biến bị tắt). ", hidden) + note.VI,
+			}
+		}
 		c.res.Tables = append(c.res.Tables, model.Table{
 			ID:      domain + ".sensors",
 			Title:   model.T("BMC sensors (IPMI SDR)", "Cảm biến BMC (IPMI SDR)"),
 			Columns: []model.Text{model.T("Sensor", "Cảm biến"), model.T("Type", "Loại"), model.T("Reading", "Giá trị"), model.T("Status", "Trạng thái")},
 			Rows:    rows,
-			Note: model.Tf("%d sensors without a reading (absent parts, disabled sensors) are not listed. Status: ok; lnc/unc = warning; lcr/ucr = critical; lnr/unr = non-recoverable.",
-				"Không liệt kê %d cảm biến không có số đo (linh kiện không lắp, cảm biến bị tắt). Trạng thái: ok; lnc/unc = cảnh báo; lcr/ucr = tới hạn; lnr/unr = không phục hồi.", hidden),
+			Note:    note,
 		})
 	}
 	var pr []model.Row
@@ -494,7 +501,7 @@ func (c *checker) sdrTables() {
 			rd = append(rd, strconv.FormatFloat(*p.Amps, 'f', -1, 64)+" A")
 		}
 		model_ := strings.TrimSpace(p.Model + " " + p.PartNumber)
-		pr = append(pr, model.Row{Status: p.Severity, Cells: []string{p.Label(), state, strings.Join(p.States, ", "), strings.Join(rd, " / "), firstNonEmpty(model_, "—"), firstNonEmpty(p.Serial, "—")}})
+		pr = append(pr, model.NewRow(p.Severity, p.Label(), cellText(state), cellText(strings.Join(p.States, ", ")), strings.Join(rd, " / "), firstNonEmpty(model_, "—"), firstNonEmpty(p.Serial, "—")))
 	}
 	if len(pr) > 0 {
 		c.res.Tables = append(c.res.Tables, model.Table{
@@ -972,7 +979,7 @@ func (c *checker) eventTable() {
 		case e.Recent == 0:
 			state = "old"
 		}
-		rows = append(rows, model.Row{Status: e.Severity, Cells: []string{e.Sensor, e.Event, strconv.Itoa(e.Count), first, last, state}})
+		rows = append(rows, model.NewRow(e.Severity, e.Sensor, eventCell(e.Event), strconv.Itoa(e.Count), first, last, cellText(state)))
 	}
 	if len(rows) == 0 {
 		return
@@ -984,7 +991,7 @@ func (c *checker) eventTable() {
 			model.T("First", "Lần đầu"), model.T("Last", "Gần nhất"), model.T("State", "Tình trạng")},
 		Rows: rows,
 		Note: model.Tf("Times are the BMC clock. Only events from the last %d days raise warnings; \"recovered\" = deasserted afterwards.",
-			"Thời gian theo đồng hồ BMC. Chỉ sự kiện trong %d ngày qua mới gây cảnh báo; \"recovered\" = sau đó đã hết (deasserted).", c.window),
+			"Thời gian theo đồng hồ BMC. Chỉ sự kiện trong %d ngày qua mới gây cảnh báo; \"đã hết\" = sự kiện đã kết thúc sau đó (deasserted).", c.window),
 	})
 }
 

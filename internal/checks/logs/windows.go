@@ -491,8 +491,7 @@ func windowsEvents(b *collect.Bundle, env model.Env, res *model.Result, facts *F
 			if tt, ok := collect.WinTime(s.Last); ok {
 				last = fmtTime(tt)
 			}
-			lvl := map[int]string{1: "critical", 2: "error", 3: "warning"}[s.Level]
-			t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{s.Provider, strconv.Itoa(s.ID), lvl, strconv.Itoa(s.Count), last}})
+			t.Rows = append(t.Rows, model.NewRow(st, s.Provider, strconv.Itoa(s.ID), winLevel(s.Level), strconv.Itoa(s.Count), last))
 		}
 		res.Tables = append(res.Tables, t)
 	}

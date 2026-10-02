@@ -732,15 +732,7 @@ func (c *checker) okFindings() {
 
 // ---- tables ----
 
-func noteText(j *judged) string {
-	if j.note.IsZero() {
-		return ""
-	}
-	if j.note.EN == j.note.VI {
-		return j.note.EN
-	}
-	return j.note.EN + " / " + j.note.VI
-}
+func noteText(j *judged) model.Text { return j.note }
 
 func (c *checker) tables() {
 	if rows := c.tempRows(); len(rows) > 0 {
@@ -760,7 +752,7 @@ func (c *checker) tables() {
 		if j.r.Input != nil {
 			speed = num(*j.r.Input, 0) + " RPM"
 		}
-		fr = append(fr, model.Row{Status: j.sev, Cells: []string{j.r.Chip, j.r.name(), speed, opt(j.r.Min, 0, " RPM"), noteText(j)}})
+		fr = append(fr, model.NewRow(j.sev, j.r.Chip, j.r.name(), speed, opt(j.r.Min, 0, " RPM"), noteText(j)))
 	}
 	if len(fr) > 0 {
 		c.res.Tables = append(c.res.Tables, model.Table{
@@ -775,7 +767,7 @@ func (c *checker) tables() {
 	}
 	var vr []model.Row
 	for _, j := range c.volts {
-		vr = append(vr, model.Row{Status: j.sev, Cells: []string{j.r.Chip, j.r.name(), opt(j.r.Input, 3, " V"), opt(j.r.Min, 3, " V"), opt(j.r.Max, 3, " V"), noteText(j)}})
+		vr = append(vr, model.NewRow(j.sev, j.r.Chip, j.r.name(), opt(j.r.Input, 3, " V"), opt(j.r.Min, 3, " V"), opt(j.r.Max, 3, " V"), noteText(j)))
 	}
 	for _, j := range c.power {
 		unit := " W"
@@ -824,16 +816,16 @@ func (c *checker) tempRows() []model.Row {
 			}
 			continue
 		}
-		rows = append(rows, model.Row{Status: j.sev, Cells: []string{r.Chip, r.name(), optC(r.Input), optC(r.Max), optC(r.Crit), noteText(j)}})
+		rows = append(rows, model.NewRow(j.sev, r.Chip, r.name(), optC(r.Input), optC(r.Max), optC(r.Crit), noteText(j)))
 	}
 	for _, chip := range order {
 		f := folds[chip]
 		m := f.max.r
-		label := m.name()
+		label := model.T(m.name(), m.name())
 		if f.n > 1 {
-			label = fmt.Sprintf("%d cores, hottest %s", f.n, m.name())
+			label = model.Tf("%d cores, hottest %s", "%d nhân, nóng nhất %s", f.n, m.name())
 		}
-		rows[f.at] = model.Row{Status: model.OK, Cells: []string{chip, label, optC(m.Input), optC(m.Max), optC(m.Crit), ""}}
+		rows[f.at] = model.NewRow(model.OK, chip, label, optC(m.Input), optC(m.Max), optC(m.Crit), "")
 	}
 	return rows
 }

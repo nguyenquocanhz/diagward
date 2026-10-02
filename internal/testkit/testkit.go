@@ -106,8 +106,9 @@ func Cov(res model.Result, id string) *model.Coverage {
 
 // Validate checks the invariants every Result must satisfy: findings have
 // an ID with the domain prefix, a known component, both languages for
-// title/detail/action, and coverage entries have known states and
-// components. It reports problems with t.Errorf.
+// title/detail/action, coverage entries have known states and components,
+// and table rows have one cell per column (and one Vietnamese cell per cell
+// when VI is set). It reports problems with t.Errorf.
 func Validate(t testing.TB, res model.Result) {
 	t.Helper()
 	comps := map[string]bool{}
@@ -158,6 +159,25 @@ func Validate(t testing.TB, res model.Result) {
 			if len(r.Cells) != len(tb.Columns) {
 				t.Errorf("table %q row %d: %d cells for %d columns", tb.ID, i, len(r.Cells), len(tb.Columns))
 			}
+			if r.VI != nil && len(r.VI) != len(r.Cells) {
+				t.Errorf("table %q row %d: %d Vietnamese cells for %d cells", tb.ID, i, len(r.VI), len(r.Cells))
+			}
+			for j := range r.VI {
+				if j < len(r.Cells) && (r.VI[j] == "") != (r.Cells[j] == "") {
+					t.Errorf("table %q row %d cell %d: en %q / vi %q must both be set or both empty", tb.ID, i, j, r.Cells[j], r.VI[j])
+				}
+			}
+		}
+		for i, c := range tb.Columns {
+			if c.EN == "" || c.VI == "" {
+				t.Errorf("table %q column %d: title needs en and vi", tb.ID, i)
+			}
+		}
+		if tb.Title.EN == "" || tb.Title.VI == "" {
+			t.Errorf("table %q: title needs en and vi", tb.ID)
+		}
+		if (tb.Note.EN == "") != (tb.Note.VI == "") {
+			t.Errorf("table %q: note must have both languages or neither", tb.ID)
 		}
 	}
 }

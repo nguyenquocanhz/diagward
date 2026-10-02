@@ -1,0 +1,39 @@
+{
+"Controllers":[
+{
+	"Command Status" : {
+		"CLI Version" : "008.0000.0000.0101-Ph3-Consistency May 16, 2021",
+		"Operating system" : "Linux4.18.0-240.22.1.el8_3.x86_64",
+		"Controller" : "0",
+		"Status" : "Success",
+		"Description" : "None"
+	},
+	"Response Data" : {
+		"Energy Pack Info" : [
+			{
+				"Type" : "Supercap",
+				"SubType" : "None",
+				"Voltage(mV)" : 10065,
+				"Temperature(C)" : 29,
+				"Status" : "Critical"
+			}
+		],
+		"Status" : {
+			"Reason" : "Cannot support cache offload."
+		},
+		"Capabilities" : {
+			"Manual Learn" : "Unsupported",
+			"Schedule Learn" : "Unsupported"
+		},
+		"VPD Information" : {
+			"Manufacturer" : "LSI",
+			"Date of Manufacture" : "2016/01/28",
+			"Serial Number" : "0x2178",
+			"Device Chemistry" : "EDLC",
+			"Device Name" : "CVPM05",
+			"Module Version" : "270-aaa"
+		}
+	}
+}
+]
+}

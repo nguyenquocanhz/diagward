@@ -11,9 +11,10 @@
 //
 //   - "redfish.res:<path>" — one per Redfish resource read: Out is the JSON
 //     body, RC the HTTP status (-1 on a transport error, with Err set).
-//   - "ipmi.sdr", "ipmi.sel_info", "ipmi.sel", "ipmi.chassis", "ipmi.mc",
-//     "ipmi.fru", "ipmi.lan", "ipmi.power" — ipmitool output, the same
-//     sections the in-band collectors write, so the ipmi domain parses them.
+//   - "ipmi.sdr", "ipmi.sel_info", "ipmi.sel_time", "ipmi.sel",
+//     "ipmi.chassis", "ipmi.mc", "ipmi.fru", "ipmi.lan", "ipmi.power" —
+//     ipmitool output (run with LC_ALL=C), the same sections the in-band
+//     collectors write, so the ipmi domain parses them.
 //   - "meta.bmc" — key=value lines: vendor, product, redfishVersion,
 //     firmware, protocol, address, and the system identity when known.
 //
@@ -35,6 +36,7 @@ import (
 	"time"
 
 	"github.com/nguyenquocanhz/diagward/collect"
+	"github.com/nguyenquocanhz/diagward/model"
 )
 
 // Options select the BMC and how to reach it.
@@ -49,7 +51,9 @@ type Options struct {
 	SinceDays int           // event log window; 0 = 30
 }
 
-// Errors Collect can return (test them with errors.Is / errors.As).
+// Errors Collect can return (test them with errors.Is / errors.As). Every
+// error Collect returns has a Vietnamese message too: Message(err) returns
+// both languages (most errors are an *Error carrying them).
 var (
 	// ErrAuth means the BMC rejected the user name or password. Collect
 	// stops at the first rejection so that it never triggers the account or
@@ -105,7 +109,7 @@ func Collect(ctx context.Context, o Options) (*collect.Bundle, error) {
 	switch proto {
 	case "auto", "redfish", "ipmi":
 	default:
-		return nil, fmt.Errorf("unknown BMC protocol %q (use auto, redfish or ipmi)", o.Protocol)
+		return nil, &Error{Msg: model.Tf("unknown BMC protocol %q (use auto, redfish or ipmi)", "giao thức BMC %q không hợp lệ (dùng auto, redfish hoặc ipmi)", o.Protocol)}
 	}
 	addr, err := parseAddress(o.Host, o.Port, proto == "ipmi")
 	if err != nil {
@@ -136,7 +140,8 @@ func Collect(ctx context.Context, o Options) (*collect.Bundle, error) {
 		var un *unavailableError
 		if errors.As(cerr, &un) && ctx.Err() == nil {
 			if _, lerr := lookPath("ipmitool"); lerr != nil {
-				cerr = fmt.Errorf("%w: Redfish: %v; IPMI over LAN: ipmitool is not installed", ErrNoProtocol, un.Err)
+				m := un.Text()
+				cerr = kindErr(ErrNoProtocol, ": ", model.T(m.EN+"; IPMI over LAN: ipmitool is not installed", m.VI+"; IPMI qua LAN: chưa cài ipmitool"))
 				meta["protocol"] = "none"
 			} else {
 				meta["redfishError"] = un.Err.Error()
@@ -154,7 +159,7 @@ func Collect(ctx context.Context, o Options) (*collect.Bundle, error) {
 		meta["timeout"] = "1"
 		var un *unavailableError
 		if errors.As(cerr, &un) {
-			cerr = fmt.Errorf("%w: %v", ErrNoProtocol, un.Err)
+			cerr = kindErr(ErrNoProtocol, ": ", un.Text())
 		}
 	}
 	b.Finished = now()
@@ -222,35 +227,36 @@ func parseAddress(h string, port int, ipmiOnly bool) (address, error) {
 	h = strings.TrimSpace(h)
 	a := address{scheme: "https"}
 	if h == "" {
-		return a, fmt.Errorf("%w: no BMC address given", ErrAddress)
+		return a, addrErr("no BMC address given", "chưa nhập địa chỉ BMC")
 	}
 	if strings.ContainsAny(h, " \t\r\n") {
-		return a, fmt.Errorf("%w: the address contains spaces", ErrAddress)
+		return a, addrErr("the address contains spaces", "địa chỉ có khoảng trắng")
 	}
 	if strings.Contains(h, "://") {
 		u, err := url.Parse(h)
 		if err != nil {
-			return a, fmt.Errorf("%w: cannot parse it as a URL", ErrAddress)
+			return a, addrErr("cannot parse it as a URL", "không đọc được dạng URL")
 		}
 		if u.User != nil {
-			return a, fmt.Errorf("%w: do not put the user name or password in the address; pass them as the user and password options", ErrAddress)
+			return a, addrErr("do not put the user name or password in the address; pass them as the user and password options",
+				"đừng ghi tài khoản hay mật khẩu vào địa chỉ; hãy dùng tùy chọn tài khoản và mật khẩu")
 		}
 		switch strings.ToLower(u.Scheme) {
 		case "https", "http":
 			a.scheme = strings.ToLower(u.Scheme)
 		default:
-			return a, fmt.Errorf("%w: unsupported scheme %q (use https)", ErrAddress, u.Scheme)
+			return a, addrErr("unsupported scheme %q (use https)", "không hỗ trợ %q (dùng https)", u.Scheme)
 		}
 		if p := strings.Trim(u.Path, "/"); p != "" && p != "redfish/v1" && p != "redfish" {
-			return a, fmt.Errorf("%w: give only the BMC address, without a path", ErrAddress)
+			return a, addrErr("give only the BMC address, without a path", "chỉ nhập địa chỉ BMC, không kèm đường dẫn")
 		}
 		if u.RawQuery != "" || u.Fragment != "" {
-			return a, fmt.Errorf("%w: give only the BMC address, without a query", ErrAddress)
+			return a, addrErr("give only the BMC address, without a query", "chỉ nhập địa chỉ BMC, không kèm tham số")
 		}
 		a.host, a.port = u.Hostname(), u.Port()
 	} else {
 		if strings.ContainsAny(h, "@/?#") {
-			return a, fmt.Errorf("%w: give only the host name or IP address (and optionally :port)", ErrAddress)
+			return a, addrErr("give only the host name or IP address (and optionally :port)", "chỉ nhập tên máy hoặc địa chỉ IP (có thể kèm :cổng)")
 		}
 		switch {
 		case strings.HasPrefix(h, "["):
@@ -262,7 +268,7 @@ func parseAddress(h string, port int, ipmiOnly bool) (address, error) {
 		case strings.Count(h, ":") == 1:
 			hh, p, err := net.SplitHostPort(h)
 			if err != nil {
-				return a, fmt.Errorf("%w: %v", ErrAddress, err)
+				return a, &Error{Kind: ErrAddress, Msg: model.Tf("invalid BMC address: %v", "địa chỉ BMC không hợp lệ: %v", err), Err: err}
 			}
 			a.host, a.port = hh, p
 		default:
@@ -270,7 +276,7 @@ func parseAddress(h string, port int, ipmiOnly bool) (address, error) {
 		}
 	}
 	if a.host == "" || strings.ContainsAny(a.host, "[]") {
-		return a, fmt.Errorf("%w: no usable host name", ErrAddress)
+		return a, addrErr("no usable host name", "không có tên máy dùng được")
 	}
 	if ipmiOnly {
 		a.ipmiPort, a.port = a.port, ""
@@ -285,7 +291,7 @@ func parseAddress(h string, port int, ipmiOnly bool) (address, error) {
 			continue
 		}
 		if n, err := strconv.Atoi(p); err != nil || n < 1 || n > 65535 {
-			return a, fmt.Errorf("%w: bad port %q", ErrAddress, p)
+			return a, addrErr("bad port %q", "cổng %q không hợp lệ", p)
 		}
 	}
 	a.display = a.host
@@ -306,7 +312,10 @@ func parseAddress(h string, port int, ipmiOnly bool) (address, error) {
 
 // unavailableError marks "Redfish is not offered at this address", the
 // case where auto mode falls back to IPMI.
-type unavailableError struct{ Err error }
+type unavailableError struct {
+	Err error
+	VI  string // Err in Vietnamese ("" = Err as is)
+}
 
 func (e *unavailableError) Error() string { return "Redfish is not available: " + e.Err.Error() }
 func (e *unavailableError) Unwrap() error { return e.Err }

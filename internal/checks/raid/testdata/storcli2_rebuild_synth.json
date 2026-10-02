@@ -1,0 +1,29 @@
+{
+"Controllers":[
+{
+	"Command Status" : {
+		"CLI Version" : "008.0000.0000.0114 Jul 30, 2021",
+		"Operating system" : "Linux4.18.0-240.22.1.el8_3.x86_64",
+		"Controller" : "0",
+		"Status" : "Success",
+		"Description" : "Show Drive Rebuild Status Succeeded."
+	},
+	"Response Data" : [
+		{
+			"EID:Slt" : "326:7",
+			"PID" : 290,
+			"Progress%" : 2,
+			"Status" : "In Progress",
+			"Estimated Time Left" : "19 Minutes"
+		},
+		{
+			"EID:Slt" : "326:14",
+			"PID" : 297,
+			"Progress%" : "-",
+			"Status" : "Not in progress",
+			"Estimated Time Left" : "-"
+		}
+	]
+}
+]
+}

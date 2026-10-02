@@ -118,7 +118,15 @@ func HostInfo(b *collect.Bundle) (h model.HostInfo) {
 		h.BMC = first(ip, addr)
 	}
 	if h.Vendor != "" || h.Model != "" || h.BMC != "" {
-		h.OS = "IPMI (out-of-band)"
+		switch meta["protocol"] {
+		case "ipmi":
+			h.OS = "IPMI (out-of-band)"
+		case "redfish":
+			// Redfish was asked for but nothing usable came back.
+			h.OS = "Redfish (out-of-band, unreadable)"
+		default:
+			h.OS = "BMC (out-of-band)"
+		}
 	}
 	return h
 }
@@ -136,9 +144,16 @@ func (w *walker) systemIdentity(sys map[string]any, h *model.HostInfo) {
 	}
 	h.BIOS = str(sys, "BiosVersion")
 	if n := num(sys, "ProcessorSummary", "Count"); n != nil && *n > 0 && *n < 1024 {
-		cpu := str(sys, "ProcessorSummary", "Model")
-		if cpu != "" {
-			h.CPU = fmt.Sprintf("%d × %s", int(*n), cpu)
+		cpu := strings.Join(strings.Fields(str(sys, "ProcessorSummary", "Model")), " ")
+		count := func(k string) int {
+			if v := num(sys, "ProcessorSummary", k); v != nil && *v > 0 && *v < 1<<20 {
+				return int(*v)
+			}
+			return 0
+		}
+		cores, threads := count("CoreCount"), count("LogicalProcessorCount")
+		if cpu != "" || cores > 0 || threads > 0 {
+			h.SetCPU(cpu, int(*n), cores, threads)
 		} else {
 			h.CPU = fmt.Sprintf("%d CPU", int(*n))
 		}

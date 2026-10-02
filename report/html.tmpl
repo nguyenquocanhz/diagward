@@ -299,7 +299,7 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 <div class="tablewrap"><table class="data">
 <thead><tr><th class="st"><span class="sr">{{template "t" (L "status")}}</span></th>{{range .Columns}}<th>{{template "t" .}}</th>{{end}}</tr></thead>
 <tbody>{{range .Rows}}
-<tr class="c-{{.Class}}"><td class="st"></td>{{range .Cells}}<td>{{.}}</td>{{end}}</tr>{{end}}
+<tr class="c-{{.Class}}"><td class="st"></td>{{range .Cells}}<td>{{template "t" .}}</td>{{end}}</tr>{{end}}
 </tbody></table></div>
 {{if .Note.EN}}<div class="tnote">{{template "p" .Note}}</div>{{end}}
 </details>

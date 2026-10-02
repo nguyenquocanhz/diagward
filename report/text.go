@@ -565,7 +565,7 @@ func (t *textWriter) table(tb model.Table) {
 	for i := range widths {
 		widths[i] = min(strWidth(heads[i]), maxCol)
 		for _, row := range tb.Rows {
-			widths[i] = max(widths[i], min(strWidth(cellAt(row.Cells, i)), maxCol))
+			widths[i] = max(widths[i], min(strWidth(cellAt(row.CellsIn(t.lang), i)), maxCol))
 		}
 		widths[i] = max(widths[i], 1)
 	}
@@ -635,7 +635,7 @@ func (t *textWriter) table(tb model.Table) {
 	}
 	row("", "", rl, stDim)
 	for _, rw := range tb.Rows {
-		row(sevMark(rw.Status, true, t.o.ASCII), sevStyle(rw.Status, true), rw.Cells, "")
+		row(sevMark(rw.Status, true, t.o.ASCII), sevStyle(rw.Status, true), rw.CellsIn(t.lang), "")
 	}
 }
 

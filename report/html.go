@@ -116,7 +116,7 @@ type hRow struct {
 	Class string
 	Mark  string
 	Sev   model.Text
-	Cells []string
+	Cells []model.Text
 }
 
 type hCovSection struct {
@@ -324,11 +324,8 @@ func buildView(r *model.Report, o Options) hView {
 			for _, row := range tb.Rows {
 				hr := hRow{Class: sevClass(row.Status, true), Mark: htmlMark(row.Status, true), Sev: bi(SeverityText(row.Status))}
 				for i := 0; i < ncol; i++ {
-					c := ""
-					if i < len(row.Cells) {
-						c = clean(row.Cells[i], false)
-					}
-					hr.Cells = append(hr.Cells, c)
+					c := row.CellText(i)
+					hr.Cells = append(hr.Cells, model.Text{EN: clean(c.EN, false), VI: clean(c.VI, false)})
 				}
 				ht.Rows = append(ht.Rows, hr)
 			}

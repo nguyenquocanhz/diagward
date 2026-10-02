@@ -275,10 +275,23 @@ func ue(en, vi string, args ...any) error {
 // the caller where it makes sense.
 func fileArg(flagName, v string) error {
 	if len(v) > 1 && strings.HasPrefix(v, "-") {
-		return ue("%s needs a file name (got %q); e.g. %s report%s",
-			"%s cần tên tệp (đang nhận %q); ví dụ %s report%s", flagName, v, flagName, fileExt(flagName))
+		return ue("%s needs a file name (got %q); e.g. %s %s",
+			"%s cần tên tệp (đang nhận %q); ví dụ %s %s", flagName, v, flagName, exampleFile(flagName))
 	}
 	return nil
+}
+
+// exampleFile is the file name shown in fileArg's message.
+func exampleFile(flagName string) string {
+	switch flagName {
+	case "--notify-config":
+		return "/etc/diagward/notify.conf"
+	case "--state":
+		return "/var/lib/diagward/state.json"
+	case "--bench":
+		return "/var/tmp"
+	}
+	return "report" + fileExt(flagName)
 }
 
 func fileExt(flagName string) string {

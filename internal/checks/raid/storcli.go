@@ -306,7 +306,7 @@ func (c *checker) parseStorcliFamily(tool, prefix string) ([]*Controller, []stri
 		for _, r := range arr(e.data) {
 			cid, key, ok := scDriveKey(str(r["Drive-ID"]))
 			ct := byID[cid]
-			if !ok || ct == nil || !strings.Contains(strings.ToLower(str(r["Status"])), "in progress") {
+			if !ok || ct == nil || !rebuildInProgress(str(r["Status"])) {
 				continue
 			}
 			d := ct.drive(key)
@@ -418,6 +418,13 @@ func walkProps(v any, fn func(prop, val string)) {
 			walkProps(e, fn)
 		}
 	}
+}
+
+// rebuildInProgress reads the Status of a "show rebuild" row: "In progress"
+// (StorCLI), "In Progress" (StorCLI2); idle drives say "Not in progress".
+func rebuildInProgress(status string) bool {
+	l := strings.ToLower(strings.TrimSpace(status))
+	return strings.Contains(l, "in progress") && !strings.Contains(l, "not")
 }
 
 func firstNonEmpty(ss ...string) string {

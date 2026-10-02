@@ -144,7 +144,8 @@ func ctrlStatusSev(s string) model.Severity {
 func batteryClass(s string) string {
 	l := strings.ToLower(strings.TrimSpace(s))
 	switch {
-	case l == "", l == "-", l == "na", l == "n/a", strings.Contains(l, "not installed"), strings.Contains(l, "not present"), strings.Contains(l, "absent"):
+	case l == "", l == "-", l == "na", l == "n/a", strings.Contains(l, "not installed"), strings.Contains(l, "not present"), strings.Contains(l, "absent"),
+		l == "unavailable": // StorCLI2 energy pack: none connected
 		return ""
 	case strings.Contains(l, "non operational"), strings.Contains(l, "non-operational"), strings.Contains(l, "nonoperational"):
 		return stFailed
@@ -157,32 +158,6 @@ func batteryClass(s string) string {
 		return stBusy
 	}
 	return stFailed
-}
-
-func errCell(d *HWDrive) string {
-	var p []string
-	if d.MediaErr > 0 {
-		p = append(p, fmt.Sprintf("media %d", d.MediaErr))
-	}
-	if d.OtherErr > 0 {
-		p = append(p, fmt.Sprintf("other %d", d.OtherErr))
-	}
-	if d.PredFail > 0 {
-		p = append(p, fmt.Sprintf("predictive %d", d.PredFail))
-	}
-	if d.SmartWarn > 0 {
-		p = append(p, fmt.Sprintf("SMART warnings %d", d.SmartWarn))
-	}
-	if d.SmartAlert {
-		p = append(p, "SMART alert")
-	}
-	if len(p) == 0 {
-		if d.MediaErr == 0 || d.OtherErr == 0 || d.PredFail == 0 || d.SmartWarn == 0 {
-			return "0"
-		}
-		return "-"
-	}
-	return strings.Join(p, ", ")
 }
 
 func (c *checker) analyzeController(ct *Controller) model.Severity {
@@ -226,7 +201,7 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 		sev = model.Worst(sev, model.Warn)
 		what := ct.Battery
 		if len(ct.BatteryFlags) > 0 {
-			what = strings.TrimSpace(what + " " + strings.Join(ct.BatteryFlags, ", "))
+			what = joinNonEmpty(", ", what, strings.Join(ct.BatteryFlags, ", "))
 		}
 		c.add(model.Finding{
 			ID: "raid.hw_battery", Severity: model.Warn, Target: label,
@@ -488,7 +463,7 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 		if d.Rebuild != "" {
 			state += " " + d.Rebuild
 		}
-		c.drives = append(c.drives, model.Row{Status: ds, Cells: []string{label, where, collapse(strings.TrimSpace(d.Vendor + " " + d.Model)), d.Serial, d.Size, state, errCell(d)}})
+		c.drives = append(c.drives, model.NewRow(ds, label, where, collapse(strings.TrimSpace(d.Vendor+" "+d.Model)), d.Serial, d.Size, stateCell(state), errCell(d)))
 	}
 	if ct.Defunct > 0 && len(failedDrives) == 0 {
 		sev = model.Worst(sev, model.Crit)
@@ -524,7 +499,7 @@ func (c *checker) analyzeController(ct *Controller) model.Severity {
 	} else if ct.BatteryModel != "" {
 		cacheCell = ct.BatteryModel + " " + cacheCell
 	}
-	c.ctrls = append(c.ctrls, model.Row{Status: sev, Cells: []string{ct.Tool + " " + ct.ID, ct.Model, ct.Serial, ct.Firmware, ct.Status, cacheCell}})
+	c.ctrls = append(c.ctrls, model.NewRow(sev, ct.Tool+" "+ct.ID, ct.Model, ct.Serial, ct.Firmware, stateCell(ct.Status), stateCell(cacheCell)))
 	return sev
 }
 
@@ -569,7 +544,8 @@ var hwName = model.T("Hardware RAID controllers", "Card RAID phần cứng")
 
 // hwFamilies are the CLI families and the sections they write.
 var hwFamilies = []struct{ tool, prefix string }{
-	{"storcli", "raid.storcli_"}, {"perccli", "raid.perccli_"}, {"ssacli", "raid.ssacli_"},
+	{"storcli", "raid.storcli_"}, {"perccli", "raid.perccli_"},
+	{"storcli2", "raid.storcli2_"}, {"perccli2", "raid.perccli2_"}, {"ssacli", "raid.ssacli_"},
 	{"arcconf", "raid.arcconf"}, {"megacli", "raid.megacli_"},
 }
 
@@ -600,6 +576,8 @@ func (c *checker) checkHW() {
 		switch fam.tool {
 		case "storcli", "perccli":
 			got, errs = c.parseStorcliFamily(fam.tool, fam.prefix)
+		case "storcli2", "perccli2":
+			got, errs = c.parseStorcli2Family(fam.tool, fam.prefix)
 		case "ssacli":
 			got = parseSsacli(c.b.Get("raid.ssacli_config").Text(), c.b.Get("raid.ssacli_status").Text())
 			if len(got) == 0 {
@@ -660,8 +638,12 @@ func (c *checker) checkHW() {
 
 	// Detected controllers whose CLI did not run.
 	var uncovered []DetectedHW
+	seenUncovered := map[string]bool{}
 	for _, d := range detected {
-		if !ran[familyOf(d.Tool)] {
+		// One card can show up as two PCI functions with the same name
+		// (MegaRAID 9700 SAS5116: MPI and management endpoints).
+		if !ran[familyOf(d.Tool)] && !seenUncovered[d.Name+"|"+d.Tool] {
+			seenUncovered[d.Name+"|"+d.Tool] = true
 			uncovered = append(uncovered, d)
 		}
 	}
@@ -716,6 +698,9 @@ func familyOf(tool string) string {
 	switch tool {
 	case "storcli", "perccli", "megacli":
 		return "megaraid"
+	case "storcli2", "perccli2":
+		// MegaRAID 9600+/PERC 12 (mpi3mr): storcli/perccli do not see them.
+		return "megaraid2"
 	}
 	return tool
 }
@@ -725,7 +710,8 @@ func dup(list []*Controller, ct *Controller) bool {
 		return false
 	}
 	for _, x := range list {
-		// Only storcli vs perccli (vs MegaCli) can see the same controller.
+		// Only storcli vs perccli (vs MegaCli), or storcli2 vs perccli2,
+		// can see the same controller.
 		if x.Tool != ct.Tool && x.Serial == ct.Serial && familyOf(x.Tool) == familyOf(ct.Tool) {
 			return true
 		}
@@ -796,7 +782,7 @@ func yesNo(b bool, yes, no string) string {
 func eventLogCmd(ct *Controller) string {
 	id := strings.TrimPrefix(strings.TrimPrefix(ct.ID, "Slot "), "Controller ")
 	switch ct.Tool {
-	case "storcli", "perccli":
+	case "storcli", "perccli", "storcli2", "perccli2":
 		return ct.Tool + " /c" + id + " show events"
 	case "megacli":
 		return "MegaCli -AdpEventLog -GetLatest 200 -f events.log -a" + id

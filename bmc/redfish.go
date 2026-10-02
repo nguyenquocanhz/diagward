@@ -21,6 +21,7 @@ import (
 
 	"github.com/nguyenquocanhz/diagward/collect"
 	"github.com/nguyenquocanhz/diagward/internal/checks/redfish"
+	"github.com/nguyenquocanhz/diagward/model"
 )
 
 // Limits of the Redfish walk. Variables so tests can shrink them.
@@ -126,7 +127,7 @@ func collectRedfish(ctx context.Context, b *collect.Bundle, o Options, a address
 	}
 	needAuthRoot := sec.RC == http.StatusUnauthorized || sec.RC == http.StatusForbidden
 	if !needAuthRoot && (sec.RC != http.StatusOK || root == nil || !looksLikeServiceRoot(root)) {
-		return &unavailableError{Err: fmt.Errorf("HTTP %d from %s/redfish/v1/ (not a Redfish service)", sec.RC, a.display)}
+		return notRedfish(sec.RC, a.display)
 	}
 
 	if o.User != "" || o.Password != "" {
@@ -147,15 +148,15 @@ func collectRedfish(ctx context.Context, b *collect.Bundle, o Options, a address
 	}
 	if needAuthRoot {
 		if o.User == "" && o.Password == "" {
-			return fmt.Errorf("%w: the BMC requires a user name and password", ErrAuth)
+			return errNeedCredentials()
 		}
 		c.forget("/redfish/v1")
 		root, sec = c.fetchRoot(ctx)
 		if sec.RC == http.StatusUnauthorized || sec.RC == http.StatusForbidden {
-			return fmt.Errorf("%w (HTTP %d)", ErrAuth, sec.RC)
+			return errAuthHTTP(sec.RC)
 		}
 		if root == nil || !looksLikeServiceRoot(root) {
-			return &unavailableError{Err: fmt.Errorf("HTTP %d from %s/redfish/v1/ (not a Redfish service)", sec.RC, a.display)}
+			return notRedfish(sec.RC, a.display)
 		}
 	}
 	vendor := str(root, "Vendor")
@@ -185,9 +186,9 @@ func collectRedfish(ctx context.Context, b *collect.Bundle, o Options, a address
 		// going and let the analysis report what could not be read.
 		if s != nil && s.RC == http.StatusUnauthorized && c.token == "" {
 			if o.User == "" && o.Password == "" {
-				return fmt.Errorf("%w: the BMC requires a user name and password", ErrAuth)
+				return errNeedCredentials()
 			}
-			return fmt.Errorf("%w (HTTP %d)", ErrAuth, s.RC)
+			return errAuthHTTP(s.RC)
 		}
 		if obj != nil {
 			c.eachMember(ctx, obj, maxMembers, c.system)
@@ -225,11 +226,15 @@ func collectRedfish(ctx context.Context, b *collect.Bundle, o Options, a address
 	return nil
 }
 
-// authError is an ErrAuth with its own explanation.
-type authError struct{ msg string }
+// errNeedCredentials: the BMC wants a login and none was given.
+func errNeedCredentials() error {
+	return kindErr(ErrAuth, ": ", model.T("the BMC requires a user name and password", "BMC yêu cầu tài khoản và mật khẩu"))
+}
 
-func (e *authError) Error() string        { return e.msg }
-func (e *authError) Is(target error) bool { return target == ErrAuth }
+// errAuthHTTP: the credentials were refused with this HTTP status.
+func errAuthHTTP(rc int) error {
+	return kindErr(ErrAuth, " ", model.Tf("(HTTP %d)", "(HTTP %d)", rc))
+}
 
 // looksLikeServiceRoot tells a Redfish service root from some other JSON.
 func looksLikeServiceRoot(root map[string]any) bool {
@@ -300,13 +305,15 @@ func (c *rfClient) login(ctx context.Context, root map[string]any) error {
 	resp.Body.Close()
 	switch {
 	case resp.StatusCode == http.StatusUnauthorized:
-		return fmt.Errorf("%w (HTTP 401 from the session service)", ErrAuth)
+		return kindErr(ErrAuth, " ", model.T("(HTTP 401 from the session service)", "(dịch vụ phiên trả về HTTP 401)"))
 	case resp.StatusCode == http.StatusForbidden:
 		// 403 is not "wrong password": the account exists but may not log in
 		// (locked out after failed attempts, disabled, or without the Login
 		// privilege / Redfish interface right). Retrying with Basic would
 		// fail the same way and count against the lockout.
-		return &authError{msg: "the BMC refused this account (HTTP 403 from the session service): it may be locked out after failed logins, disabled, or lack the right to log in over Redfish. Check the account in the BMC user settings (it needs at least the Login / Read Only role, and on Supermicro the Redfish interface enabled for it)"}
+		return &Error{Kind: ErrAuth, Msg: model.T(
+			"the BMC refused this account (HTTP 403 from the session service): it may be locked out after failed logins, disabled, or lack the right to log in over Redfish. Check the account in the BMC user settings (it needs at least the Login / Read Only role, and on Supermicro the Redfish interface enabled for it)",
+			"BMC từ chối tài khoản này (dịch vụ phiên trả về HTTP 403): tài khoản có thể đang bị khóa do đăng nhập sai nhiều lần, bị vô hiệu hóa, hoặc không có quyền đăng nhập qua Redfish. Kiểm tra tài khoản trong phần quản lý người dùng của BMC (cần ít nhất quyền Login / Read Only; trên Supermicro phải bật giao diện Redfish cho tài khoản)")}
 	case resp.StatusCode >= 200 && resp.StatusCode < 300 && resp.Header.Get("X-Auth-Token") != "":
 		c.token = resp.Header.Get("X-Auth-Token")
 		loc := resp.Header.Get("Location")

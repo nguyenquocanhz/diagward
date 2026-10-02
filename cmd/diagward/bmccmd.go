@@ -202,18 +202,15 @@ func isTLSError(err error) bool {
 		strings.Contains(s, "certificate signed by unknown authority") || strings.Contains(s, "tls: failed to verify certificate")
 }
 
-// bmcErrorText explains a BMC error, adding (or translating) the hint about
-// --insecure for certificate problems.
+// bmcErrorText explains a BMC error in the report language. bmc.Message
+// carries both languages, including the --insecure hint for certificate
+// problems.
 func (a *app) bmcErrorText(err error) string {
-	s := err.Error()
-	if !isTLSError(err) {
+	s := bmc.Message(err).In(a.lang)
+	if !isTLSError(err) || strings.Contains(s, "--insecure") {
 		return s
 	}
-	if a.lang == "vi" {
-		return s + "\nChứng chỉ TLS của BMC không được xác thực (BMC thường dùng chứng chỉ tự ký). Nếu chắc chắn địa chỉ này đúng là BMC của bạn, hãy chạy lại với --insecure."
-	}
-	if strings.Contains(s, "--insecure") {
-		return s
-	}
-	return s + "\nThe BMC's TLS certificate could not be verified (BMCs usually ship a self-signed certificate). If you are sure this address is your BMC, run again with --insecure."
+	// A certificate error that reached us untranslated.
+	return s + a.t("\nThe BMC's TLS certificate could not be verified (BMCs usually ship a self-signed certificate). If you are sure this address is your BMC, run again with --insecure.",
+		"\nKhông xác thực được chứng chỉ TLS của BMC (BMC thường dùng chứng chỉ tự ký). Nếu chắc chắn địa chỉ này đúng là BMC của bạn, hãy chạy lại với --insecure.")
 }

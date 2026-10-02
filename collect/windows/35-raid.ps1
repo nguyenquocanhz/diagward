@@ -1,6 +1,7 @@
 # RAID domain: Storage Spaces (pools, virtual disks, pool disks, repair jobs),
 # RAID controller detection (Win32_SCSIController) and the vendor RAID CLIs
-# (storcli/perccli/ssacli/arcconf/MegaCli) when installed. Read-only.
+# (storcli/perccli, storcli2/perccli2 for MegaRAID 9600+/PERC 12,
+# ssacli/arcconf/MegaCli) when installed. Read-only.
 # Section names for the vendor CLIs match the Linux collector so one parser
 # serves both.
 
@@ -12,7 +13,10 @@ $DW_TOOLDIRS += @(
   "$env:ProgramFiles\Adaptec\Adaptec Storage Manager",
   "$env:ProgramFiles\Microsemi\maxView Storage Manager\cmdline",
   "${env:ProgramFiles(x86)}\MegaRAID Storage Manager",
-  "$env:SystemDrive\MegaCli"
+  "$env:SystemDrive\MegaCli",
+  "$env:SystemDrive\storcli2", "$env:SystemDrive\perccli2",
+  "$env:ProgramFiles\Broadcom\StorCLI2", "$env:ProgramFiles\Dell\PERCCLI2",
+  "$env:ProgramFiles\LSI"
 )
 
 # Enum values are written as their names ([string]), arrays joined by ','.
@@ -101,11 +105,13 @@ DW-Json 'raid.win_controllers' {
 # ---- vendor RAID CLIs ----
 $rdSc = $null; foreach ($n in @('storcli64', 'storcli')) { if (-not $rdSc) { $rdSc = DW-FindExe $n } }
 $rdPc = $null; foreach ($n in @('perccli64', 'perccli')) { if (-not $rdPc) { $rdPc = DW-FindExe $n } }
+$rdS2 = DW-FindExe 'storcli2'
+$rdP2 = DW-FindExe 'perccli2'
 $rdHp = $null; foreach ($n in @('ssacli', 'hpssacli', 'hpacucli')) { if (-not $rdHp) { $rdHp = DW-FindExe $n } }
 $rdAc = DW-FindExe 'arcconf'
 $rdMc = $null; foreach ($n in @('MegaCli64', 'MegaCli')) { if (-not $rdMc) { $rdMc = DW-FindExe $n } }
 
-if ($rdSc -or $rdPc -or $rdHp -or $rdAc -or $rdMc) {
+if ($rdSc -or $rdPc -or $rdS2 -or $rdP2 -or $rdHp -or $rdAc -or $rdMc) {
   if (-not $DW_ADMIN) {
     DW-Skip 'raid.hw' 'not-admin'
   } else {
@@ -123,6 +129,20 @@ if ($rdSc -or $rdPc -or $rdHp -or $rdAc -or $rdMc) {
         DW-Exe "raid.${p}_rebuild" $exe @('/call/eall/sall', 'show', 'rebuild', 'J') $rdTmp
         DW-Exe "raid.${p}_bbu" $exe @('/call/bbu', 'show', 'all', 'J') $rdTmp
         DW-Exe "raid.${p}_cv" $exe @('/call/cv', 'show', 'all', 'J') $rdTmp
+      }
+      # StorCLI2/PERCCLI2 (MPI3 controllers): the same JSON on every OS.
+      # Nothing more runs when the CLI sees no controller.
+      foreach ($fam in @(@('storcli2', $rdS2), @('perccli2', $rdP2))) {
+        if (-not $fam[1]) { continue }
+        $p = $fam[0]; $exe = $fam[1]
+        $r = DW-Run $exe @('/call', 'show', 'all', 'J') $rdTmp
+        if ($null -eq $r) { DW-Missing "raid.${p}_ctrl" $p; continue }
+        DW-Emit "raid.${p}_ctrl" $r.Out $r.Err $r.Rc $r.Ms $r.Flags
+        if ($r.Out -match '"Number of Controllers"\s*:\s*0(?![0-9])') { continue }
+        DW-Exe "raid.${p}_vd" $exe @('/call/vall', 'show', 'all', 'J') $rdTmp
+        DW-Exe "raid.${p}_pd" $exe @('/call/eall/sall', 'show', 'all', 'J') $rdTmp
+        DW-Exe "raid.${p}_rebuild" $exe @('/call/eall/sall', 'show', 'rebuild', 'J') $rdTmp
+        DW-Exe "raid.${p}_ep" $exe @('/call/ep', 'show', 'all', 'J') $rdTmp
       }
       if ($rdHp) {
         DW-Exe 'raid.ssacli_config' $rdHp @('ctrl', 'all', 'show', 'config', 'detail') $rdTmp

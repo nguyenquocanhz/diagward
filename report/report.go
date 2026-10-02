@@ -663,7 +663,7 @@ func identity(r *model.Report, extra bool) []kv {
 	add("os", same(osName))
 	add("kernel", same(strings.TrimSpace(h.Kernel+" "+h.Arch)))
 	if extra {
-		add("cpu", same(h.CPU))
+		add("cpu", h.CPUText())
 		if h.MemBytes > 0 {
 			add("ram", same(units.IEC(h.MemBytes)))
 		}

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/nguyenquocanhz/diagward/collect"
+	"github.com/nguyenquocanhz/diagward/model"
 )
 
 // Runner runs an external command with extra environment variables
@@ -57,6 +57,9 @@ var ipmiCommands = []struct {
 	{"ipmi.chassis", []string{"chassis", "status"}},
 	{"ipmi.sdr", []string{"sdr", "elist"}},
 	{"ipmi.sel_info", []string{"sel", "info"}},
+	// The BMC clock, read before the SEL so the ipmi domain can tell event
+	// times written by a BMC whose clock is wrong.
+	{"ipmi.sel_time", []string{"sel", "time", "get"}},
 	{"ipmi.fru", []string{"fru", "print"}},
 	{"ipmi.lan", []string{"lan", "print"}},
 	{"ipmi.power", []string{"dcmi", "power", "reading"}},
@@ -64,8 +67,13 @@ var ipmiCommands = []struct {
 }
 
 // ipmiArgs builds the ipmitool command line. The password is never on it:
-// -E makes ipmitool read IPMI_PASSWORD from the environment.
+// -E makes ipmitool read IPMI_PASSWORD from the environment. LC_ALL=C keeps
+// the output in the format the ipmi domain parses: ipmitool formats SEL
+// dates with strftime and the user's locale (a de_DE or vi_VN laptop would
+// otherwise produce day-first or translated dates), as the in-band
+// collectors do.
 func ipmiArgs(a address, user, pass string, cmd []string) (args, env []string) {
+	env = []string{"LC_ALL=C"}
 	args = []string{"-I", "lanplus", "-H", a.host}
 	if a.ipmiPort != "" {
 		args = append(args, "-p", a.ipmiPort)
@@ -75,7 +83,7 @@ func ipmiArgs(a address, user, pass string, cmd []string) (args, env []string) {
 	}
 	if pass != "" {
 		args = append(args, "-E")
-		env = []string{"IPMI_PASSWORD=" + pass}
+		env = append(env, "IPMI_PASSWORD="+pass)
 	}
 	return append(args, cmd...), env
 }
@@ -167,12 +175,15 @@ func collectIPMI(ctx context.Context, b *collect.Bundle, o Options, a address, m
 			low := strings.ToLower(s.Err + "\n" + s.Out)
 			for _, f := range ipmiSessionFailures {
 				if strings.Contains(low, f) {
-					return fmt.Errorf("%w: IPMI over LAN to %s failed (%s). Check the user name and password, and that IPMI over LAN is enabled in the BMC settings",
-						ErrNoProtocol, target, firstLine(s.Err))
+					return kindErr(ErrNoProtocol, ": ", model.Tf(
+						"IPMI over LAN to %s failed (%s). Check the user name and password, and that IPMI over LAN is enabled in the BMC settings",
+						"IPMI qua LAN tới %s không thành công (%s). Kiểm tra tài khoản, mật khẩu và đã bật IPMI over LAN trong cài đặt BMC chưa",
+						target, firstLine(s.Err)))
 				}
 			}
 			if s.Timeout {
-				return fmt.Errorf("%w: IPMI over LAN to %s did not answer (UDP port %s)", ErrNoProtocol, target, first(a.ipmiPort, "623"))
+				return kindErr(ErrNoProtocol, ": ", model.Tf("IPMI over LAN to %s did not answer (UDP port %s)",
+					"IPMI qua LAN tới %s không trả lời (cổng UDP %s)", target, first(a.ipmiPort, "623")))
 			}
 		}
 	}

@@ -564,7 +564,7 @@ func bootTable(boots []BootFact) model.Table {
 		if bf.Ending == "running" {
 			end = "-"
 		}
-		t.Rows = append(t.Rows, model.Row{Status: st, Cells: []string{idx, fmtTime(bf.Start), end, bf.Ending, bf.Source}})
+		t.Rows = append(t.Rows, model.NewRow(st, idx, fmtTime(bf.Start), end, bootEnding(bf.Ending), bf.Source))
 	}
 	return t
 }

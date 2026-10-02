@@ -1,0 +1,59 @@
+{
+"Controllers":[
+{
+	"Command Status" : {
+		"CLI Version" : "008.0000.0000.0101-Ph3-Consistency May 16, 2021",
+		"Operating system" : "Linux4.18.0-240.22.1.el8_3.x86_64",
+		"Controller" : "0",
+		"Status" : "Success",
+		"Description" : "None"
+	},
+	"Response Data" : {
+		"Basics" : {
+			"Product Name" : "MegaRAID 9660-16i Tri-Mode Storage Adapter",
+			"Serial Number" : "SPB23P0250",
+			"SAS Address" : "0x500062b211e47ac0"
+		},
+		"Version" : {
+			"Package Version" : "8.4.0.0-00000-00002",
+			"Firmware Version" : "8.4.0.0-00000-00002",
+			"Driver Name" : "mpi3mr"
+		},
+		"Status" : {
+			"Controller Status" : "Need Attention",
+			"VD Count" : 1,
+			"VD Degraded Count" : 1,
+			"VD Offline Count" : 0,
+			"PD Count" : 6,
+			"Critical Predictive Failure PD Drive Count" : 0,
+			"Failed PD Drive Count" : 0,
+			"Memory Correctable Errors" : 0,
+			"Memory Uncorrectable Errors" : 0
+		},
+		"Drive Groups" : 1,
+		"TOPOLOGY" : [
+			{"DG" : 0, "Span" : "-", "Row" : "-", "EID:Slot" : "-", "PID" : "-", "Type" : "RAID50", "State" : "-", "Status" : "-", "BT" : "N", "Size" : "1.817 TiB", "PDC" : "dflt", "Secured" : "N", "FSpace" : "N"},
+			{"DG" : 0, "Span" : 1, "Row" : 2, "EID:Slot" : "326:7", "PID" : 290, "Type" : "DRIVE", "State" : "Conf", "Status" : "Rebuild", "BT" : "N", "Size" : "558.406 GiB", "PDC" : "dflt", "Secured" : "N", "FSpace" : "-"}
+		],
+		"Virtual Drives" : 1,
+		"VD LIST" : [
+			{"DG/VD" : "0/2", "TYPE" : "RAID50", "State" : "Dgrd", "Access" : "RW", "CurrentCache" : "NR,WB", "DefaultCache" : "NR,WB", "Size" : "1.817 TiB", "Name" : ""}
+		],
+		"Physical Drives" : 6,
+		"PD LIST" : [
+			{"EID:Slt" : "326:7", "PID" : 290, "State" : "Conf", "Status" : "Rebuild", "DG" : 0, "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"},
+			{"EID:Slt" : "326:14", "PID" : 297, "State" : "Conf", "Status" : "Online", "DG" : 0, "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"},
+			{"EID:Slt" : "326:16", "PID" : 299, "State" : "Conf", "Status" : "Online", "DG" : 0, "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"},
+			{"EID:Slt" : "326:17", "PID" : 300, "State" : "Conf", "Status" : "Online", "DG" : 0, "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"},
+			{"EID:Slt" : "326:18", "PID" : 301, "State" : "Conf", "Status" : "Online", "DG" : 0, "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"},
+			{"EID:Slt" : "326:19", "PID" : 302, "State" : "Conf", "Status" : "Online", "DG" : 0, "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"},
+			{"EID:Slt" : "326:20", "PID" : 303, "State" : "GHS", "Status" : "Good", "DG" : "-", "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"},
+			{"EID:Slt" : "326:21", "PID" : 304, "State" : "ConfShld", "Status" : "Online", "DG" : "-", "Size" : "558.406 GiB", "Intf" : "SAS", "Med" : "HDD", "SED_Type" : "-", "SeSz" : "512B", "Model" : "ST600MM0009", "Sp" : "U", "LU/NS Count" : 1, "Alt-EID" : "-"}
+		],
+		"Energy Pack Info" : [
+			{"Type" : "Supercap", "SubType" : "None", "Voltage(mV)" : 10065, "Temperature(C)" : 29, "Status" : "Optimal"}
+		]
+	}
+}
+]
+}

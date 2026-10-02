@@ -663,31 +663,35 @@ func finishTable(fss []FS, pools []ZPoolSpace, status map[string]model.Severity,
 		if fs.InodePct != nil {
 			ino = fmt.Sprintf("%.0f%%", *fs.InodePct)
 		}
-		mode := "rw"
+		mode := model.T("rw", "đọc ghi (rw)")
 		if fs.ReadOnly {
-			mode = "ro"
+			mode = model.T("ro", "chỉ đọc (ro)")
 		}
 		if fs.ErrorsCount > 0 {
-			mode += fmt.Sprintf(", %d errors", fs.ErrorsCount)
+			mode.EN += fmt.Sprintf(", %d errors", fs.ErrorsCount)
+			mode.VI += fmt.Sprintf(", %d lỗi", fs.ErrorsCount)
 		}
 		if fs.Dirty {
-			mode += ", dirty"
+			mode.EN += ", dirty"
+			mode.VI += ", chưa sạch (dirty)"
 		}
 		if fs.State != "" && !strings.EqualFold(fs.State, "clean") && !strings.EqualFold(fs.State, "healthy") {
-			mode += ", " + fs.State
+			st := fsPhrases.Text(fs.State)
+			mode.EN += ", " + st.EN
+			mode.VI += ", " + st.VI
 		}
 		used := fmt.Sprintf("%.0f%%", fs.UsePct)
 		if fs.byPool {
 			used += " (dataset)"
 		}
-		t.Rows = append(t.Rows, model.Row{Status: status[fs.Mount], Cells: []string{
+		t.Rows = append(t.Rows, model.NewRow(status[fs.Mount],
 			fs.Mount, fs.Device, fs.Type, units.SI(fs.SizeBytes), units.SI(fs.AvailBytes), used, ino, mode,
-		}})
+		))
 	}
 	for _, p := range pools {
-		t.Rows = append(t.Rows, model.Row{Status: status["zpool:"+p.Name], Cells: []string{
-			"(ZFS pool)", p.Name, "zpool", units.SI(p.SizeBytes), units.SI(p.FreeBytes), fmt.Sprintf("%.0f%%", p.CapPct), "", strings.ToLower(p.Health),
-		}})
+		t.Rows = append(t.Rows, model.NewRow(status["zpool:"+p.Name],
+			model.T("(ZFS pool)", "(pool ZFS)"), p.Name, "zpool", units.SI(p.SizeBytes), units.SI(p.FreeBytes), fmt.Sprintf("%.0f%%", p.CapPct), "", fsPhrases.Text(strings.ToLower(p.Health)),
+		))
 	}
 	if len(pools) > 0 {
 		t.Note = model.T("For a ZFS dataset df counts only the dataset's own data; the pool row shows how full the storage really is.",
@@ -746,3 +750,17 @@ func spaceAction(env model.Env, fs FS) model.Text {
 	return model.Tf("To free space on %s, find the big folders (TreeSize or WizTree), remove old backups, database dumps and logs, and check the shadow copy storage (vssadmin list shadowstorage). Extend the volume if usage keeps growing.",
 		"Để giải phóng dung lượng trên %s, tìm thư mục lớn (TreeSize hoặc WizTree), xoá backup cũ, file dump database và log, kiểm tra dung lượng shadow copy (vssadmin list shadowstorage). Nếu dung lượng tiếp tục tăng, mở rộng volume.", m)
 }
+
+// fsPhrases translates filesystem and pool states for the table: the ext4
+// superblock state, Windows volume health, ZFS pool health.
+var fsPhrases = units.NewPhrases(map[string]string{
+	"clean with errors": "sạch nhưng có lỗi",
+	"not clean":         "chưa sạch",
+	"clean":             "sạch",
+	"dirty":             "chưa sạch (dirty)",
+	"unhealthy":         "không tốt",
+	"faulted":           "lỗi (faulted)",
+	"unavail":           "không truy cập được",
+	"removed":           "đã rút",
+	"suspended":         "tạm dừng (suspended)",
+})

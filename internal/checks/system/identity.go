@@ -1,13 +1,13 @@
 package system
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/nguyenquocanhz/diagward/collect"
+	"github.com/nguyenquocanhz/diagward/internal/checks/cpu/dmi"
 	"github.com/nguyenquocanhz/diagward/model"
 )
 
@@ -124,7 +124,10 @@ func linuxIdentity(b *collect.Bundle) Identity {
 	if id.Threads == 0 {
 		id.Threads = atoi(strings.TrimSpace(b.Get("system.nproc").Text()))
 	}
-	id.CPU = cpuSummary(c.model, c.sockets, c.cores, id.Threads)
+	if id.CPUModel == "" {
+		dmiCPU(b.Get("cpu.dmidecode").Text(), &id)
+	}
+	id.CPU = cpuSummary(id.CPUModel, id.Sockets, id.Cores, id.Threads)
 	if kb := meminfoKB(b.Get("system.meminfo").Text(), "MemTotal"); kb > 0 {
 		id.MemBytes = kb * 1024
 	}
@@ -222,29 +225,10 @@ func cleanCPUName(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
-// cpuSummary formats "2 × Intel Xeon Silver 4214 (24 cores, 48 threads)".
-func cpuSummary(model string, sockets, cores, threads int) string {
-	if model == "" && threads == 0 {
-		return ""
-	}
-	var parts []string
-	if cores > 0 {
-		parts = append(parts, plural(cores, "core"))
-	}
-	if threads > 0 {
-		parts = append(parts, plural(threads, "thread"))
-	}
-	s := model
-	if s == "" {
-		s = "CPU"
-	}
-	if sockets > 1 {
-		s = fmt.Sprintf("%d × %s", sockets, s)
-	}
-	if len(parts) > 0 {
-		s += " (" + strings.Join(parts, ", ") + ")"
-	}
-	return s
+// cpuSummary formats "2 × Intel Xeon Silver 4214 (24 cores, 48 threads)" (the
+// English line kept in Identity.CPU; model.CPUSummary has both languages).
+func cpuSummary(name string, sockets, cores, threads int) string {
+	return model.CPUSummary(name, sockets, cores, threads).EN
 }
 
 func meminfoKB(s, key string) uint64 {
@@ -393,9 +377,39 @@ func bmcHost(b *collect.Bundle, env model.Env) model.HostInfo {
 	return h
 }
 
-func plural(n int, word string) string {
-	if n == 1 {
-		return fmt.Sprintf("1 %s", word)
+// dmiCPU fills the CPU model, sockets and cores from the cpu domain's
+// dmidecode type 4 records (populated and enabled sockets) when
+// /proc/cpuinfo gave no model, so the report header still names the CPU.
+func dmiCPU(s string, id *Identity) {
+	var models []string
+	seen := map[string]bool{}
+	sockets, cores, threads := 0, 0, 0
+	for _, r := range dmi.OfType(dmi.Parse(s), 4) {
+		st := strings.ToLower(r.Get("Status"))
+		if !strings.HasPrefix(st, "populated") || !strings.Contains(st, "enabled") {
+			continue
+		}
+		m := cleanCPUName(dmi.Clean(r.Get("Version")))
+		if m == "" {
+			continue
+		}
+		if !seen[m] {
+			seen[m] = true
+			models = append(models, m)
+		}
+		sockets++
+		n := atoi(r.Get("Core Enabled"))
+		if n <= 0 {
+			n = atoi(r.Get("Core Count"))
+		}
+		cores += max(n, 0)
+		threads += max(atoi(r.Get("Thread Count")), 0)
 	}
-	return fmt.Sprintf("%d %ss", n, word)
+	if len(models) == 0 {
+		return
+	}
+	id.CPUModel, id.Sockets, id.Cores = strings.Join(models, " + "), sockets, cores
+	if id.Threads == 0 {
+		id.Threads = threads
+	}
 }

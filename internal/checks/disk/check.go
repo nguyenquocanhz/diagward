@@ -823,7 +823,7 @@ func (c *checker) row(d *diskInfo) (model.Row, DiskFact) {
 			f.SmartDevice += " -d " + d.SmartType
 		}
 	}
-	counters := ""
+	var counters model.Text
 	health := d.health
 	if s != nil {
 		f.Protocol = s.Protocol
@@ -832,7 +832,7 @@ func (c *checker) row(d *diskInfo) (model.Row, DiskFact) {
 		f.PowerOnHours = s.POH
 		f.PercentUsed, _ = wearUsed(s)
 		f.Standby = s.Standby != ""
-		var cs []string
+		var cs []model.Text
 		if len(s.Attrs) > 0 {
 			f.Reallocated = attrCount(s, 5)
 			f.Pending = attrCount(s, 197)
@@ -840,29 +840,29 @@ func (c *checker) row(d *diskInfo) (model.Row, DiskFact) {
 			f.ReportedUncorrect = attrCount(s, 187)
 			f.CRCErrors = attrCount(s, 199)
 			for _, x := range []struct {
-				p     *uint64
-				label string
-			}{{f.Reallocated, "realloc"}, {f.Pending, "pending"}, {f.OfflineUncorrectable, "offline-unc"}, {f.CRCErrors, "CRC"}} {
+				p      *uint64
+				en, vi string
+			}{{f.Reallocated, "realloc", "sector đã thay"}, {f.Pending, "pending", "sector chờ thay"}, {f.OfflineUncorrectable, "offline-unc", "lỗi quét offline"}, {f.CRCErrors, "CRC", "CRC"}} {
 				if x.p != nil {
-					cs = append(cs, fmt.Sprintf("%s %s", x.label, units.Thousands(*x.p)))
+					cs = append(cs, countCell(x.en, x.vi, *x.p))
 				}
 			}
 		}
 		if n := s.NVMe; n != nil {
 			f.NVMeCriticalWarning, f.NVMeMediaErrors, f.NVMeErrorLogEntries, f.AvailableSpare = n.CriticalWarning, n.MediaErrors, n.NumErrLogEntries, n.AvailableSpare
 			if n.CriticalWarning != nil && *n.CriticalWarning != 0 {
-				cs = append(cs, fmt.Sprintf("critical warning 0x%02x", *n.CriticalWarning))
+				cs = append(cs, model.Tf("critical warning 0x%02x", "cảnh báo nghiêm trọng 0x%02x", *n.CriticalWarning))
 			}
 			if n.AvailableSpare != nil {
-				cs = append(cs, fmt.Sprintf("spare %d%%", *n.AvailableSpare))
+				cs = append(cs, model.Tf("spare %d%%", "dự phòng %d%%", *n.AvailableSpare))
 			}
 			if n.MediaErrors != nil {
-				cs = append(cs, "media errors "+units.Thousands(*n.MediaErrors))
+				cs = append(cs, countCell("media errors", "lỗi media", *n.MediaErrors))
 			}
 		}
 		if s.GrownDefects != nil {
 			f.GrownDefects = s.GrownDefects
-			cs = append(cs, "grown defects "+units.Thousands(*s.GrownDefects))
+			cs = append(cs, countCell("grown defects", "sector lỗi phát sinh", *s.GrownDefects))
 		}
 		if s.Uncorrected != nil {
 			f.UncorrectedErrors = s.Uncorrected
@@ -870,12 +870,12 @@ func (c *checker) row(d *diskInfo) (model.Row, DiskFact) {
 			for _, v := range s.Uncorrected {
 				tot += v
 			}
-			cs = append(cs, "uncorrected "+units.Thousands(tot))
+			cs = append(cs, countCell("uncorrected", "lỗi không sửa được", tot))
 		}
 		if f.PercentUsed != nil {
-			cs = append(cs, fmt.Sprintf("used %d%%", *f.PercentUsed))
+			cs = append(cs, usedCell(*f.PercentUsed))
 		}
-		counters = strings.Join(cs, ", ")
+		counters = joinCells(cs)
 		if health == "" {
 			switch {
 			case s.Standby != "":
@@ -897,7 +897,7 @@ func (c *checker) row(d *diskInfo) (model.Row, DiskFact) {
 		if f.PercentUsed == nil {
 			f.PercentUsed = w.wear()
 		}
-		if counters == "" {
+		if counters.IsZero() {
 			counters = w.counters()
 		}
 		if health == "" {
@@ -921,12 +921,12 @@ func (c *checker) row(d *diskInfo) (model.Row, DiskFact) {
 		}
 	}
 	f.Health = health
-	temp, poh := "", ""
+	temp, poh := "", model.Text{}
 	if f.TemperatureC != nil {
 		temp = fmt.Sprintf("%d °C", *f.TemperatureC)
 	}
 	if f.PowerOnHours != nil {
-		poh = units.Hours(*f.PowerOnHours).EN
+		poh = units.Hours(*f.PowerOnHours)
 	}
 	status := d.sev.String()
 	switch {
@@ -941,9 +941,9 @@ func (c *checker) row(d *diskInfo) (model.Row, DiskFact) {
 	if d.Vendor != "" && strings.HasPrefix(strings.ToUpper(d.Model), strings.ToUpper(d.Vendor)) {
 		mdl = d.Model
 	}
-	row := model.Row{Status: d.sev, Cells: []string{
-		d.target(), mdl, d.Serial, sizeText(d.Bytes), f.Kind, d.Iface, health, temp, poh, counters, status,
-	}}
+	row := model.NewRow(d.sev,
+		d.target(), mdl, d.Serial, sizeText(d.Bytes), diskWords(f.Kind), diskWords(d.Iface), diskWords(health), temp, poh, counters, diskWords(status),
+	)
 	return row, f
 }
 
@@ -992,4 +992,49 @@ func standbyText(names []string) model.Text {
 	return model.Tf("Asleep (standby) and not woken up, so S.M.A.R.T. was not read: %s. Run Diagward again while the disks are active.",
 		"Ổ đang ngủ (standby) nên không bị đánh thức, chưa đọc được S.M.A.R.T.: %s. Chạy lại Diagward khi ổ đang hoạt động.",
 		strings.Join(names, ", "))
+}
+
+// ---- bilingual table cells ----
+
+// diskCellWords is Vietnamese for the words of the disk table: disk kinds,
+// the health verdict (smartctl's PASSED/FAILED, Windows HealthStatus) and
+// the row status.
+var diskCellWords = map[string]string{
+	"virtual":             "ổ ảo",
+	"file backed virtual": "ổ ảo dạng file",
+	"raid volume":         "volume RAID",
+	"passed":              "đạt",
+	"unhealthy":           "không tốt",
+	"standby":             "đang ngủ (standby)",
+	"n/a (san lun)":       "không áp dụng (SAN LUN)",
+	"n/a (virtual)":       "không áp dụng (ổ ảo)",
+	"n/a (raid volume)":   "không áp dụng (volume RAID)",
+	"n/a":                 "không áp dụng",
+	"timeout":             "quá thời gian chờ",
+	"unreadable":          "không đọc được",
+	"not checked":         "chưa kiểm tra",
+	"info":                "lưu ý",
+	"warn":                "cảnh báo",
+	"crit":                "nghiêm trọng",
+}
+
+func diskWords(s string) model.Text { return units.Words(s, diskCellWords) }
+
+// countCell formats "pending 81" / "sector chờ thay 81" (thousands
+// separated the way each language writes them).
+func countCell(en, vi string, n uint64) model.Text {
+	return model.T(en+" "+units.Thousands(n), vi+" "+units.ThousandsVI(n))
+}
+
+// usedCell is the share of the rated endurance an SSD has used ("hao
+// mòn", not "đã dùng", which reads as space used).
+func usedCell(pct int) model.Text { return model.Tf("used %d%%", "hao mòn %d%%", pct) }
+
+// joinCells joins counter texts with ", " in each language.
+func joinCells(cs []model.Text) model.Text {
+	var en, vi []string
+	for _, c := range cs {
+		en, vi = append(en, c.EN), append(vi, c.VI)
+	}
+	return model.T(strings.Join(en, ", "), strings.Join(vi, ", "))
 }

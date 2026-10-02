@@ -142,9 +142,9 @@ func checkWindows(b *collect.Bundle, env model.Env, res *model.Result) {
 		if p.NumberOfCores > 0 {
 			cores = fmt.Sprintf("%d/%d", firstPos(p.NumberOfEnabledCore, p.NumberOfCores), p.NumberOfCores)
 		}
-		t.Rows = append(t.Rows, model.Row{Status: row, Cells: []string{
-			sock, mdl, firstNonEmpty(stText, p.Status), cores, itoa(p.NumberOfLogicalProcessors), speeds(p.CurrentClockSpeed, p.MaxClockSpeed), load,
-		}})
+		t.Rows = append(t.Rows, model.NewRow(row,
+			sock, mdl, statusCell(firstNonEmpty(stText, p.Status)), cores, itoa(p.NumberOfLogicalProcessors), speeds(p.CurrentClockSpeed, p.MaxClockSpeed), load,
+		))
 	}
 	if len(t.Rows) > 0 {
 		res.Tables = append(res.Tables, t)

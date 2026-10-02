@@ -86,7 +86,8 @@ func linuxHost(b *collect.Bundle, env model.Env) model.HostInfo {
 	}
 	ident := linuxIdentity(b)
 	h.Vendor, h.Model, h.Serial = ident.Vendor, ident.Model, ident.Serial
-	h.BIOS, h.Board, h.CPU, h.MemBytes = ident.biosString(), ident.boardString(), ident.CPU, ident.MemBytes
+	h.BIOS, h.Board, h.MemBytes = ident.biosString(), ident.boardString(), ident.MemBytes
+	h.SetCPU(ident.CPUModel, ident.Sockets, ident.Cores, ident.Threads)
 	h.Uptime = parseUptime(b.Get("system.uptime").Text())
 	if h.Uptime == 0 {
 		h.Uptime = parseUptime(id["uptime"])
@@ -128,7 +129,8 @@ func windowsHost(b *collect.Bundle, env model.Env) model.HostInfo {
 	}
 	ident := windowsIdentity(b)
 	h.Vendor, h.Model, h.Serial = ident.Vendor, ident.Model, ident.Serial
-	h.BIOS, h.Board, h.CPU, h.MemBytes = ident.biosString(), ident.boardString(), ident.CPU, ident.MemBytes
+	h.BIOS, h.Board, h.MemBytes = ident.biosString(), ident.boardString(), ident.MemBytes
+	h.SetCPU(ident.CPUModel, ident.Sockets, ident.Cores, ident.Threads)
 	if !h.BootTime.IsZero() && !env.Now.IsZero() && env.Now.After(h.BootTime) {
 		h.Uptime = math.Round(env.Now.Sub(h.BootTime).Seconds())
 	}
@@ -240,12 +242,12 @@ func identityTable(id Identity, h model.HostInfo, res *model.Result) {
 	if id.Source == "" && id.CPU == "" && id.MemBytes == 0 {
 		return
 	}
-	mem, up := "", ""
+	mem, up := "", model.Text{}
 	if id.MemBytes > 0 {
 		mem = units.IEC(id.MemBytes)
 	}
 	if h.Uptime > 0 {
-		up = shortDuration(h.Uptime)
+		up = units.ShortSeconds(h.Uptime)
 	}
 	res.Tables = append(res.Tables, model.Table{
 		ID:    "system.identity",
@@ -255,7 +257,8 @@ func identityTable(id Identity, h model.HostInfo, res *model.Result) {
 			model.T("BIOS", "BIOS"), model.T("Mainboard", "Bo mạch chủ"), model.T("CPU", "CPU"),
 			model.T("RAM", "RAM"), model.T("Uptime", "Thời gian chạy"),
 		},
-		Rows: []model.Row{{Cells: []string{id.Vendor, id.Model, id.Serial, id.biosString(), id.boardString(), id.CPU, mem, up}}},
+		Rows: []model.Row{model.NewRow(model.OK, id.Vendor, id.Model, id.Serial, id.biosString(), id.boardString(),
+			model.CPUSummary(id.CPUModel, id.Sockets, id.Cores, id.Threads), mem, up)},
 	})
 }
 
@@ -745,21 +748,7 @@ func firstLine(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// shortDuration formats an uptime for the identity table, whose cells are
-// shown as-is in both languages: "41d 6h", "5h 12m", "3m" rather than
-// English words.
-func shortDuration(sec float64) string {
-	d := time.Duration(sec) * time.Second
-	days := int64(d / (24 * time.Hour))
-	h := int64(d/time.Hour) % 24
-	m := int64(d/time.Minute) % 60
-	switch {
-	case days > 0:
-		return fmt.Sprintf("%dd %dh", days, h)
-	case h > 0:
-		return fmt.Sprintf("%dh %dm", h, m)
-	case m > 0:
-		return fmt.Sprintf("%dm", m)
-	}
-	return "<1m"
-}
+// shortDuration is the English form of the uptime cell in the identity
+// table ("41d 6h", "5h 12m", "3m"); the table itself is bilingual
+// (units.ShortSeconds).
+func shortDuration(sec float64) string { return units.ShortSeconds(sec).EN }

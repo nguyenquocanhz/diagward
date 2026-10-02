@@ -1,0 +1,37 @@
+{
+  "json_format_version": [
+    1,
+    0
+  ],
+  "smartctl": {
+    "version": [
+      7,
+      5
+    ],
+    "pre_release": false,
+    "svn_revision": "5714",
+    "platform_info": "x86_64-linux-6.18.40.1-microsoft-standard-WSL2",
+    "build_info": "(local build)",
+    "argv": [
+      "smartctl",
+      "-x",
+      "-j",
+      "-n",
+      "standby",
+      "-d",
+      "aacraid,0,0,2",
+      "/dev/sda"
+    ],
+    "messages": [
+      {
+        "string": "Smartctl open device: /dev/sda [aacraid_disk_00_00_2] [SCSI/SAT] failed: aac entry not found in /proc/devices",
+        "severity": "error"
+      }
+    ],
+    "exit_status": 2
+  },
+  "local_time": {
+    "time_t": 1790965066,
+    "asctime": "Sat Oct  3 01:17:46 2026 +07"
+  }
+}

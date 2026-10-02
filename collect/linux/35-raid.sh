@@ -1,12 +1,17 @@
 # RAID domain: Linux software RAID (md), ZFS, Btrfs, LVM RAID and hardware
-# RAID controllers (Broadcom/LSI storcli, Dell perccli, HPE ssacli, Microchip
-# arcconf, legacy MegaCli). Read-only. Variables use the _rd_ prefix.
+# RAID controllers (Broadcom/LSI storcli, Dell perccli, storcli2/perccli2 for
+# MegaRAID 9600+/PERC 12, HPE ssacli, Microchip arcconf, legacy MegaCli).
+# Read-only. Variables use the _rd_ prefix.
 #
 # Vendor CLIs write log files into the current directory (storcli.log,
 # UcliEvt.log, MegaSAS.log), so they run from $DW_T, which is removed on exit.
 
 # Common install locations that are not on PATH by default.
-for _rd_d in /opt/MegaRAID/MegaCli /usr/Arcconf /opt/hp/hpssacli/bld /opt/smartstorageadmin/ssacli/bin; do
+# The storcli/perccli RPMs install into /opt/MegaRAID/<tool>/ without a link
+# on PATH.
+for _rd_d in /opt/MegaRAID/MegaCli /opt/MegaRAID/storcli /opt/MegaRAID/perccli \
+	/opt/MegaRAID/storcli2 /opt/MegaRAID/perccli2 \
+	/usr/Arcconf /opt/hp/hpssacli/bld /opt/smartstorageadmin/ssacli/bin; do
 	[ -d "$_rd_d" ] && PATH="$PATH:$_rd_d"
 done
 export PATH
@@ -150,6 +155,12 @@ _rd_sc=""
 for _rd_c in storcli64 storcli; do dw_has "$_rd_c" && { _rd_sc=$_rd_c; break; }; done
 _rd_pc=""
 for _rd_c in perccli64 perccli; do dw_has "$_rd_c" && { _rd_pc=$_rd_c; break; }; done
+# StorCLI2/PERCCLI2 manage the MPI3 controllers (mpi3mr driver: MegaRAID
+# 9600/9700, PERC H965i/H765i/H365i/H975i), which storcli/perccli do not see.
+_rd_s2=""
+dw_has storcli2 && _rd_s2=storcli2
+_rd_p2=""
+dw_has perccli2 && _rd_p2=perccli2
 _rd_hp=""
 for _rd_c in ssacli hpssacli hpacucli; do dw_has "$_rd_c" && { _rd_hp=$_rd_c; break; }; done
 _rd_mc=""
@@ -173,16 +184,38 @@ _rd_megaraid() {
 	dw_fn "raid.$1_cv" _rd_inT "$2" /call/cv show all J
 }
 
+# _rd_mr2ctrl CLI - "/call show all J", also kept in $DW_T/rd_mr2.json.
+_rd_mr2ctrl() {
+	_rd_inT "$1" /call show all J >"$DW_T/rd_mr2.json"
+	_rd_rc=$?
+	cat "$DW_T/rd_mr2.json"
+	return $_rd_rc
+}
+
+# _rd_megaraid2 PREFIX CLI - the storcli2/perccli2 command set (identical
+# JSON; commands from the StorCLI2 User Guide and Dell's sos perccli2
+# plugin). Nothing more runs when the CLI sees no controller.
+_rd_megaraid2() {
+	dw_fn "raid.$1_ctrl" _rd_mr2ctrl "$2"
+	grep -q -e '"Number of Controllers"[[:space:]]*:[[:space:]]*0[^0-9]' -e '"Number of Controllers"[[:space:]]*:[[:space:]]*0$' "$DW_T/rd_mr2.json" 2>/dev/null && return 0
+	dw_fn "raid.$1_vd" _rd_inT "$2" /call/vall show all J
+	dw_fn "raid.$1_pd" _rd_inT "$2" /call/eall/sall show all J
+	dw_fn "raid.$1_rebuild" _rd_inT "$2" /call/eall/sall show rebuild J
+	dw_fn "raid.$1_ep" _rd_inT "$2" /call/ep show all J
+}
+
 if [ -n "$DW_CONTAINER" ]; then
 	dw_skip raid.hw container
 else
 	[ -d /sys/bus/pci/devices ] && dw_fn raid.pci _rd_pci
-	if [ -n "$_rd_sc$_rd_pc$_rd_hp$_rd_mc" ] || dw_has arcconf; then
+	if [ -n "$_rd_sc$_rd_pc$_rd_s2$_rd_p2$_rd_hp$_rd_mc" ] || dw_has arcconf; then
 		if [ "$DW_ROOT" != 1 ]; then
 			dw_skip raid.hw not-root
 		else
 			[ -n "$_rd_sc" ] && _rd_megaraid storcli "$_rd_sc"
 			[ -n "$_rd_pc" ] && _rd_megaraid perccli "$_rd_pc"
+			[ -n "$_rd_s2" ] && _rd_megaraid2 storcli2 "$_rd_s2"
+			[ -n "$_rd_p2" ] && _rd_megaraid2 perccli2 "$_rd_p2"
 			if [ -n "$_rd_hp" ]; then
 				dw_fn raid.ssacli_config _rd_inT "$_rd_hp" ctrl all show config detail
 				dw_fn raid.ssacli_status _rd_inT "$_rd_hp" ctrl all show status

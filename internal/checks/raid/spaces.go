@@ -225,11 +225,12 @@ func (c *checker) checkSpaces() {
 				Evidence: []string{fmt.Sprintf("%s HealthStatus=%s OperationalStatus=%s ReadOnly=%v", p.FriendlyName, h, op, p.IsReadOnly)},
 			})
 		}
-		used := ""
+		state := stateCell(joinNonEmpty(", ", h, op))
 		if p.Size > 0 {
-			used = fmt.Sprintf("%.0f%% allocated", float64(p.AllocatedSize)*100/float64(p.Size))
+			pct := float64(p.AllocatedSize) * 100 / float64(p.Size)
+			state = joinTexts(", ", state, model.Tf("%.0f%% allocated", "đã cấp phát %.0f%%", pct))
 		}
-		c.arrayRow(s, p.FriendlyName, "storage pool", units.SI(uint64(p.Size)), strings.TrimSpace(h+" "+op+" "+used), "", "")
+		c.arrayRow(s, p.FriendlyName, "storage pool", units.SI(uint64(p.Size)), state, "", "")
 		if s == model.OK {
 			ok = append(ok, p.FriendlyName)
 		}
@@ -294,7 +295,7 @@ func (c *checker) checkSpaces() {
 				Detail: model.T("Manual-attach virtual disks (and clustered disks owned by another node) show as detached; this is normal.", "Ổ ảo đặt chế độ gắn thủ công (hoặc ổ cluster do node khác giữ) sẽ hiện detached; điều này bình thường."),
 			})
 		}
-		c.arrayRow(s, target, "storage space "+strings.ToLower(v.ResiliencySettingName), units.SI(uint64(v.Size)), strings.TrimSpace(h+" "+op), v.PoolName, "")
+		c.arrayRow(s, target, "storage space "+strings.ToLower(v.ResiliencySettingName), units.SI(uint64(v.Size)), joinNonEmpty(", ", h, op), v.PoolName, "")
 		if s == model.OK {
 			ok = append(ok, target)
 		}
@@ -368,7 +369,7 @@ func (c *checker) checkSpaces() {
 				Part:   part,
 			})
 		}
-		c.drives = append(c.drives, model.Row{Status: s, Cells: []string{"Storage Spaces " + d.PoolName, firstNonEmpty(string(d.SlotNumber), string(d.DeviceID)), part.Model, part.Serial, part.Size, strings.TrimSpace(h + " " + op + " " + usage), "-"}})
+		c.drives = append(c.drives, model.NewRow(s, "Storage Spaces "+d.PoolName, firstNonEmpty(string(d.SlotNumber), string(d.DeviceID)), part.Model, part.Serial, part.Size, stateCell(joinNonEmpty(", ", h, op, usage)), "-"))
 	}
 
 	if len(ok) > 0 {

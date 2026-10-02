@@ -41,7 +41,7 @@ func (a *app) printHelp(topic string) {
 	switch topic {
 	case "", "check", "analyze", "bmc":
 		text += exitHelp[a.langIdx()]
-	case "collect", "install-tools":
+	case "collect", "install-tools", "notify-test":
 		text += exitHelpSimple[a.langIdx()]
 	}
 	fmt.Fprint(a.stdout, strings.TrimLeft(text, "\n"))
@@ -139,6 +139,8 @@ Usage:
                                        Supermicro, OpenBMC) over the network
   diagward install-tools [--yes]       install the helper tools (smartctl, sensors,
                                        ipmitool, ...) on Linux
+  diagward notify-test --notify-config FILE
+                                       send a test message to every notification channel
   diagward version                     print the version
   diagward help [command]              help for a command
 
@@ -146,6 +148,8 @@ Examples:
   sudo diagward                        full check, report in the terminal
   sudo diagward check --html srv01.html
   sudo diagward check -q               one line for cron/monitoring (exit code 0-3)
+  sudo diagward check -q --notify-config /etc/diagward/notify.conf
+                                       for cron: alert Telegram/Zalo/Slack/... on changes
   sudo diagward collect -o srv01.dwb   then: diagward analyze srv01.dwb
   diagward bmc 10.0.0.15 --user root --insecure
 
@@ -165,6 +169,8 @@ Cách dùng:
                                        Supermicro, OpenBMC) qua mạng
   diagward install-tools [--yes]       cài các công cụ hỗ trợ (smartctl, sensors,
                                        ipmitool, ...) trên Linux
+  diagward notify-test --notify-config TỆP
+                                       gửi tin nhắn thử tới mọi kênh thông báo
   diagward version                     in phiên bản
   diagward help [lệnh]                 hướng dẫn cho từng lệnh
 
@@ -172,6 +178,8 @@ Ví dụ:
   sudo diagward                        kiểm tra đầy đủ, báo cáo ngay trên terminal
   sudo diagward check --html srv01.html
   sudo diagward check -q               một dòng cho cron/giám sát (mã thoát 0-3)
+  sudo diagward check -q --notify-config /etc/diagward/notify.conf
+                                       cho cron: báo qua Telegram/Zalo/Slack/... khi có thay đổi
   sudo diagward collect -o srv01.dwb   rồi: diagward analyze srv01.dwb
   diagward bmc 10.0.0.15 --user root --insecure
 
@@ -192,6 +200,20 @@ Collection:
                    size of the test file, 16M to 64G (default 256M)
   --memtest SIZE   opt-in RAM test with memtester, e.g. 1G (takes minutes and
                    loads CPU and RAM; Linux only, needs root)
+
+Notifications (for cron, systemd timers, Task Scheduler; see docs/notify.md):
+  --notify-config FILE
+                   send the result to the channels in FILE (Telegram, Zalo,
+                   Slack, Discord, webhook, e-mail); also DIAGWARD_NOTIFY_CONFIG.
+                   By default only when something changed: new or worse
+                   problems, problems resolved, the first run with problems
+  --state FILE     where the previous result is kept (default
+                   /var/lib/diagward/state.json as root, ~/.local/state/diagward
+                   otherwise, %ProgramData%\Diagward on Windows)
+  --notify-always  send on every run, even when nothing changed
+  --force          accept a config file that other users can read
+A notification that cannot be sent prints a warning; it never changes the
+exit code.
 `, `Cách dùng: diagward check [tùy chọn]
 
 Thu thập dữ liệu phần cứng của máy chủ này (chỉ đọc, không thay đổi gì),
@@ -207,6 +229,19 @@ Thu thập:
   --memtest DUNG_LƯỢNG
                    test RAM bằng memtester, ví dụ 1G (chỉ chạy khi bạn yêu cầu;
                    mất vài phút, CPU và RAM tải nặng; chỉ Linux, cần root)
+
+Thông báo (cho cron, systemd timer, Task Scheduler; xem docs/notify.md):
+  --notify-config TỆP
+                   gửi kết quả tới các kênh khai báo trong TỆP (Telegram, Zalo,
+                   Slack, Discord, webhook, e-mail); hoặc đặt DIAGWARD_NOTIFY_CONFIG.
+                   Mặc định chỉ gửi khi có thay đổi: lỗi mới hoặc nặng hơn,
+                   lỗi đã hết, lần chạy đầu tiên có lỗi
+  --state TỆP      nơi lưu kết quả lần trước (mặc định /var/lib/diagward/state.json
+                   khi chạy root, ~/.local/state/diagward với người dùng khác,
+                   %ProgramData%\Diagward trên Windows)
+  --notify-always  lần nào cũng gửi, kể cả khi không có gì thay đổi
+  --force          vẫn dùng tệp cấu hình dù người dùng khác đọc được
+Không gửi được thông báo thì chỉ in cảnh báo, mã thoát không thay đổi.
 `},
 
 	"collect": {`Usage: diagward collect [-o FILE.dwb] [--since N] [--timeout SEC] [-q]
@@ -306,6 +341,28 @@ Windows: in hướng dẫn cần cài gì (smartmontools, công cụ card RAID).
   --memtester      cài thêm memtester (cho "check --memtest"; cần EPEL trên
                    AlmaLinux/Rocky/RHEL)
   --lang vi|en     ngôn ngữ
+`},
+
+	"notify-test": {`Usage: diagward notify-test --notify-config FILE [--force]
+
+Sends a test message to every channel in FILE and shows which ones work.
+Run it once after writing the config (see docs/notify.md for the format).
+The exit code is 3 when the message could not be sent to some channel.
+
+  --notify-config FILE
+                   the notification config (or DIAGWARD_NOTIFY_CONFIG)
+  --force          accept a config file that other users can read
+  --lang vi|en     language (the config's lang = applies otherwise)
+`, `Cách dùng: diagward notify-test --notify-config TỆP [--force]
+
+Gửi một tin nhắn thử tới từng kênh trong TỆP và cho biết kênh nào gửi được.
+Nên chạy một lần sau khi viết xong tệp cấu hình (định dạng xem docs/notify.md).
+Mã thoát là 3 nếu có kênh không gửi được.
+
+  --notify-config TỆP
+                   tệp cấu hình thông báo (hoặc biến DIAGWARD_NOTIFY_CONFIG)
+  --force          vẫn dùng tệp cấu hình dù người dùng khác đọc được
+  --lang vi|en     ngôn ngữ (nếu không có thì theo lang = trong tệp cấu hình)
 `},
 
 	"version": {"Usage: diagward version\n", "Cách dùng: diagward version\n"},

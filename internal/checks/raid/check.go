@@ -70,8 +70,10 @@ func (c *checker) cover(id string, name model.Text, state string, reason, fix mo
 	c.res.Coverage = append(c.res.Coverage, cv)
 }
 
-func (c *checker) arrayRow(sev model.Severity, name, typ, size, state, members, progress string) {
-	c.arrays = append(c.arrays, model.Row{Status: sev, Cells: []string{name, typ, size, state, members, progress}})
+// arrayRow adds a row to the arrays table. size, state and progress are
+// strings (translated with raidWords) or Texts.
+func (c *checker) arrayRow(sev model.Severity, name, typ string, size, state any, members string, progress any) {
+	c.arrays = append(c.arrays, model.NewRow(sev, name, typ, stateCell(size), stateCell(state), membersCell(members), stateCell(progress)))
 }
 
 func (c *checker) finish() {

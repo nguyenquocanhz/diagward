@@ -77,6 +77,35 @@ func Duration(d time.Duration) model.Text {
 	return model.T(strings.Join(en, " "), strings.Join(vi, " "))
 }
 
+// Short formats a duration compactly for table cells, with the two largest
+// units: "41d 6h" / "41 ngày 6 giờ", "5h 12m" / "5 giờ 12 phút", "3m" /
+// "3 phút", "<1m" / "<1 phút".
+func Short(d time.Duration) model.Text {
+	if d < 0 {
+		d = -d
+	}
+	days := int64(d / (24 * time.Hour))
+	h := int64(d/time.Hour) % 24
+	m := int64(d/time.Minute) % 60
+	switch {
+	case days > 0:
+		return model.Tf("%dd %dh", "%d ngày %d giờ", days, h)
+	case h > 0:
+		return model.Tf("%dh %dm", "%d giờ %d phút", h, m)
+	case m > 0:
+		return model.Tf("%dm", "%d phút", m)
+	}
+	return model.T("<1m", "<1 phút")
+}
+
+// ShortSeconds is Short for a number of seconds (uptime counters).
+func ShortSeconds(sec float64) model.Text {
+	if !(sec > 0) || sec > 1e12 { // also rejects NaN
+		return Short(0)
+	}
+	return Short(time.Duration(sec * float64(time.Second)))
+}
+
 // Hours formats a power-on-hours counter ("3 years 2 months (27,900 h)").
 func Hours(h uint64) model.Text {
 	d := Duration(time.Duration(h) * time.Hour)

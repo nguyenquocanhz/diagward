@@ -1,0 +1,56 @@
+slot=0000:16:00.0
+class=0x010400
+vendor=0x1000
+device=0x00a5
+subsystem_vendor=0x1028
+subsystem_device=0x2114
+driver=mpi3mr
+lspci_Slot=16:00.0
+lspci_Class=RAID bus controller [0104]
+lspci_Vendor=Broadcom / LSI [1000]
+lspci_Device=Fusion-MPT 24GSAS/PCIe SAS40xx/41xx [00a5]
+lspci_SVendor=Dell [1028]
+lspci_SDevice=PERC H965i Adapter [2114]
+
+slot=0000:17:00.0
+class=0x010700
+vendor=0x1000
+device=0x00a5
+subsystem_vendor=0x1000
+subsystem_device=0x4670
+driver=mpi3mr
+lspci_Slot=17:00.0
+lspci_Class=Serial Attached SCSI controller [0107]
+lspci_Vendor=Broadcom / LSI [1000]
+lspci_Device=Fusion-MPT 24GSAS/PCIe SAS40xx/41xx [00a5]
+lspci_SVendor=Broadcom / LSI [1000]
+lspci_SDevice=eHBA 9600-16i Tri-Mode Storage Adapter [4670]
+
+slot=0000:18:00.0
+class=0x010400
+vendor=0x1000
+device=0x00a5
+subsystem_vendor=0x1000
+subsystem_device=0x4620
+driver=mpi3mr
+lspci_Slot=18:00.0
+lspci_Class=RAID bus controller [0104]
+lspci_Vendor=Broadcom / LSI [1000]
+lspci_Device=Fusion-MPT 24GSAS/PCIe SAS40xx/41xx [00a5]
+lspci_SVendor=Broadcom / LSI [1000]
+lspci_SDevice=MegaRAID 9660-16i Tri-Mode Storage Adapter [4620]
+
+slot=0000:3b:00.0
+class=0x010400
+vendor=0x1000
+device=0x005d
+subsystem_vendor=0x1028
+subsystem_device=0x1f47
+driver=megaraid_sas
+lspci_Slot=3b:00.0
+lspci_Class=RAID bus controller [0104]
+lspci_Vendor=Broadcom / LSI [1000]
+lspci_Device=MegaRAID SAS-3 3108 [Invader] [005d]
+lspci_SVendor=Dell [1028]
+lspci_SDevice=PERC H730P Mini [1f47]
+

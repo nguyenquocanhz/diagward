@@ -196,21 +196,21 @@ func (w *winDisk) wear() *int {
 	return w.Rel.Wear
 }
 
-func (w *winDisk) counters() string {
+func (w *winDisk) counters() model.Text {
 	if w.Rel == nil {
-		return ""
+		return model.Text{}
 	}
-	var cs []string
+	var cs []model.Text
 	if w.Rel.ReadErrorsUncorrected != nil {
-		cs = append(cs, fmt.Sprintf("read uncorrected %d", *w.Rel.ReadErrorsUncorrected))
+		cs = append(cs, model.Tf("read uncorrected %d", "lỗi đọc không sửa được %d", *w.Rel.ReadErrorsUncorrected))
 	}
 	if w.Rel.WriteErrorsUncorrected != nil {
-		cs = append(cs, fmt.Sprintf("write uncorrected %d", *w.Rel.WriteErrorsUncorrected))
+		cs = append(cs, model.Tf("write uncorrected %d", "lỗi ghi không sửa được %d", *w.Rel.WriteErrorsUncorrected))
 	}
 	if u := w.wear(); u != nil {
-		cs = append(cs, fmt.Sprintf("used %d%%", *u))
+		cs = append(cs, usedCell(*u))
 	}
-	return strings.Join(cs, ", ")
+	return joinCells(cs)
 }
 
 // winSmartIndex maps a smartctl device name on Windows to the disk number:

@@ -50,7 +50,7 @@ and runs the same script over its SSH connections.
 | `internal/checks/logs` + `60-logs.*` | logs | kernel log / journal patterns, unexpected reboots, Windows event log |
 | `internal/checks/redfish`, `bmc/` | bmc | Redfish client and analysis, IPMI-over-LAN collection |
 | `report/` | report | text/HTML/Markdown/JSON renderers |
-| `cmd/diagward`, `collect/local.go`, `internal/install` | cli | commands, local runner, tool installer |
+| `cmd/diagward`, `collect/local.go`, `internal/install`, `internal/notify` | cli | commands, local runner, tool installer, notifications (docs/notify.md) |
 
 ## Sections
 
