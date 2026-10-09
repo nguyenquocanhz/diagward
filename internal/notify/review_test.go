@@ -58,7 +58,9 @@ func TestDocsConfigExample(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	doc := string(b)
+	// Normalize CRLF so the search and slicing below are line-ending agnostic:
+	// on a Windows checkout docs/notify.md has \r\n, and "```ini\n…" would miss.
+	doc := strings.ReplaceAll(string(b), "\r\n", "\n")
 	i := strings.Index(doc, "```ini\n# /etc/diagward/notify.conf")
 	if i < 0 {
 		t.Fatal("example not found")
