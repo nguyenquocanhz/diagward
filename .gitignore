@@ -4,6 +4,7 @@
 *.exe
 *.test
 *.test.linux
+*.7z
 
 # Saved bundles and generated reports from local runs
 *.dwb
