@@ -54,16 +54,24 @@ type hView struct {
 	OK         []hFinding
 	Parts      []hPart
 	RMA        model.Text
-	Tables     []hTable
-	Coverage   []hCovSection
-	Ran        []model.Text
-	Notes      []model.Text
-	Version    string
-	Collected  string
-	Duration   model.Text
-	Repo       string
-	TitleVI    string
-	TitleEN    string
+	// All-in-one summary hero (layout A): severity counts, components checked,
+	// and a plain-text summary the "Copy summary" button puts on the clipboard.
+	Crit        int
+	Warn        int
+	Info        int
+	CompChecked int
+	CompTotal   int
+	Summary     model.Text
+	Tables      []hTable
+	Coverage    []hCovSection
+	Ran         []model.Text
+	Notes       []model.Text
+	Version     string
+	Collected   string
+	Duration    model.Text
+	Repo        string
+	TitleVI     string
+	TitleEN     string
 }
 
 type hComp struct {
@@ -240,12 +248,24 @@ func buildView(r *model.Report, o Options) hView {
 		if _, ok := firstByComp[f.Component]; !ok {
 			firstByComp[f.Component] = hf.Anchor
 		}
+		switch hf.Class {
+		case "crit":
+			v.Crit++
+		case "warn":
+			v.Warn++
+		case "info":
+			v.Info++
+		}
 		v.Findings = append(v.Findings, hf)
 		if f.Severity >= model.Warn {
 			v.DoNow = append(v.DoNow, hf)
 		}
 	}
 	for _, s := range summaryOf(r) {
+		v.CompTotal++
+		if s.Checked {
+			v.CompChecked++
+		}
 		c := hComp{
 			Name:    bi(compName(s)),
 			Class:   sevClass(s.Severity, s.Checked),
@@ -302,6 +322,21 @@ func buildView(r *model.Report, o Options) hView {
 	if len(v.Parts) > 0 {
 		v.RMA = model.Text{EN: RMAText(r, "en"), VI: RMAText(r, "vi")}
 	}
+
+	// A short, plain-text summary for the "Copy summary" button (per language).
+	mkSummary := func(lang string) string {
+		s := "Diagward — " + v.Host
+		if v.HostSub != "" {
+			s += " (" + v.HostSub + ")"
+		}
+		s += "\n" + v.Headline.In(lang) + " — " + v.Sub.In(lang)
+		if rma := v.RMA.In(lang); rma != "" {
+			s += "\n\n" + rma
+		}
+		s += "\n" + v.Repo
+		return s
+	}
+	v.Summary = model.Text{EN: clean(mkSummary("en"), true), VI: clean(mkSummary("vi"), true)}
 
 	// Tables
 	for _, res := range r.Results {

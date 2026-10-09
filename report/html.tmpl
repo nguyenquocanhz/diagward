@@ -87,6 +87,20 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .badge{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);color:var(--badge-ink);font:700 13px/1 var(--sans)}
 .badge.lg{width:44px;height:44px;font-size:24px}
 .badge.sm{width:18px;height:18px;font-size:11px}
+.hero{margin:0 0 6px}
+.herocard{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:stretch}
+.herocard .verdict{margin:0}
+.herocard>.card{display:flex;flex-direction:column;justify-content:center;padding:16px 18px}
+.herocard h1{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.stats{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.stat{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid var(--cd);background:var(--cb);color:var(--c);font-weight:600;font-size:12.5px}
+.stat .n{font-size:15px}
+.parts-quick{margin-top:12px}
+.ptags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ptag{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 10px;border-radius:8px;border:1px solid var(--cd);background:var(--cb);color:inherit;text-decoration:none;font-size:12.5px;overflow-wrap:anywhere}
+.ptag:hover{border-color:var(--c)}
+.ptag .sn{font-family:var(--mono);font-size:11px;color:var(--muted)}
+@media (max-width:640px){.herocard{grid-template-columns:1fr}}
 section{margin:30px 0}
 h2.sec{font-size:20px;margin-bottom:12px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 h2.sec small{font:400 13px var(--sans);color:var(--muted)}
@@ -225,6 +239,8 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 <header class="top">
 <div class="brand"><span class="logo" aria-hidden="true">&#9670;</span><span class="name">Diagward</span><span class="sub">{{template "t" .Title}}</span></div>
 <div class="ctl noprint">
+<button type="button" class="btn" data-copy-summary>{{template "copylbl" (L "copySummary")}}</button>
+<button type="button" class="btn" data-print>{{template "t" (L "print")}}</button>
 <div class="seg" role="group" aria-label="Ngôn ngữ / Language">
 <button type="button" data-setlang="vi" aria-pressed="{{if eq .Lang "vi"}}true{{else}}false{{end}}">VI</button><button type="button" data-setlang="en" aria-pressed="{{if eq .Lang "en"}}true{{else}}false{{end}}">EN</button>
 </div>
@@ -233,16 +249,23 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 </header>
 
 <main>
-<section class="card ident" style="margin-top:0">
-<h1>{{.Host}}</h1>{{with .HostSub}}<div class="hostsub">{{.}}</div>{{end}}
-<dl class="kv">{{range .Identity}}
-<div><dt>{{template "t" .Key}}</dt><dd>{{template "t" .Val}}</dd></div>{{end}}
-</dl>
-</section>
-
-<section class="verdict c-{{.Class}}" role="status">
+<section class="hero" style="margin-top:0">
+<div class="herocard">
+<div class="verdict c-{{.Class}}" role="status">
 <span class="badge lg" aria-hidden="true">{{.Mark}}</span>
 <div><h2>{{template "t" .Headline}}</h2><p class="vsub">{{template "t" .Sub}}</p></div>
+</div>
+<div class="card ident">
+<h1>{{.Host}}</h1>{{with .HostSub}}<div class="hostsub">{{.}}</div>{{end}}
+<div class="stats">
+{{if .Crit}}<span class="stat c-crit"><span class="n">{{.Crit}}</span> {{template "t" (L "statCrit")}}</span>{{end}}
+{{if .Warn}}<span class="stat c-warn"><span class="n">{{.Warn}}</span> {{template "t" (L "statWarn")}}</span>{{end}}
+{{if .Info}}<span class="stat c-info"><span class="n">{{.Info}}</span> {{template "t" (L "statNote")}}</span>{{end}}
+<span class="stat c-none"><span class="n">{{.CompChecked}}/{{.CompTotal}}</span> {{template "t" (L "statChecked")}}</span>
+</div>
+</div>
+</div>
+{{if .Parts}}<div class="parts-quick"><div class="alabel">{{template "t" (L "parts")}} ({{len .Parts}})</div><div class="ptags">{{range .Parts}}{{if .Anchor}}<a class="ptag c-{{.Class}}" href="#{{.Anchor}}">{{else}}<span class="ptag c-{{.Class}}">{{end}}<b>{{template "t" .Kind}}</b>{{with .Model}} {{.}}{{end}}{{with .Serial}} <span class="sn">S/N {{.}}</span>{{end}}{{if .Anchor}}</a>{{else}}</span>{{end}}{{end}}</div></div>{{end}}
 </section>
 
 <section aria-labelledby="h-comp">
@@ -324,7 +347,18 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 <ul class="notes">{{range .Notes}}<li>{{template "t" .}}</li>{{end}}</ul>
 </section>
 {{end}}
+{{if .Identity}}
+<section aria-labelledby="h-sys">
+<h2 class="sec" id="h-sys">{{template "t" (L "sysInfo")}}</h2>
+<div class="card"><dl class="kv">{{range .Identity}}
+<div><dt>{{template "t" .Key}}</dt><dd>{{template "t" .Val}}</dd></div>{{end}}
+</dl></div>
+</section>
+{{end}}
 </main>
+
+<pre id="summary-vi" lang="vi" hidden>{{.Summary.VI}}</pre>
+<pre id="summary-en" lang="en" hidden>{{.Summary.EN}}</pre>
 
 <footer class="foot">
 <div>{{template "t" (L "generated")}} <a href="{{.Repo}}">Diagward{{with .Version}} {{.}}{{end}}</a></div>
@@ -389,6 +423,12 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
       try { localStorage.setItem("dw-theme", next); } catch (x) {}
       return;
     }
+    if ((b = up(e.target, "data-copy-summary"))) {
+      var sp = document.getElementById("summary-" + (root.getAttribute("data-lang") || "vi"));
+      if (sp) { copy(sp.textContent, b); }
+      return;
+    }
+    if ((b = up(e.target, "data-print"))) { window.print(); return; }
     if ((b = up(e.target, "data-copy-rma"))) {
       var pre = document.getElementById("rma-" + (root.getAttribute("data-lang") || "vi"));
       if (pre) { copy(pre.textContent, b); }

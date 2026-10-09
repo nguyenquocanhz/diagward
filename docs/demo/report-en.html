@@ -82,6 +82,20 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:2px solid var
 .badge{display:inline-flex;align-items:center;justify-content:center;flex:none;width:22px;height:22px;border-radius:50%;background:var(--c);color:var(--badge-ink);font:700 13px/1 var(--sans)}
 .badge.lg{width:44px;height:44px;font-size:24px}
 .badge.sm{width:18px;height:18px;font-size:11px}
+.hero{margin:0 0 6px}
+.herocard{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:14px;align-items:stretch}
+.herocard .verdict{margin:0}
+.herocard>.card{display:flex;flex-direction:column;justify-content:center;padding:16px 18px}
+.herocard h1{font-family:var(--serif);font-size:22px;font-weight:600;line-height:1.2;overflow-wrap:anywhere}
+.stats{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.stat{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid var(--cd);background:var(--cb);color:var(--c);font-weight:600;font-size:12.5px}
+.stat .n{font-size:15px}
+.parts-quick{margin-top:12px}
+.ptags{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.ptag{display:inline-flex;align-items:center;gap:6px;max-width:100%;padding:4px 10px;border-radius:8px;border:1px solid var(--cd);background:var(--cb);color:inherit;text-decoration:none;font-size:12.5px;overflow-wrap:anywhere}
+.ptag:hover{border-color:var(--c)}
+.ptag .sn{font-family:var(--mono);font-size:11px;color:var(--muted)}
+@media (max-width:640px){.herocard{grid-template-columns:1fr}}
 section{margin:30px 0}
 h2.sec{font-size:20px;margin-bottom:12px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 h2.sec small{font:400 13px var(--sans);color:var(--muted)}
@@ -220,6 +234,8 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 <header class="top">
 <div class="brand"><span class="logo" aria-hidden="true">&#9670;</span><span class="name">Diagward</span><span class="sub"><span lang="vi">Báo cáo phần cứng máy chủ</span><span lang="en">Server hardware report</span></span></div>
 <div class="ctl noprint">
+<button type="button" class="btn" data-copy-summary><span class="lbl"><span lang="vi">Copy tóm tắt</span><span lang="en">Copy summary</span></span><span class="done"><span lang="vi">Đã sao chép</span><span lang="en">Copied</span></span></button>
+<button type="button" class="btn" data-print><span lang="vi">In / PDF</span><span lang="en">Print / PDF</span></button>
 <div class="seg" role="group" aria-label="Ngôn ngữ / Language">
 <button type="button" data-setlang="vi" aria-pressed="false">VI</button><button type="button" data-setlang="en" aria-pressed="true">EN</button>
 </div>
@@ -228,27 +244,23 @@ pre,.cmd code{white-space:pre-wrap;overflow:visible}
 </header>
 
 <main>
-<section class="card ident" style="margin-top:0">
-<h1>srv-db01</h1><div class="hostsub">Dell Inc. PowerEdge R740</div>
-<dl class="kv">
-<div><dt><span lang="vi">Hệ điều hành</span><span lang="en">Operating system</span></dt><dd>AlmaLinux 9.4 (Seafoam Ocelot)</dd></div>
-<div><dt>Kernel / build</dt><dd>5.14.0-427.13.1.el9_4.x86_64</dd></div>
-<div><dt>CPU</dt><dd><span lang="vi">2 × Intel Xeon Gold 6154 (36 nhân, 72 luồng)</span><span lang="en">2 × Intel Xeon Gold 6154 (36 cores, 72 threads)</span></dd></div>
-<div><dt><span lang="vi">RAM</span><span lang="en">Memory</span></dt><dd>251 GiB</dd></div>
-<div><dt>Mainboard</dt><dd>Dell Inc. 01YM03</dd></div>
-<div><dt>BIOS</dt><dd>2.22.1 (2024-08-09)</dd></div>
-<div><dt>BMC</dt><dd>12.34.123.111</dd></div>
-<div><dt>Uptime</dt><dd><span lang="vi">10 ngày</span><span lang="en">10 days</span></dd></div>
-<div><dt><span lang="vi">Máy ảo</span><span lang="en">Virtual machine</span></dt><dd><span lang="vi">không (máy vật lý)</span><span lang="en">no (physical machine)</span></dd></div>
-<div><dt><span lang="vi">Quyền chạy</span><span lang="en">Ran as</span></dt><dd><span lang="vi">root / Administrator (đầy đủ)</span><span lang="en">root / Administrator (complete)</span></dd></div>
-<div><dt><span lang="vi">Thời điểm thu thập</span><span lang="en">Collected at</span></dt><dd>2026-10-01 09:00:27 &#43;00:00</dd></div>
-<div><dt><span lang="vi">Thời gian thu thập</span><span lang="en">Collection took</span></dt><dd><span lang="vi">27 giây</span><span lang="en">27 s</span></dd></div>
-</dl>
-</section>
-
-<section class="verdict c-crit" role="status">
+<section class="hero" style="margin-top:0">
+<div class="herocard">
+<div class="verdict c-crit" role="status">
 <span class="badge lg" aria-hidden="true">✕</span>
 <div><h2><span lang="vi">CẦN XỬ LÝ NGAY</span><span lang="en">ACTION NEEDED NOW</span></h2><p class="vsub"><span lang="vi">5 lỗi nghiêm trọng · 6 cảnh báo · 1 lưu ý · đã kiểm tra 12/12 nhóm linh kiện (2 nhóm chỉ một phần)</span><span lang="en">5 critical problems · 6 warnings · 1 note · 12 of 12 components checked (2 only partly)</span></p></div>
+</div>
+<div class="card ident">
+<h1>srv-db01</h1><div class="hostsub">Dell Inc. PowerEdge R740</div>
+<div class="stats">
+<span class="stat c-crit"><span class="n">5</span> <span lang="vi">nghiêm trọng</span><span lang="en">critical</span></span>
+<span class="stat c-warn"><span class="n">6</span> <span lang="vi">cảnh báo</span><span lang="en">warnings</span></span>
+<span class="stat c-info"><span class="n">1</span> <span lang="vi">lưu ý</span><span lang="en">notes</span></span>
+<span class="stat c-none"><span class="n">12/12</span> <span lang="vi">đã kiểm</span><span lang="en">checked</span></span>
+</div>
+</div>
+</div>
+<div class="parts-quick"><div class="alabel"><span lang="vi">Linh kiện cần thay</span><span lang="en">Parts to replace</span> (7)</div><div class="ptags"><a class="ptag c-crit" href="#f-1"><b><span lang="vi">Ổ cứng</span><span lang="en">Disk</span></b> Samsung SAMSUNG HD502HI 500 GB <span class="sn">S/N S1VZJ9CS712490</span></a><a class="ptag c-crit" href="#f-2"><b><span lang="vi">Ổ cứng</span><span lang="en">Disk</span></b> SAMSUNG MZ7LM960HCHP-00003 894.252 GB <span class="sn">S/N S1YHNYAG600061</span></a><a class="ptag c-crit" href="#f-3"><b><span lang="vi">Ổ cứng</span><span lang="en">Disk</span></b> SAMSUNG MZ7LM960HCHP-00003 894.252 GB <span class="sn">S/N S1YHNXAG804001</span></a><a class="ptag c-crit" href="#f-5"><b><span lang="vi">Bộ nguồn (PSU)</span><span lang="en">Power supply (PSU)</span></b> DELL PWR SPLY,750W,RDNT,DELTA 05RHVVA03 <span class="sn">S/N CNDED0003G0O0P</span></a><a class="ptag c-warn" href="#f-6"><b><span lang="vi">Thanh RAM</span><span lang="en">Memory module (DIMM)</span></b></a><a class="ptag c-warn" href="#f-9"><b><span lang="vi">Ổ cứng</span><span lang="en">Disk</span></b> SAMSUNG MZ7LM960HCHP-00003 894.252 GB <span class="sn">S/N S1YHNXAG803993</span></a><a class="ptag c-warn" href="#f-11"><b><span lang="vi">Card mạng</span><span lang="en">Network card</span></b></a></div></div>
 </section>
 
 <section aria-labelledby="h-comp">
@@ -774,7 +786,105 @@ Collected at: 2026-10-01 09:00:27 &#43;00:00
 
 </section>
 
+
+<section aria-labelledby="h-sys">
+<h2 class="sec" id="h-sys"><span lang="vi">Thông tin máy</span><span lang="en">System info</span></h2>
+<div class="card"><dl class="kv">
+<div><dt><span lang="vi">Hệ điều hành</span><span lang="en">Operating system</span></dt><dd>AlmaLinux 9.4 (Seafoam Ocelot)</dd></div>
+<div><dt>Kernel / build</dt><dd>5.14.0-427.13.1.el9_4.x86_64</dd></div>
+<div><dt>CPU</dt><dd><span lang="vi">2 × Intel Xeon Gold 6154 (36 nhân, 72 luồng)</span><span lang="en">2 × Intel Xeon Gold 6154 (36 cores, 72 threads)</span></dd></div>
+<div><dt><span lang="vi">RAM</span><span lang="en">Memory</span></dt><dd>251 GiB</dd></div>
+<div><dt>Mainboard</dt><dd>Dell Inc. 01YM03</dd></div>
+<div><dt>BIOS</dt><dd>2.22.1 (2024-08-09)</dd></div>
+<div><dt>BMC</dt><dd>12.34.123.111</dd></div>
+<div><dt>Uptime</dt><dd><span lang="vi">10 ngày</span><span lang="en">10 days</span></dd></div>
+<div><dt><span lang="vi">Máy ảo</span><span lang="en">Virtual machine</span></dt><dd><span lang="vi">không (máy vật lý)</span><span lang="en">no (physical machine)</span></dd></div>
+<div><dt><span lang="vi">Quyền chạy</span><span lang="en">Ran as</span></dt><dd><span lang="vi">root / Administrator (đầy đủ)</span><span lang="en">root / Administrator (complete)</span></dd></div>
+<div><dt><span lang="vi">Thời điểm thu thập</span><span lang="en">Collected at</span></dt><dd>2026-10-01 09:00:27 &#43;00:00</dd></div>
+<div><dt><span lang="vi">Thời gian thu thập</span><span lang="en">Collection took</span></dt><dd><span lang="vi">27 giây</span><span lang="en">27 s</span></dd></div>
+</dl></div>
+</section>
+
 </main>
+
+<pre id="summary-vi" lang="vi" hidden>Diagward — srv-db01 (Dell Inc. PowerEdge R740)
+CẦN XỬ LÝ NGAY — 5 lỗi nghiêm trọng · 6 cảnh báo · 1 lưu ý · đã kiểm tra 12/12 nhóm linh kiện (2 nhóm chỉ một phần)
+
+Máy chủ: srv-db01
+Hãng / model: Dell Inc. PowerEdge R740
+Thời điểm thu thập: 2026-10-01 09:00:27 &#43;00:00
+
+1. Ổ cứng: Samsung SAMSUNG HD502HI 500 GB
+   Serial: S1VZJ9CS712490
+   Vị trí: /dev/sda
+   Firmware: 1AG01118
+   Lý do: Ổ /dev/sda sắp hỏng: 81 sector không đọc được; Ổ /dev/sda báo 2,375 lỗi không sửa được; Ổ /dev/sda: 1 lỗi truyền dữ liệu (CRC) — kiểm tra cáp/backplane
+2. Ổ cứng: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNYAG600061
+   Vị trí: Controller 0, Enclosure 32 Slot 2
+   Firmware: GXT3003Q
+   Lý do: Ổ Enclosure 32 Slot 2 trên Controller 0 đã hỏng (Failed); Volume RAID Controller 0 v0 (RAID1) bị degraded
+3. Ổ cứng: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG804001
+   Vị trí: Controller 0, Enclosure 32 Slot 3
+   Firmware: GXT3003Q
+   Lý do: Ổ Enclosure 32 Slot 3 trên Controller 0 báo sắp hỏng (cảnh báo S.M.A.R.T.)
+4. Bộ nguồn (PSU): DELL PWR SPLY,750W,RDNT,DELTA 05RHVVA03
+   Serial: CNDED0003G0O0P
+   Vị trí: PSU 2
+   Lý do: PSU 2: bộ nguồn bị hỏng
+5. Thanh RAM
+   Vị trí: CPU_SrcID#1_MC#0_Chan#1_DIMM#0
+   Lý do: Thanh RAM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 liên tục bị lỗi (đã được ECC sửa): 250 lỗi (25 lỗi/ngày)
+6. Ổ cứng: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG803993
+   Vị trí: Controller 0, Enclosure 32 Slot 1
+   Firmware: GXT3003Q
+   Lý do: Ổ Enclosure 32 Slot 1 trên Controller 0 có 5 lỗi media
+7. Card mạng
+   Vị trí: enp0s8 (MAC 08:00:27:a2:8d:f5)
+   Lý do: Bond bond0 mất dự phòng: cổng enp0s8 bị rớt link
+
+https://github.com/nguyenquocanhz/diagward</pre>
+<pre id="summary-en" lang="en" hidden>Diagward — srv-db01 (Dell Inc. PowerEdge R740)
+ACTION NEEDED NOW — 5 critical problems · 6 warnings · 1 note · 12 of 12 components checked (2 only partly)
+
+Server: srv-db01
+Vendor / model: Dell Inc. PowerEdge R740
+Collected at: 2026-10-01 09:00:27 &#43;00:00
+
+1. Disk: Samsung SAMSUNG HD502HI 500 GB
+   Serial: S1VZJ9CS712490
+   Location: /dev/sda
+   Firmware: 1AG01118
+   Reason: Disk /dev/sda is failing: 81 sectors could not be read; Disk /dev/sda reported 2,375 uncorrectable errors; Disk /dev/sda: 1 data transfer (CRC) errors — check cable/backplane
+2. Disk: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNYAG600061
+   Location: Controller 0, Enclosure 32 Slot 2
+   Firmware: GXT3003Q
+   Reason: Disk Enclosure 32 Slot 2 on Controller 0 has failed (Failed); RAID volume Controller 0 v0 (RAID1) is degraded
+3. Disk: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG804001
+   Location: Controller 0, Enclosure 32 Slot 3
+   Firmware: GXT3003Q
+   Reason: Disk Enclosure 32 Slot 3 on Controller 0 predicts its own failure (S.M.A.R.T. alert)
+4. Power supply (PSU): DELL PWR SPLY,750W,RDNT,DELTA 05RHVVA03
+   Serial: CNDED0003G0O0P
+   Location: PSU 2
+   Reason: PSU 2: power supply has failed
+5. Memory module (DIMM)
+   Location: CPU_SrcID#1_MC#0_Chan#1_DIMM#0
+   Reason: DIMM CPU_SrcID#1_MC#0_Chan#1_DIMM#0 keeps producing corrected memory errors: 250 (25 per day)
+6. Disk: SAMSUNG MZ7LM960HCHP-00003 894.252 GB
+   Serial: S1YHNXAG803993
+   Location: Controller 0, Enclosure 32 Slot 1
+   Firmware: GXT3003Q
+   Reason: Disk Enclosure 32 Slot 1 on Controller 0 has 5 media errors
+7. Network card
+   Location: enp0s8 (MAC 08:00:27:a2:8d:f5)
+   Reason: Bond bond0 lost redundancy: port enp0s8 is down
+
+https://github.com/nguyenquocanhz/diagward</pre>
 
 <footer class="foot">
 <div><span lang="vi">Tạo bởi</span><span lang="en">Generated by</span> <a href="https://github.com/nguyenquocanhz/diagward">Diagward 0.1.0</a></div>
@@ -839,6 +949,12 @@ Collected at: 2026-10-01 09:00:27 &#43;00:00
       try { localStorage.setItem("dw-theme", next); } catch (x) {}
       return;
     }
+    if ((b = up(e.target, "data-copy-summary"))) {
+      var sp = document.getElementById("summary-" + (root.getAttribute("data-lang") || "vi"));
+      if (sp) { copy(sp.textContent, b); }
+      return;
+    }
+    if ((b = up(e.target, "data-print"))) { window.print(); return; }
     if ((b = up(e.target, "data-copy-rma"))) {
       var pre = document.getElementById("rma-" + (root.getAttribute("data-lang") || "vi"));
       if (pre) { copy(pre.textContent, b); }

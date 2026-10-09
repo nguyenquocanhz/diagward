@@ -57,6 +57,13 @@ var labels = map[string]model.Text{
 	"langHint":    model.T("Vietnamese: add --lang vi", "English: thêm --lang en"),
 	"none":        model.T("none", "không có"),
 	"more":        model.T("more", "nữa"),
+	"copySummary": model.T("Copy summary", "Copy tóm tắt"),
+	"print":       model.T("Print / PDF", "In / PDF"),
+	"sysInfo":     model.T("System info", "Thông tin máy"),
+	"statCrit":    model.T("critical", "nghiêm trọng"),
+	"statWarn":    model.T("warnings", "cảnh báo"),
+	"statNote":    model.T("notes", "lưu ý"),
+	"statChecked": model.T("checked", "đã kiểm"),
 }
 
 func label(k string) model.Text {

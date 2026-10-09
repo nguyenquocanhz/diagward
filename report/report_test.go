@@ -1025,7 +1025,7 @@ func TestGuestHeadline(t *testing.T) {
 	if !strings.Contains(out, "[INFO]  NO PROBLEMS FOUND IN THIS VIRTUAL MACHINE") {
 		t.Errorf("vm banner:\n%s", out)
 	}
-	if h := render(t, "html", r, Options{Lang: "en"}); !strings.Contains(h, `<section class="verdict c-info" role="status">`) {
+	if h := render(t, "html", r, Options{Lang: "en"}); !strings.Contains(h, `<div class="verdict c-info" role="status">`) {
 		t.Error("vm html banner should be info")
 	}
 	r.Env.Container, r.Env.Virtual = true, "wsl"
